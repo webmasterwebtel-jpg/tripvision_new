@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TripVision | Bons plans voyage</title>
+  <meta name="description" content="TripVision sélectionne des bons plans vols, locations de voiture et packs week-end depuis la France." />
+  <link rel="stylesheet" href="styles.css?v=20260927-admin-1" />
+  <script src="assets/boot.js"></script>
+  <link rel="stylesheet" href="premium.css?v=20261014-v29" />
+</head>
+<body>
+  <svg class="tv-icon-sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></symbol>
+  <symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.7 2.8 8 7 10 4.2-2 7-5.3 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M4 13a8 8 0 0 1 16 0"/><path d="M4 13v5a2 2 0 0 0 2 2h2v-7H4Zm16 0v5a2 2 0 0 1-2 2h-2v-7h4Z"/></symbol>
+  <symbol id="i-plane" viewBox="0 0 24 24"><path d="M22 2 9.5 14.5"/><path d="m22 2-7 20-4-8-8-4 19-8Z"/></symbol>
+  <symbol id="i-suitcase" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M9 12v3m6-3v3"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="m5 11 2-5h10l2 5"/><rect x="3" y="11" width="18" height="7" rx="2"/><path d="M7 18v2m10-2v2M7 14h.01M17 14h.01"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4m8-4v4M3 10h18"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+  <symbol id="i-dashboard" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 0 0 4v5h18v-5a2 2 0 0 0 0-4V3H3v5Z"/><path d="M13 7h4m-4 4h4m-4 4h4M8 7v8"/></symbol>
+  <symbol id="i-booking" viewBox="0 0 24 24"><path d="M8 4h8M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1Z"/><rect x="5" y="4" width="14" height="18" rx="2"/><path d="m9 13 2 2 4-4"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+</svg>
+  <header class="topbar">
+    <div class="wrap nav">
+      <a class="brand brand-premium brand-logo" href="#home" data-page-link="home" aria-label="TripVision — Voyager autrement"><img src="/assets/tripvision-logo-original.png?v=20260920-1" alt="TripVision — Voyager autrement" width="2048" height="682" decoding="async"></a>
+      <button class="burger" id="burger" type="button" aria-label="Ouvrir le menu" aria-controls="mainNav" aria-expanded="false"><svg class="tv-icon" aria-hidden="true"><use href="#i-menu"></use></svg></button>
+      <nav class="links" id="mainNav">
+        <a href="#flights" data-page-link="flights">Vols</a>
+        <a href="#cars" data-page-link="cars">Voitures</a>
+        <a href="#packs" data-page-link="packs">Week-ends</a>
+        <div class="mobile-account" id="mobileAccount" aria-label="Compte"></div>
+      </nav>
+      <div class="account"><a class="btn small client-menu-btn" href="#login" data-page-link="login">Mon Espace Client</a></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="page active premium-home" id="home">
+      <section class="premium-hero">
+        <div class="wrap premium-hero-inner">
+          <div class="premium-hero-copy">
+            <div class="premium-kicker">Bons plans voyage</div>
+            <h1>Partez l’esprit tranquille,<em>au prix qui vous convient.</em></h1>
+            <p>Vos billets d’avion, votre voiture et vos virées du week-end réunis au même endroit. Vous n’avez plus qu’à faire vos valises.</p>
+            <form class="premium-search" data-jump="cars">
+              <input name="q" placeholder="Ville, destination, catégorie de véhicule..." />
+              <button class="btn" type="submit">Explorer <span>→</span></button>
+            </form>
+            <div class="premium-trust">
+              <div class="premium-trust-item"><div class="premium-trust-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-check-circle"></use></svg></div><div><strong>Offres validées</strong><span>Par l’administration</span></div></div>
+              <div class="premium-trust-item"><div class="premium-trust-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-shield-check"></use></svg></div><div><strong>Partenaires contrôlés</strong><span>Une sélection de confiance</span></div></div>
+              <div class="premium-trust-item"><div class="premium-trust-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-headphones"></use></svg></div><div><strong>Réservation assistée</strong><span>Un accompagnement humain</span></div></div>
+            </div>
+          </div>
+          <div class="premium-hero-note">Des destinations<br>qui ont du sens</div>
+        </div>
+      </section>
+
+      <div class="wrap stats premium-hidden-stats" id="homeStats"></div>
+
+      <section class="premium-discover">
+        <div class="wrap discover-grid">
+          <div class="inspiration-block">
+            <div class="premium-section-kicker">Nos inspirations</div>
+            <div class="premium-title-row">
+              <h2>Destinations en vedette</h2>
+              <a href="#flights" data-page-link="flights">Voir toutes les destinations &nbsp;→</a>
+            </div>
+            <div class="destination-cards">
+              <a class="destination-card" href="#flights" data-page-link="flights">
+                <img src="https://images.unsplash.com/photo-1573843981267-be1999ff37cd?auto=format&fit=crop&w=700&q=86" alt="Maldives" />
+                <div class="destination-card-body"><h3>Maldives</h3><p>Plages de rêve</p><span class="destination-arrow">→</span></div>
+              </a>
+              <a class="destination-card" href="#flights" data-page-link="flights">
+                <img src="https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=700&q=86" alt="Sicile" />
+                <div class="destination-card-body"><h3>Sicile</h3><p>Culture & authenticité</p><span class="destination-arrow">→</span></div>
+              </a>
+              <a class="destination-card" href="#packs" data-page-link="packs">
+                <img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=700&q=86" alt="Santorin" />
+                <div class="destination-card-body"><h3>Santorin</h3><p>Soleil & panoramas</p><span class="destination-arrow">→</span></div>
+              </a>
+              <a class="destination-card" href="#packs" data-page-link="packs">
+                <img src="https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?auto=format&fit=crop&w=700&q=86" alt="Île Maurice" />
+                <div class="destination-card-body"><h3>Île Maurice</h3><p>Nature préservée</p><span class="destination-arrow">→</span></div>
+              </a>
+            </div>
+          </div>
+
+          <aside class="partner-showcase">
+            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1100&q=86" alt="Destination tropicale TripVision" />
+            <div class="partner-showcase-content">
+              <div class="premium-section-kicker">Devenez partenaire</div>
+              <h3>Rejoignez l’aventure TripVision</h3>
+              <p>Collaborez avec une plateforme de confiance et touchez une clientèle engagée.</p>
+              <a class="btn" href="#partner" data-page-link="partner">Devenir partenaire →</a>
+            </div>
+          </aside>
+        </div>
+
+        <div class="wrap premium-way">
+          <div class="premium-way-head">
+            <div><div class="premium-section-kicker">Pourquoi TripVision ?</div><h2>Une nouvelle façon de voyager</h2></div>
+            <p class="premium-way-intro">Plus qu’une plateforme, TripVision réunit sélection, confiance et accompagnement pour transformer la recherche d’un voyage en expérience simple.</p>
+          </div>
+          <div class="premium-benefits">
+            <article class="premium-benefit"><span>01</span><h3>Des offres choisies</h3><p>Les vols, véhicules et week-ends sont publiés uniquement après validation.</p></article>
+            <article class="premium-benefit"><span>02</span><h3>Des partenaires suivis</h3><p>Les professionnels renseignent leurs offres et TripVision contrôle leur publication.</p></article>
+            <article class="premium-benefit"><span>03</span><h3>Un parcours fluide</h3><p>Recherche, sélection et demande de réservation sont réunies dans une même expérience.</p></article>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="page service-page flights-page" id="flights">
+      <section class="flight-premium-hero travel-photo-hero">
+        <div class="wrap flight-premium-grid">
+          <div class="flight-intro-card travel-hero-copy">
+            
+            <h1>Votre prochain vol,<br><em>en quelques clics.</em></h1>
+            <p>Trouvez le vol qui vous convient et partez l’esprit léger. Comparez les options selon votre trajet, vos dates et vos envies.</p>
+            <div class="flight-benefits">
+              <div><span>01</span><strong>Recherche ciblée</strong><small>Départ, destination et dates</small></div>
+              <div><span>02</span><strong>Offres réelles</strong><small>Aucun prix inventé</small></div>
+              <div><span>03</span><strong>Parcours rapide</strong><small>Du trajet au résultat</small></div>
+            </div>
+          </div>
+
+          <form class="flight-search-panel" id="flightSimulator">
+            <div class="flight-search-top">
+              <div>
+                <span>Rechercher un vol</span>
+                <strong>Construisez votre trajet</strong>
+              </div>
+              <div class="flight-trip-toggle" role="group" aria-label="Type de trajet">
+                <label><input type="radio" name="tripType" value="roundtrip" checked><span>Aller-retour</span></label>
+                <label><input type="radio" name="tripType" value="oneway"><span>Aller simple</span></label>
+              </div>
+            </div>
+
+            <div class="flight-route-row">
+              <label class="flight-route-field">
+                <span>Départ</span>
+                <div class="flight-input-line"><b>DE</b><input name="fromCity" placeholder="Ville de départ" autocomplete="off" data-geo="place"></div>
+              </label>
+              <button type="button" class="flight-swap" id="flightSwap" aria-label="Inverser départ et destination">⇄</button>
+              <label class="flight-route-field">
+                <span>Destination</span>
+                <div class="flight-input-line"><b>À</b><input name="toCity" placeholder="Destination" autocomplete="off" data-geo="place"></div>
+              </label>
+            </div>
+
+            <div class="flight-meta-row">
+              <label><span>Départ</span><input name="departDate" type="date"></label>
+              <label class="flight-return-field"><span>Retour</span><input name="returnDate" type="date"></label>
+              <label><span>Voyageurs</span><select name="travelers"><option value="1">1 voyageur</option><option value="2">2 voyageurs</option><option value="3">3 voyageurs</option><option value="4">4 voyageurs</option><option value="5">5+ voyageurs</option></select></label>
+            </div>
+
+            <button class="btn flight-primary-cta" type="submit">Afficher les vols disponibles <span>→</span></button>
+            <div class="flight-form-foot"><span><svg class="tv-icon" aria-hidden="true"><use href="#i-check"></use></svg> Recherche simple et rapide</span><span><svg class="tv-icon" aria-hidden="true"><use href="#i-check"></use></svg> Vos options réunies au même endroit</span></div>
+          </form>
+        </div>
+      </section>
+
+      <section class="dest-band">
+        <div class="wrap">
+          <div class="dest-head"><span class="eyebrow">Inspirations</span><h2>Destinations <em>populaires</em></h2><p>Un clic sur une destination pour voir les vols disponibles.</p></div>
+          <div class="dest-grid"><button type="button" class="dest-card" data-dest-flight="Dakar"><img src="assets/dest/dakar.jpg" alt="Dakar" loading="lazy" decoding="async"><span class="dest-info"><b>Dakar</b><small>Sénégal</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Abidjan"><img src="assets/dest/abidjan.jpg" alt="Abidjan" loading="lazy" decoding="async"><span class="dest-info"><b>Abidjan</b><small>Côte d’Ivoire</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Douala"><img src="assets/dest/douala.jpg" alt="Douala" loading="lazy" decoding="async"><span class="dest-info"><b>Douala</b><small>Cameroun</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Casablanca"><img src="assets/dest/casablanca.jpg" alt="Casablanca" loading="lazy" decoding="async"><span class="dest-info"><b>Casablanca</b><small>Maroc</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Marrakech"><img src="assets/dest/marrakech.jpg" alt="Marrakech" loading="lazy" decoding="async"><span class="dest-info"><b>Marrakech</b><small>Maroc</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Libreville"><img src="assets/dest/libreville.jpg" alt="Libreville" loading="lazy" decoding="async"><span class="dest-info"><b>Libreville</b><small>Gabon</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Brazzaville"><img src="assets/dest/brazzaville.jpg" alt="Brazzaville" loading="lazy" decoding="async"><span class="dest-info"><b>Brazzaville</b><small>Congo</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Tunis"><img src="assets/dest/tunis.jpg" alt="Tunis" loading="lazy" decoding="async"><span class="dest-info"><b>Tunis</b><small>Tunisie</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Paris"><img src="assets/dest/paris.jpg" alt="Paris" loading="lazy" decoding="async"><span class="dest-info"><b>Paris</b><small>France</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Marseille"><img src="assets/dest/marseille.jpg" alt="Marseille" loading="lazy" decoding="async"><span class="dest-info"><b>Marseille</b><small>France</small></span><i class="dest-go">→</i></button></div>
+        </div>
+      </section>
+
+      <section class="service-results flight-results-premium">
+        <div class="wrap">
+          <div class="service-results-head">
+            <div><div class="eyebrow">Résultats</div><h2>Vols disponibles <small class="result-count" id="flightResultCount"></small></h2></div>
+            <div class="flight-sortbar"><div class="service-filter-pills pills" data-filter-group="flights"><button class="pill active" data-sort="price" type="button">Le moins cher</button><button class="pill" data-sort="fast" type="button">Le plus rapide</button><button class="pill" data-sort="early" type="button">Départ le plus tôt</button></div><label class="flight-direct"><input type="checkbox" id="flightDirect"> Vols directs</label></div>
+          </div>
+          <div class="service-search-inline"><span><svg class="tv-icon" aria-hidden="true"><use href="#i-search"></use></svg></span><input id="flightSearch" placeholder="Filtrer par destination, compagnie ou ville de départ..." /></div>
+          <div class="grid service-grid flight-list" id="flightGrid"></div>
+          <div class="service-empty" id="flightEmpty"><div class="service-empty-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-plane"></use></svg></div><h3>Aucun vol ne correspond pour le moment</h3><p>Modifiez votre trajet ou vos dates pour découvrir d’autres options.</p></div>
+        </div>
+      </section>
+    </section>
+
+    <section class="page service-page cars-page" id="cars">
+      <section class="car-premium-hero travel-photo-hero">
+        <div class="wrap car-premium-shell travel-split-shell">
+          <div class="car-intro-band travel-hero-copy">
+            <div>
+              <h1>Votre voiture,<br><em>selon votre voyage.</em></h1>
+              <p>De la citadine au SUV, trouvez la voiture adaptée à votre séjour, à votre rythme et à vos besoins.</p>
+              <div class="car-benefits">
+                <span>Large choix de véhicules</span>
+                <span>Conditions claires et transparentes</span>
+                <span>Réservation simple et sécurisée</span>
+              </div>
+            </div>
+          </div>
+
+          <form class="car-configurator" id="carSearchForm">
+            <div class="car-config-head">
+              <div><span>Votre location</span><strong>Trouvez votre voiture</strong></div>
+              <div class="car-config-badge">01 — 05</div>
+            </div>
+
+            <div class="car-route-strip">
+              <label class="car-route-box"><span>Prise en charge</span><input name="pickup" placeholder="Ville ou aéroport en France" required autocomplete="off" data-geo="place" data-geo-fixed="FR"></label>
+            </div>
+
+            <div class="car-config-grid">
+              <label><span>Départ</span><input name="startDate" type="date" required></label>
+              <label><span>Heure</span><input name="startTime" type="time" value="11:00" required></label>
+              <label><span>Retour</span><input name="endDate" type="date" required></label>
+              <label><span>Heure</span><input name="endTime" type="time" value="11:00" required></label>
+              <label><span>Conducteur</span><input name="age" type="number" value="30" min="18" max="99" required></label>
+              <label><span>Catégorie</span><select name="category"><option value="all">Toutes</option><option>Mini (A)</option><option>Économique (B)</option><option>Compacte (C)</option><option>Intermédiaire (D)</option><option>Routière (E)</option><option>SUV et Break</option><option>Monospace ou Minibus</option></select></label>
+            </div>
+            <button class="btn car-compare-btn" type="submit">Rechercher les véhicules <span>→</span></button>
+          </form>
+        </div>
+      </section>
+
+      <section class="service-results car-results-premium">
+        <div class="wrap">
+          <div class="service-results-head"><div><div class="eyebrow">Comparaison</div><h2>Véhicules disponibles</h2></div><div class="result-chip"><strong id="carResultCount">0 offre</strong><span id="carSearchSummary">Aucune voiture publiée</span></div></div>
+          <span id="carResultsAnchor"></span>
+          <div class="car-intro" id="carPrompt">
+            <div class="car-intro-steps">
+              <div><b>1</b><h3>Choisissez le lieu</h3><p>Ville ou aéroport de prise en charge, partout en France.</p></div>
+              <div><b>2</b><h3>Indiquez vos dates</h3><p>Jour et heure de départ et de retour : le prix s’ajuste à votre durée exacte.</p></div>
+              <div><b>3</b><h3>Comparez et réservez</h3><p>Réglez en ligne une petite commission, le reste se paie au loueur au retrait.</p></div>
+            </div>
+            <div class="car-intro-cities-photo"><span class="eyebrow">Villes populaires</span><div class="dest-grid"><button type="button" class="dest-card" data-car-city="Paris"><img src="assets/dest/paris.jpg" alt="Paris" loading="lazy" decoding="async"><span class="dest-info"><b>Paris</b><small>Île-de-France</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-car-city="Marseille"><img src="assets/dest/marseille.jpg" alt="Marseille" loading="lazy" decoding="async"><span class="dest-info"><b>Marseille</b><small>Provence</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-car-city="Nice"><img src="assets/dest/nice.jpg" alt="Nice" loading="lazy" decoding="async"><span class="dest-info"><b>Nice</b><small>Côte d’Azur</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-car-city="Lyon"><img src="assets/dest/lyon.jpg" alt="Lyon" loading="lazy" decoding="async"><span class="dest-info"><b>Lyon</b><small>Auvergne-Rhône-Alpes</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-car-city="Bordeaux"><img src="assets/dest/bordeaux.jpg" alt="Bordeaux" loading="lazy" decoding="async"><span class="dest-info"><b>Bordeaux</b><small>Nouvelle-Aquitaine</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-car-city="Toulouse"><img src="assets/dest/toulouse.jpg" alt="Toulouse" loading="lazy" decoding="async"><span class="dest-info"><b>Toulouse</b><small>Occitanie</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-car-city="Lille"><img src="assets/dest/lille.jpg" alt="Lille" loading="lazy" decoding="async"><span class="dest-info"><b>Lille</b><small>Hauts-de-France</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-car-city="Nantes"><img src="assets/dest/nantes.jpg" alt="Nantes" loading="lazy" decoding="async"><span class="dest-info"><b>Nantes</b><small>Pays de la Loire</small></span><i class="dest-go">→</i></button></div></div>
+            <div class="car-intro-perks">
+              <div><svg class="tv-icon" aria-hidden="true"><use href="#i-shield-check"></use></svg><strong>Loueurs vérifiés</strong><p>Chaque annonce est fournie et validée par des loueurs professionnels.</p></div>
+              <div><svg class="tv-icon" aria-hidden="true"><use href="#i-shield-check"></use></svg><strong>Prix clair</strong><p>Total, part payée en ligne et solde à l’agence affichés avant de payer.</p></div>
+              <div><svg class="tv-icon" aria-hidden="true"><use href="#i-shield-check"></use></svg><strong>Paiement sécurisé</strong><p>Règlement par carte via Stripe : nous ne conservons jamais vos données bancaires.</p></div>
+              <div><svg class="tv-icon" aria-hidden="true"><use href="#i-shield-check"></use></svg><strong>Conditions du loueur</strong><p>Kilométrage, carburant, dépôt, annulation : tout est détaillé par le loueur.</p></div>
+            </div>
+          </div>
+
+          <div class="cat-tiles" id="carTiles" hidden></div>
+          <div class="service-info-strip"><span>ⓘ</span><p>Le prix affiché correspond à la durée de votre recherche. Les informations de chaque annonce sont fournies par le loueur.</p></div>
+          <div class="rent-layout">
+            <aside class="rent-filters" id="rentFilters" aria-label="Filtres"></aside>
+            <div class="rent-results">
+              <div class="rent-toolbar"><button type="button" class="btn small rent-filter-toggle" data-rf-toggle>Filtres</button><label>Trier par <select id="carSort"><option value="price">Prix croissant</option><option value="priceDesc">Prix décroissant</option><option value="seats">Nombre de places</option><option value="cancel">Annulation gratuite d’abord</option></select></label></div>
+              <div class="car-grid service-car-grid rent-list" id="carGrid"></div>
+              <div class="service-empty" id="carEmpty"><div class="service-empty-icon">⌁</div><h3>Aucun véhicule disponible</h3><p>Aucun véhicule validé ne correspond encore à cette recherche. Essayez une autre ville, d’autres dates ou une autre catégorie.</p></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="page rsv-page" id="reserve"><div class="wrap" id="reserveRoot"></div></section>
+
+    <section class="page service-page packs-page" id="packs">
+      <section class="weekend-editorial-hero travel-photo-hero">
+        <div class="wrap weekend-editorial">
+          <div class="weekend-copy travel-hero-copy">
+            
+            <h1>Des week-ends<br><em>pensés pour vous.</em></h1>
+            <p>Envie de changer d’air ? Trouvez l’escapade qui vous ressemble et préparez votre prochain week-end en quelques clics.</p>
+          </div>
+
+          <form class="weekend-planner" id="packSimulator">
+            <div class="weekend-planner-head">
+              <div><span>Planifier mon week-end</span><strong>Votre escapade commence ici</strong></div>
+              <div class="weekend-step">01 — 05</div>
+            </div>
+            <div class="weekend-fields">
+              <label><span>Départ</span><input name="fromCity" placeholder="Ville de départ" autocomplete="off" data-geo="place"></label>
+              <label><span>Destination</span><input name="toCity" placeholder="Destination" autocomplete="off" data-geo="place"></label>
+              <label><span>Date aller</span><input name="startDate" type="date"></label>
+              <label><span>Date retour</span><input name="endDate" type="date"></label>
+              <label><span>Voyageurs</span><select name="travelers"><option value="1">1 voyageur</option><option value="2" selected>2 voyageurs</option><option value="3">3 voyageurs</option><option value="4">4 voyageurs</option><option value="5">5+ voyageurs</option></select></label>
+              <button class="btn weekend-search-btn" type="submit">Découvrir les séjours <span>→</span></button>
+            </div>
+          </form>
+
+          <div class="weekend-signature"><span>Des idées pour s’évader</span><span>Une recherche sans complication</span><span>Votre prochain week-end commence ici</span></div>
+        </div>
+      </section>
+
+      <section class="dest-band">
+        <div class="wrap">
+          <div class="dest-head"><span class="eyebrow">Escapades</span><h2>Où partir <em>ce week-end ?</em></h2><p>Choisissez une destination pour découvrir les séjours proposés.</p></div>
+          <div class="dest-grid"><button type="button" class="dest-card" data-dest-pack="Marrakech"><img src="assets/dest/marrakech.jpg" alt="Marrakech" loading="lazy" decoding="async"><span class="dest-info"><b>Marrakech</b><small>Maroc</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-pack="Barcelone"><img src="assets/dest/barcelone.jpg" alt="Barcelone" loading="lazy" decoding="async"><span class="dest-info"><b>Barcelone</b><small>Espagne</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-pack="Lisbonne"><img src="assets/dest/lisbonne.jpg" alt="Lisbonne" loading="lazy" decoding="async"><span class="dest-info"><b>Lisbonne</b><small>Portugal</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-pack="Rome"><img src="assets/dest/rome.jpg" alt="Rome" loading="lazy" decoding="async"><span class="dest-info"><b>Rome</b><small>Italie</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-pack="Amsterdam"><img src="assets/dest/amsterdam.jpg" alt="Amsterdam" loading="lazy" decoding="async"><span class="dest-info"><b>Amsterdam</b><small>Pays-Bas</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-pack="Santorin"><img src="assets/dest/santorin.jpg" alt="Santorin" loading="lazy" decoding="async"><span class="dest-info"><b>Santorin</b><small>Grèce</small></span><i class="dest-go">→</i></button></div>
+        </div>
+      </section>
+
+      <section class="service-results weekend-results">
+        <div class="wrap">
+          <div class="service-results-head"><div><div class="eyebrow">Sélection</div><h2>Packs disponibles</h2></div><div class="result-chip"><strong id="packResultCount">0 offre</strong><span id="packSearchSummary">Aucun pack publié</span></div></div>
+          <div class="grid service-grid" id="packGrid"></div>
+          <div class="service-empty" id="packEmpty"><div class="service-empty-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-suitcase"></use></svg></div><h3>Aucun pack week-end disponible</h3><p>Aucun séjour ne correspond encore à vos critères. Essayez une autre destination ou modifiez vos dates pour découvrir plus d’options.</p></div>
+        </div>
+      </section>
+    </section>
+
+    <section class="page auth-page" id="login">
+      <div class="auth-page-shell">
+        <div class="auth-brand-panel">
+          <div class="auth-brand-copy">
+            <div class="eyebrow">Espace voyageur</div>
+            <h1>Votre voyage,<br><em>à portée de main.</em></h1>
+            <p>Retrouvez vos réservations, leur suivi et vos documents depuis un espace personnel sécurisé.</p>
+          </div>
+          <div class="auth-brand-foot">TripVision · Voyager autrement</div>
+        </div>
+
+        <div class="auth-form-panel">
+          <div class="auth-form-wrap">
+            <div class="auth-view active" id="authSignin">
+              <form id="loginForm" class="saas-auth-form" method="post" action="javascript:void(0)" autocomplete="on" onsubmit="return false;">
+                <div class="saas-auth-head">
+                  <div class="eyebrow">Mon Espace Client</div>
+                  <h2>Connexion</h2>
+                  <p>Renseignez vos identifiants pour accéder à votre compte.</p>
+                </div>
+                <label>Adresse e-mail
+                  <input name="email" placeholder="vous@exemple.fr" type="email" autocomplete="username" required>
+                </label>
+                <label>Mot de passe
+                  <div class="password-field"><input name="password" placeholder="Votre mot de passe" type="password" autocomplete="current-password" required><button class="password-toggle" type="button" aria-label="Afficher le mot de passe">Afficher</button></div>
+                </label>
+                <div class="auth-options"><label class="remember-me"><input type="checkbox" name="remember"> <span>Se souvenir de moi</span></label><button type="button" class="auth-link-btn" data-auth-view="forgot">Mot de passe oublié ?</button></div>
+                <button class="btn auth-main-btn" type="submit">Se connecter</button>
+                <p class="auth-bottom">Vous n’avez pas encore de compte ? <button type="button" class="auth-link-btn" data-auth-view="signup">Créer un compte</button></p>
+              </form>
+            </div>
+
+            <div class="auth-view" id="authSignup">
+              <form id="clientRegisterForm" class="saas-auth-form">
+                <button type="button" class="auth-back" data-auth-view="signin">← Retour à la connexion</button>
+                <div class="saas-auth-head"><div class="eyebrow">Nouveau voyageur</div><h2>Créer mon compte</h2><p>Créez votre espace TripVision en quelques secondes.</p></div>
+                <label>Nom complet<input name="name" placeholder="Prénom et nom" required></label>
+                <label>Adresse e-mail<input name="email" placeholder="vous@exemple.fr" type="email" autocomplete="email" required></label>
+                <label>Mot de passe<div class="password-field"><input name="password" placeholder="14 caractères minimum" type="password" minlength="14" data-pw-rules autocomplete="new-password" required><button class="password-toggle" type="button">Afficher</button></div></label>
+                <button class="btn auth-main-btn" type="submit">Créer mon compte</button>
+                <p class="auth-bottom">Vous avez déjà un compte ? <button type="button" class="auth-link-btn" data-auth-view="signin">Se connecter</button></p>
+              </form>
+            </div>
+
+            <div class="auth-view" id="authForgot">
+              <form id="forgotPasswordForm" class="saas-auth-form">
+                <button type="button" class="auth-back" data-auth-view="signin">← Retour à la connexion</button>
+                <div class="saas-auth-head"><div class="eyebrow">Sécurité du compte</div><h2>Mot de passe oublié ?</h2><p>Indiquez l’adresse e-mail de votre compte. Si elle est reconnue, vous recevrez les instructions de réinitialisation.</p></div>
+                <label>Adresse e-mail<input name="email" placeholder="vous@exemple.fr" type="email" autocomplete="email" required></label>
+                <button class="btn auth-main-btn" type="submit">Recevoir mes instructions</button>
+                <div id="forgotPasswordStatus" class="auth-status" hidden></div>
+              </form>
+            </div>
+          </div>
+          <div class="auth-security-note">🔒 Connexion sécurisée · Vos données restent confidentielles</div>
+        </div>
+      </div>
+    </section>
+
+
+
+    <section class="page partner-page internal-page" id="partner">
+      <section class="partner-access" id="partnerAccess">
+        <div class="wrap partner-access-grid">
+          <div>
+            <div class="eyebrow">Espace partenaire</div>
+            <h1>Gérez votre activité<br><em>avec TripVision.</em></h1>
+            <p class="lead">L’espace partenaire est réservé aux professionnels déjà enregistrés. Une fois votre dossier validé, vous accédez directement à votre tableau de bord.</p>
+            <p class="muted">Vous n’avez pas encore de compte ? Envoyez votre dossier à TripVision avant toute connexion.</p>
+          </div>
+          <div class="partner-access-card">
+            <form id="partnerLoginForm" class="panel form">
+              <h2>Connexion partenaire</h2>
+              <p class="muted">Utilisez les accès transmis après validation de votre dossier.</p>
+              <input name="email" placeholder="Email professionnel" type="email" autocomplete="username" required />
+              <input name="password" placeholder="Mot de passe" type="password" autocomplete="current-password" required />
+              <button class="btn" type="submit">Accéder au portail</button>
+              <button class="partner-request-toggle" id="openPartnerApplication" type="button">Demander un accès →</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="wrap partner-application-wrap" id="partnerApplicationWrap" hidden>
+          <section class="partner-card partner-application-card">
+            <div class="partner-card-head">
+              <div><div class="eyebrow">Devenir partenaire</div><h2>Présentez votre entreprise</h2><p>Ces informations sont étudiées par TripVision avant la création de vos accès.</p></div>
+              <button type="button" class="partner-application-close" id="closePartnerApplication" aria-label="Fermer"><svg class="tv-icon" aria-hidden="true"><use href="#i-x"></use></svg></button>
+            </div>
+            <form class="form partner-form" id="partnerApplicationForm">
+              <label>Raison sociale<input name="legalName" placeholder="Nom légal de l’entreprise" required /></label>
+              <label>Nom commercial<input name="tradeName" placeholder="Nom commercial" required /></label>
+              <label>Adresse du siège<input name="headOffice" placeholder="Adresse complète" required /></label>
+              <label>Agence(s)<input name="agencies" placeholder="Adresse de la ou des agences" required /></label>
+              <label>Numéro de SIRET<input name="siret" placeholder="Numéro SIRET" required /></label>
+              <label>Email des réservations<input name="bookingEmail" type="email" placeholder="reservations@entreprise.fr" required /></label>
+              <label>Email de contact<input name="contactEmail" type="email" placeholder="contact@entreprise.fr" required /></label>
+              <label>Responsable<input name="managerName" placeholder="Nom et prénom" required /></label>
+              <label>Téléphone<input name="phone" type="tel" placeholder="Téléphone professionnel" /></label>
+              <label>Email de connexion souhaité<input name="loginEmail" type="email" placeholder="connexion@entreprise.fr" required /></label>
+              <label class="partner-form-wide">Référence Kbis<input name="kbisName" placeholder="Nom du document ou référence" /></label>
+              <div class="partner-form-actions"><p>Après étude du dossier, TripVision vous transmettra vos accès.</p><button class="btn" type="submit">Envoyer ma demande</button></div>
+            </form>
+          </section>
+        </div>
+      </section>
+
+    </section>
+
+
+
+    <section class="page contact-page contact-premium-final" id="contact">
+  <section class="contact-final-hero">
+    <div class="wrap contact-final-hero-inner">
+      <div class="contact-final-copy">
+        <div class="eyebrow">Contact</div>
+        <h1>Une question sur<br>votre <em>voyage</em> ?</h1>
+        <p>Réservation, demande commerciale ou question générale : notre équipe est à votre écoute.</p>
+      </div>
+
+      <div class="contact-final-card">
+        <h2>Écrivez-nous</h2>
+        <p>Envoyez votre message directement depuis le site. Notre équipe le recevra par e-mail.</p>
+
+        <form class="contact-final-form" id="publicContactForm">
+          <div class="contact-final-form-row">
+            <label><span>Nom</span><input name="name" type="text" autocomplete="name" placeholder="Votre nom" required></label>
+            <label><span>Email</span><input name="email" type="email" autocomplete="email" placeholder="vous@email.com" required></label>
+          </div>
+          <label><span>Objet</span><select name="subject" required><option value="">Choisir</option><option value="Réservation">Réservation</option><option value="Demande commerciale">Demande commerciale</option><option value="Partenariat">Partenariat</option><option value="Question générale">Question générale</option></select></label>
+          <label><span>Message</span><textarea name="message" rows="5" placeholder="Écrivez votre message..." required></textarea></label>
+          <input class="contact-honeypot" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <button class="btn contact-final-btn" type="submit">Envoyer le message <span>→</span></button>
+          <div class="contact-final-note">Votre message sera envoyé à info@tripvision.fr.</div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="contact-final-trust">
+    <div class="wrap contact-final-trust-grid">
+      <div class="contact-final-trust-item"><span><svg class="tv-icon" aria-hidden="true"><use href="#i-zap"></use></svg></span><div><strong>Réponse rapide</strong><small>Une équipe disponible pour vous répondre.</small></div></div>
+      <div class="contact-final-trust-item"><span><svg class="tv-icon" aria-hidden="true"><use href="#i-message"></use></svg></span><div><strong>Accompagnement personnalisé</strong><small>Une écoute adaptée à votre demande.</small></div></div>
+      <div class="contact-final-trust-item"><span><svg class="tv-icon" aria-hidden="true"><use href="#i-shield-check"></use></svg></span><div><strong>Service de confiance</strong><small>Un échange clair à chaque étape.</small></div></div>
+    </div>
+  </section>
+</section>
+  </main>
+
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+  <div class="modal" id="offerModal"><div class="modal-card offer-modal"><button class="modal-close" id="closeOfferModal" type="button" aria-label="Fermer"><svg class="tv-icon" aria-hidden="true"><use href="#i-x"></use></svg></button><h2 id="offerModalTitle">Réserver</h2><p class="muted" id="offerName"></p><div class="offer-summary" id="offerSummary"></div><form class="form" id="offerRequestForm"><p class="offer-account" id="offerAccountNote" hidden>Un compte TripVision est nécessaire pour réserver un pack : il vous sera proposé à l’envoi.</p><div class="offer-contact" id="offerContact"><input name="email" type="email" placeholder="Votre e-mail" autocomplete="email" required /><input name="name" placeholder="Nom (facultatif)" autocomplete="name" /><input name="phone" type="tel" placeholder="Téléphone (facultatif)" autocomplete="tel" /></div><fieldset class="offer-trip" id="offerTripChoice" hidden><legend>Type de billet</legend><label><input type="radio" name="tripType" value="roundtrip" checked><span>Aller-retour</span><b id="priceRT"></b></label><label><input type="radio" name="tripType" value="oneway"><span>Aller simple</span><b id="priceOW"></b></label></fieldset><label class="offer-trav"><span>Voyageurs</span><select name="travelers"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select></label><div class="offer-total" id="offerRequestTotal"></div><textarea name="message" placeholder="Une précision ? (facultatif)"></textarea><label class="offer-optin" id="offerOptin"><input type="checkbox" name="marketing"> Je souhaite recevoir les offres et bons plans TripVision par e-mail (désinscription à tout moment).</label><button class="btn" type="submit">Envoyer ma demande</button><p class="muted offer-note">Aucun paiement maintenant : nous confirmons la disponibilité et le prix par e-mail.</p></form></div></div>
+    <div class="modal" id="carDetailModal"><div class="modal-card car-detail-card"><button class="modal-close" id="closeCarDetail" type="button" aria-label="Fermer"><svg class="tv-icon" aria-hidden="true"><use href="#i-x"></use></svg></button><div class="cd-body"></div></div></div>
+
+  <footer class="footer"><div class="wrap footer-grid footer-grid-final"><div class="footer-brand-block"><a class="brand brand-premium brand-logo" href="#home" data-page-link="home" aria-label="TripVision — Voyager autrement"><img src="/assets/tripvision-logo-original.png?v=20260920-1" alt="TripVision — Voyager autrement" width="2048" height="682" decoding="async"></a></div><div><h4>Voyager</h4><a href="#flights" data-page-link="flights">Vols</a><a href="#cars" data-page-link="cars">Voitures</a><a href="#packs" data-page-link="packs">Week-ends</a></div><div><h4>Informations</h4><a href="#contact" data-page-link="contact">Contact</a><a href="mailto:info@tripvision.fr">info@tripvision.fr</a><a href="#login" data-page-link="login">Mon Espace Client</a><a href="#partner" data-page-link="partner">Espace partenaire</a></div></div><div class="wrap bottom footer-bottom-final"><span>© 2026 TripVision. Tous droits réservés.</span> <button type="button" class="credits-link" id="creditsBtn">Crédits photos</button></div></footer>
+  <script src="assets/pw-rules.js?v=1"></script>
+  <script src="assets/geo-picker.js?v=5"></script>
+  <script src="assets/gallery.js?v=5"></script>
+  <script src="assets/spin.js?v=5"></script>
+  <script src="assets/guest-auth.js?v=2"></script>
+  <script src="assets/cars.js?v=30"></script>
+  <script src="script.js?v=20261013-v27"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+# Hébergement de l'API TripVision sur Render (Blueprint : New → Blueprint, puis choisir ce dépôt).
+# La base de données est déjà en ligne (Supabase) : seule l'API Node doit être hébergée.
+# Les valeurs marquées « sync: false » se saisissent dans Render ; elles ne sont jamais écrites dans le code.
+services:
+  - type: web
+    name: tripvision-api
+    runtime: node
+    plan: starter            # « free » s'endort après 15 min d'inactivité (premier chargement très lent)
+    region: frankfurt
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: DATABASE_URL        # la même adresse (pooler Supabase) que dans votre .env local
+        sync: false
+      - key: JWT_SECRET          # une longue chaîne aléatoire ; en changer déconnecte tout le monde
+        sync: false
+      - key: APP_URL             # adresse publique du site, ex. https://tripvision.netlify.app
+        sync: false
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: STRIPE_SECRET_KEY   # clé de TEST pour l'instant ; passer à la clé live pour de vrais paiements
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false

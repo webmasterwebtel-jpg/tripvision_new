@@ -1,0 +1,2 @@
+-- Remplacé par api/migrations/001_init.sql (schéma complet avec rôles IT/superadmin/admin,
+-- audit_logs, login_attempts, login_history). Exécute `npm run migrate` au lieu de ce fichier.

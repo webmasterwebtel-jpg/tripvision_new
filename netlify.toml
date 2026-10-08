@@ -1,0 +1,9 @@
+# Déploiement Netlify : site public + back-office (/backoffice) + espace client et partenaire (/espace).
+# Variable à définir dans Netlify (Site configuration → Environment variables) :
+#   API_URL = https://adresse-de-votre-api   (l'API Node/Postgres, hébergée ailleurs, par ex. Render)
+[build]
+  command = "node scripts/build-netlify.mjs"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"

@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#08271f">
+  <title>Back-office TripVision</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="backoffice.css?v=10">
+</head>
+<body>
+  <div id="login" class="auth" hidden>
+    <section class="auth-art">
+      <div class="auth-brand"><img src="/assets/tripvision-icon.png?v=2" alt="" class="logo-mark"><span>TripVision</span></div>
+      <div class="auth-pitch">
+        <p class="eyebrow">Espace de gestion</p>
+        <h1>Piloter chaque voyage, <em>avec précision.</em></h1>
+        <p>Partenaires, véhicules, offres et réservations réunis dans un seul poste de commande.</p>
+      </div>
+      <p class="auth-foot">Accès réservé aux équipes TripVision</p>
+    </section>
+    <section class="auth-panel">
+      <form id="loginForm" class="auth-card">
+        <p class="eyebrow">Connexion</p>
+        <h2>Bon retour <em>parmi nous</em></h2>
+        <label>Adresse e-mail <input type="email" name="email" required autocomplete="username" placeholder="prenom@tripvision.fr"></label>
+        <label>Mot de passe <input type="password" name="password" required autocomplete="current-password" placeholder="••••••••••••"></label>
+        <p id="loginError" class="form-error" role="alert" hidden></p>
+        <button class="btn primary block" type="submit">Se connecter</button>
+        <button class="link-btn" type="button" data-goto="forgot">Mot de passe oublié ?</button>
+      </form>
+    </section>
+  </div>
+
+  <div id="forgot" class="auth" hidden>
+    <section class="auth-art">
+      <div class="auth-brand"><img src="/assets/tripvision-icon.png?v=2" alt="" class="logo-mark"><span>TripVision</span></div>
+      <div class="auth-pitch">
+        <p class="eyebrow">Assistance</p>
+        <h1>Accès <em>perdu&nbsp;?</em></h1>
+        <p>Indiquez votre adresse e-mail : vous recevrez un lien pour choisir un nouveau mot de passe.</p>
+      </div>
+      <p class="auth-foot">Lien valable 2 heures, à usage unique</p>
+    </section>
+    <section class="auth-panel">
+      <form id="forgotForm" class="auth-card">
+        <p class="eyebrow">Mot de passe oublié</p>
+        <h2>Demander <em>une réinitialisation</em></h2>
+        <label>Adresse e-mail <input type="email" name="email" required autocomplete="username" placeholder="prenom@tripvision.fr"></label>
+        <p id="forgotMsg" class="form-note" role="status" hidden></p>
+        <button class="btn primary block" type="submit">Envoyer la demande</button>
+        <button class="link-btn" type="button" data-goto="login">← Retour à la connexion</button>
+      </form>
+    </section>
+  </div>
+
+  <div id="activate" class="auth" hidden>
+    <section class="auth-art">
+      <div class="auth-brand"><img src="/assets/tripvision-icon.png?v=2" alt="" class="logo-mark"><span>TripVision</span></div>
+      <div class="auth-pitch">
+        <p class="eyebrow">Votre accès</p>
+        <h1>Choisissez <em>votre mot de passe.</em></h1>
+        <p>Ce lien est personnel et ne fonctionne qu’une seule fois.</p>
+      </div>
+      <p class="auth-foot">14 caractères minimum, avec majuscule, minuscule, chiffre et caractère spécial</p>
+    </section>
+    <section class="auth-panel">
+      <div class="auth-card" id="activateLoading"><span class="spinner big" aria-hidden="true"></span><p class="muted">Vérification du lien…</p></div>
+      <form id="activateForm" class="auth-card" hidden>
+        <p class="eyebrow" id="activateEyebrow">Activation</p>
+        <h2 id="activateTitle">Activer <em>mon accès</em></h2>
+        <p id="activateWho" class="muted"></p>
+        <label>Nouveau mot de passe <input type="password" name="password" required autocomplete="new-password" data-pw-rules></label>
+        <label>Confirmation <input type="password" name="confirm" required autocomplete="new-password"></label>
+        <p id="activateError" class="form-error" role="alert" hidden></p>
+        <button class="btn primary block" type="submit">Enregistrer mon mot de passe</button>
+      </form>
+      <div class="auth-card" id="activateDone" hidden>
+        <p class="eyebrow">C’est fait</p>
+        <h2>Mot de passe <em>enregistré</em></h2>
+        <p class="muted" id="activateDoneText"></p>
+        <button class="btn primary block" type="button" id="activateGoLogin">Se connecter</button>
+        <a class="btn block" id="activateGoSite" href="/" hidden>Aller sur le site</a>
+      </div>
+      <div class="auth-card" id="activateInvalid" hidden>
+        <p class="eyebrow">Lien invalide</p>
+        <h2>Ce lien <em>n’est plus valable</em></h2>
+        <p class="muted">Il a expiré ou a déjà été utilisé. Demandez-en un nouveau pour choisir votre mot de passe.</p>
+        <button class="btn primary block" type="button" data-goto="forgot">Recevoir un nouveau lien</button>
+        <button class="link-btn" type="button" data-goto="login">Retour à la connexion</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="changePassword" class="auth" hidden>
+    <section class="auth-art">
+      <div class="auth-brand"><img src="/assets/tripvision-icon.png?v=2" alt="" class="logo-mark"><span>TripVision</span></div>
+      <div class="auth-pitch">
+        <p class="eyebrow">Sécurité</p>
+        <h1>Sécurisez <em>votre accès.</em></h1>
+        <p>Votre mot de passe temporaire doit être remplacé avant d’accéder au back-office.</p>
+      </div>
+      <p class="auth-foot">14 caractères minimum, avec majuscule, minuscule, chiffre et caractère spécial</p>
+    </section>
+    <section class="auth-panel">
+      <form id="changePasswordForm" class="auth-card">
+        <p class="eyebrow">Première connexion</p>
+        <h2>Nouveau <em>mot de passe</em></h2>
+        <label>Nouveau mot de passe <input type="password" name="password" required autocomplete="new-password" data-pw-rules></label>
+        <label>Confirmation <input type="password" name="confirm" required autocomplete="new-password"></label>
+        <p id="changePasswordError" class="form-error" role="alert" hidden></p>
+        <button class="btn primary block" type="submit">Enregistrer et continuer</button>
+      </form>
+    </section>
+  </div>
+
+  <div id="app" class="app" hidden>
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="/assets/tripvision-icon.png?v=2" alt="" class="logo-mark">
+        <div class="brand-text"><strong>TripVision</strong><small>Back-office</small></div>
+        <button id="collapseBtn" class="icon-btn collapse-btn" type="button" aria-label="Réduire le menu" title="Réduire le menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
+        </button>
+      </div>
+      <nav id="nav" aria-label="Navigation principale"></nav>
+      <div class="sidebar-foot">
+        <div class="me">
+          <span id="whoAvatar" class="avatar" aria-hidden="true"></span>
+          <div class="me-text"><strong id="whoName"></strong><span id="whoRole" class="role-chip"></span></div>
+          <button id="logoutBtn" class="icon-btn" type="button" aria-label="Se déconnecter" title="Se déconnecter">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+    <main id="view" class="workspace"></main>
+  </div>
+
+  <div id="progress" aria-hidden="true"></div>
+  <div id="overlay" class="overlay" hidden></div>
+  <aside id="drawer" class="drawer" hidden aria-label="Détail"></aside>
+  <div id="modalRoot"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="/assets/geo-picker.js?v=5"></script>
+  <script src="/assets/vehicle-form.js?v=12"></script>
+  <script src="backoffice.js?v=22"></script>
+</body>
+</html>
