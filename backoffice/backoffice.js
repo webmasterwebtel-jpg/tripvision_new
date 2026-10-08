@@ -1212,17 +1212,17 @@ function flightFields(o) {
     ${field('Aéroport de départ', `name="fromAirport" maxlength="120" data-geo="airport" data-geo-city="fromCity" data-geo-country="fromCountry" placeholder="Rechercher un aéroport…" value="${fv(f.fromAirport)}"`)}
     ${field('Aéroport d’arrivée', `name="toAirport" maxlength="120" data-geo="airport" data-geo-city="toCity" data-geo-country="country" placeholder="Rechercher un aéroport…" value="${fv(f.toAirport)}"`)}
     ${field('Date de départ', `name="startDate" type="date" required value="${fv(dateOnly(o?.start_date))}"`)}
-    ${field('Heure de départ', `name="departTime" type="time" required value="${fv(f.departTime)}"`)}
-    ${field('Heure d’arrivée', `name="arriveTime" type="time" required value="${fv(f.arriveTime)}"`)}
+    ${field('Heure de départ (facultatif)', `name="departTime" type="time" value="${fv(f.departTime)}"`)}
+    ${field('Heure d’arrivée (facultatif)', `name="arriveTime" type="time" value="${fv(f.arriveTime)}"`)}
     <label>Arrivée<select name="arriveDayOffset">${pairs(DAY_OFFSETS, f.arriveDayOffset || 0)}</select></label>
-    ${field('Durée du vol (heures)', `name="durH" type="number" min="0" max="40" required placeholder="2" value="${fv(dur ? Math.floor(dur / 60) : '')}"`)}
+    ${field('Durée du vol (heures, facultatif)', `name="durH" type="number" min="0" max="40" placeholder="2" value="${fv(dur ? Math.floor(dur / 60) : '')}"`)}
     ${field('Durée (minutes)', `name="durM" type="number" min="0" max="59" placeholder="30" value="${fv(dur ? dur % 60 : '')}"`)}
     <div class="sub-grid full" data-return ${oneway ? 'hidden' : ''}>
       <h4 class="form-section full">Vol retour</h4>
       ${field('Date de retour', `name="endDate" type="date" required ${dis} value="${fv(dateOnly(o?.end_date))}"`)}
       ${field('N° de vol retour', `name="returnFlightNumber" maxlength="12" ${dis} placeholder="AF 719" value="${fv(f.returnFlightNumber)}"`)}
-      ${field('Heure de départ (retour)', `name="returnDepartTime" type="time" required ${dis} value="${fv(f.returnDepartTime)}"`)}
-      ${field('Heure d’arrivée (retour)', `name="returnArriveTime" type="time" required ${dis} value="${fv(f.returnArriveTime)}"`)}
+      ${field('Heure de départ (retour, facultatif)', `name="returnDepartTime" type="time" ${dis} value="${fv(f.returnDepartTime)}"`)}
+      ${field('Heure d’arrivée (retour, facultatif)', `name="returnArriveTime" type="time" ${dis} value="${fv(f.returnArriveTime)}"`)}
       <label>Arrivée (retour)<select name="returnDayOffset" ${dis}>${pairs(DAY_OFFSETS, f.returnDayOffset || 0)}</select></label>
     </div>
     <h4 class="form-section full">Prestations</h4>
@@ -1275,9 +1275,9 @@ function openOfferModal(type, existing = null) {
         body.endDate = roundtrip ? g('endDate') || undefined : undefined;
         body.flight = {
           tripType: roundtrip ? 'roundtrip' : 'oneway', fromCountry: g('fromCountry'), airline: g('airline'), bookingUrl: g('bookingUrl'), flightNumber: g('flightNumber') || undefined, fromAirport: g('fromAirport') || undefined, toAirport: g('toAirport') || undefined,
-          departTime: g('departTime'), arriveTime: g('arriveTime'), arriveDayOffset: Number(g('arriveDayOffset')), durationMin: Number(g('durH') || 0) * 60 + Number(g('durM') || 0) || undefined,
+          departTime: g('departTime') || undefined, arriveTime: g('arriveTime') || undefined, arriveDayOffset: Number(g('arriveDayOffset')), durationMin: Number(g('durH') || 0) * 60 + Number(g('durM') || 0) || undefined,
           stops: Number(g('stops')), cabin: g('cabin'), baggage: g('baggage') || undefined, oneWayPrice: roundtrip && g('oneWayPrice') ? Number(g('oneWayPrice')) : undefined,
-          ...(roundtrip ? { returnFlightNumber: g('returnFlightNumber') || undefined, returnDepartTime: g('returnDepartTime'), returnArriveTime: g('returnArriveTime'), returnDayOffset: Number(g('returnDayOffset')) } : {}),
+          ...(roundtrip ? { returnFlightNumber: g('returnFlightNumber') || undefined, returnDepartTime: g('returnDepartTime') || undefined, returnArriveTime: g('returnArriveTime') || undefined, returnDayOffset: Number(g('returnDayOffset')) } : {}),
         };
       }
       if (!editing) body.publishAt = publishAt;

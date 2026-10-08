@@ -370,7 +370,7 @@ const flightSchema = z.object({
   airline: z.string().trim().min(2).max(80), flightNumber: z.string().trim().max(12).optional(),
   bookingUrl: z.string().trim().max(600).url('Indiquez le lien de réservation de la compagnie (https://…).').refine((u) => /^https?:\/\//i.test(u), 'Le lien doit commencer par https://'),
   fromCountry: z.string().trim().max(80).optional(), fromAirport: z.string().trim().max(120).optional(), toAirport: z.string().trim().max(120).optional(),
-  departTime: timeStr, arriveTime: timeStr, arriveDayOffset: z.coerce.number().int().min(0).max(2).default(0),
+  departTime: timeStr.optional(), arriveTime: timeStr.optional(), arriveDayOffset: z.coerce.number().int().min(0).max(2).default(0),
   durationMin: z.coerce.number().int().min(10).max(2400).optional(), oneWayPrice: z.coerce.number().positive().optional(),
   returnFlightNumber: z.string().trim().max(12).optional(), returnDepartTime: timeStr.optional(), returnArriveTime: timeStr.optional(),
   returnDayOffset: z.coerce.number().int().min(0).max(2).default(0), returnDurationMin: z.coerce.number().int().min(10).max(2400).optional(),
@@ -395,7 +395,6 @@ const offerSchema = z.object({
     if (!((from === 'FR' && AFRICA.has(to)) || (to === 'FR' && AFRICA.has(from)))) ctx.addIssue({ code: 'custom', path: ['country'], message: 'Les vols relient uniquement la France et un pays africain (ex. Paris → Dakar ou Abidjan → Lyon). Un vol entre deux pays africains n’est pas possible.' });
     if (f.tripType === 'roundtrip') {
       if (!o.endDate) ctx.addIssue({ code: 'custom', path: ['endDate'], message: 'Date de retour obligatoire' });
-      if (!f.returnDepartTime || !f.returnArriveTime) ctx.addIssue({ code: 'custom', path: ['flight'], message: 'Horaires du vol retour obligatoires' });
       if (o.startDate && o.endDate && o.endDate < o.startDate) ctx.addIssue({ code: 'custom', path: ['endDate'], message: 'Le retour doit suivre le départ' });
     }
   }
