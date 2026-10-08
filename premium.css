@@ -3297,3 +3297,9 @@ html[data-boot="contact"] #contact{display:block!important}
 .tv-spin-cue.gone{opacity:0}
 @keyframes tvCue{0%,100%{opacity:.35;transform:translateX(0)}50%{opacity:1;transform:translateX(3px)}}
 @media(max-width:600px){.tv-spin-cue em{display:none}}
+
+.cat-tile.off{opacity:.5;cursor:default;filter:grayscale(.6)}
+.cat-tile.off:hover{transform:none;border-color:var(--line,#e5e0da);box-shadow:none}
+.cat-tile.off:hover .cat-from{background:#f1f1f1;color:inherit}
+.cat-tile.off .cat-go{visibility:hidden}
+.airline-note{display:block;margin-top:6px;font-size:12px;color:#6b7a72;text-align:center}

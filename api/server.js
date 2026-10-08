@@ -368,6 +368,7 @@ const timeStr = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Heure invalide');
 const flightSchema = z.object({
   tripType: z.enum(['roundtrip', 'oneway']).default('roundtrip'),
   airline: z.string().trim().min(2).max(80), flightNumber: z.string().trim().max(12).optional(),
+  bookingUrl: z.string().trim().max(600).url('Indiquez le lien de réservation de la compagnie (https://…).').refine((u) => /^https?:\/\//i.test(u), 'Le lien doit commencer par https://'),
   fromCountry: z.string().trim().max(80).optional(), fromAirport: z.string().trim().max(120).optional(), toAirport: z.string().trim().max(120).optional(),
   departTime: timeStr, arriveTime: timeStr, arriveDayOffset: z.coerce.number().int().min(0).max(2).default(0),
   durationMin: z.coerce.number().int().min(10).max(2400).optional(), oneWayPrice: z.coerce.number().positive().optional(),

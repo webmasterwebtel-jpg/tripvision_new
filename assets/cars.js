@@ -52,6 +52,29 @@
       renderCars();
     }).catch(() => {});
   });
+  /* ---------- Après 10 minutes d'inactivité, la page Voitures redevient vierge ---------- */
+  const IDLE_MS = 10 * 60 * 1000;
+  let lastActivity = Date.now();
+  ['pointerdown', 'pointermove', 'keydown', 'scroll', 'touchstart', 'wheel'].forEach((ev) => addEventListener(ev, () => { lastActivity = Date.now(); }, { passive: true }));
+  function resetCars() {
+    searched = false;
+    try { sessionStorage.removeItem('tvCarSearch'); } catch { /* rien */ }
+    Object.assign(F, { priceTouched: false, cats: new Set(), gear: '', seats: 0, maxPrice: 0, freeCancel: false, unlimited: false, deposit: '', lessors: new Set() });
+    const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const t = new Date(), n = new Date(t.getTime() + 864e5);
+    const f = document.getElementById('carSearchForm')?.elements;
+    if (f) { f.pickup.value = ''; f.startDate.value = iso(t); f.endDate.value = iso(n); if (f.category) f.category.value = 'all'; }
+    search = { ...search, pickup: '', startDate: '', endDate: '', category: 'all' };
+    renderCars();
+  }
+  const checkIdle = () => {
+    if (!searched || Date.now() - lastActivity < IDLE_MS) return;
+    const inReserve = document.getElementById('reserve')?.classList.contains('active');
+    if (!inReserve) resetCars();
+  };
+  setInterval(checkIdle, 30000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkIdle(); });
+
   let fetchTimer = 0;
   // Les voitures ne s'affichent qu'une fois la ville et les dates choisies puis la recherche lancée.
   let searched = false;
@@ -155,14 +178,20 @@
     for (const v of state.vehicles) {
       const t = rentalTotal(v, d);
       const cur = byCat.get(v.category);
-      if (!cur || t < cur.total) byCat.set(v.category, { total: t, image: (catImage(v.category) || v.images?.[0] || v.image), name: v.category });
+      if (!cur || t < cur.total) byCat.set(v.category, { total: t, vimg: (v.images?.[0] || v.image) });
     }
-    const order = (n) => { const i = CATS.findIndex((c) => c.name === n); return i < 0 ? 999 : i; };
-    const list = [...byCat.values()].sort((a, b) => order(a.name) - order(b.name) || a.total - b.total);
-    box.innerHTML = list.length ? list.map((c) => `<button type="button" class="cat-tile ${F.cats.has(c.name) ? 'on' : ''}" data-cat="${E(c.name)}">
-      <span class="cat-name">${E(c.name)}</span><span class="cat-img"><img src="${E(c.image)}" alt="" loading="lazy"></span>
-      <span class="cat-from"><span><small>À partir de</small><b>${euro(c.total)}</b></span><i class="cat-go">→</i></span>${F.cats.has(c.name) ? '<i class="cat-check">✓</i>' : ''}</button>`).join('') : '';
-    box.hidden = !list.length;
+    // Toutes les catégories du back-office, dans leur ordre ; celles sans offre sur cette recherche sont grisées.
+    const names = [...CATS.map((c) => c.name), ...[...byCat.keys()].filter((n) => !CATS.some((c) => c.name === n))];
+    const ph = '<svg class="cat-ph" viewBox="0 0 80 36" aria-hidden="true"><path d="M8 26v-6l6-2 8-9h26l10 9 12 2v6" fill="none" stroke="#c9c3b6" stroke-width="2.5" stroke-linejoin="round"/><circle cx="24" cy="27" r="5" fill="#fff" stroke="#c9c3b6" stroke-width="2.5"/><circle cx="58" cy="27" r="5" fill="#fff" stroke="#c9c3b6" stroke-width="2.5"/></svg>';
+    box.innerHTML = names.map((name) => {
+      const hit = byCat.get(name);
+      const img = catImage(name) || hit?.vimg || '';
+      const on = F.cats.has(name);
+      return `<button type="button" class="cat-tile ${on ? 'on' : ''} ${hit ? '' : 'off'}" ${hit ? `data-cat="${E(name)}"` : 'disabled'}>
+        <span class="cat-name">${E(name)}</span><span class="cat-img">${img ? `<img src="${E(img)}" alt="" loading="lazy">` : ph}</span>
+        <span class="cat-from"><span><small>${hit ? 'À partir de' : 'Aucune offre'}</small><b>${hit ? euro(hit.total) : '—'}</b></span><i class="cat-go">→</i></span>${on ? '<i class="cat-check">✓</i>' : ''}</button>`;
+    }).join('');
+    box.hidden = !names.length;
   }
 
   /* ---------- Cartes de résultats ---------- */

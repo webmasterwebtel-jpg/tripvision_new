@@ -1207,6 +1207,8 @@ function flightFields(o) {
     <label>Type de trajet<select name="tripType"><option value="roundtrip" ${oneway ? '' : 'selected'}>Aller-retour</option><option value="oneway" ${oneway ? 'selected' : ''}>Aller simple</option></select></label>
     ${field('Compagnie aérienne', `name="airline" required maxlength="80" placeholder="Ex. Air France" value="${fv(f.airline)}"`)}
     ${field('N° de vol', `name="flightNumber" maxlength="12" placeholder="AF 718" value="${fv(f.flightNumber)}"`)}
+    ${field('Lien de réservation sur le site de la compagnie', `name="bookingUrl" type="url" required maxlength="600" placeholder="https://www.compagnie.com/vol/…" value="${fv(f.bookingUrl)}"`, true)}
+    <p class="hint full">TripVision ne vend pas les billets : le bouton « Réserver » du site envoie le voyageur sur ce lien, dans un nouvel onglet.</p>
     ${field('Aéroport de départ', `name="fromAirport" maxlength="120" data-geo="airport" data-geo-city="fromCity" data-geo-country="fromCountry" placeholder="Rechercher un aéroport…" value="${fv(f.fromAirport)}"`)}
     ${field('Aéroport d’arrivée', `name="toAirport" maxlength="120" data-geo="airport" data-geo-city="toCity" data-geo-country="country" placeholder="Rechercher un aéroport…" value="${fv(f.toAirport)}"`)}
     ${field('Date de départ', `name="startDate" type="date" required value="${fv(dateOnly(o?.start_date))}"`)}
@@ -1272,7 +1274,7 @@ function openOfferModal(type, existing = null) {
         const roundtrip = g('tripType') !== 'oneway';
         body.endDate = roundtrip ? g('endDate') || undefined : undefined;
         body.flight = {
-          tripType: roundtrip ? 'roundtrip' : 'oneway', fromCountry: g('fromCountry'), airline: g('airline'), flightNumber: g('flightNumber') || undefined, fromAirport: g('fromAirport') || undefined, toAirport: g('toAirport') || undefined,
+          tripType: roundtrip ? 'roundtrip' : 'oneway', fromCountry: g('fromCountry'), airline: g('airline'), bookingUrl: g('bookingUrl'), flightNumber: g('flightNumber') || undefined, fromAirport: g('fromAirport') || undefined, toAirport: g('toAirport') || undefined,
           departTime: g('departTime'), arriveTime: g('arriveTime'), arriveDayOffset: Number(g('arriveDayOffset')), durationMin: Number(g('durH') || 0) * 60 + Number(g('durM') || 0) || undefined,
           stops: Number(g('stops')), cabin: g('cabin'), baggage: g('baggage') || undefined, oneWayPrice: roundtrip && g('oneWayPrice') ? Number(g('oneWayPrice')) : undefined,
           ...(roundtrip ? { returnFlightNumber: g('returnFlightNumber') || undefined, returnDepartTime: g('returnDepartTime'), returnArriveTime: g('returnArriveTime'), returnDayOffset: Number(g('returnDayOffset')) } : {}),
