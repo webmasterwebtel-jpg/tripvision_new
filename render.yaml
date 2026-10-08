@@ -5,7 +5,7 @@ services:
   - type: web
     name: tripvision-api
     runtime: node
-    plan: starter            # « free » s'endort après 15 min d'inactivité (premier chargement très lent)
+    plan: free               # gratuit, mais s'endort après 15 min d'inactivité (premier chargement lent) ; passer à « starter » pour un service toujours actif
     region: frankfurt
     buildCommand: npm install
     startCommand: npm start
