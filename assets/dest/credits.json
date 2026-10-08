@@ -130,5 +130,17 @@
   "artist": "Henri van der Noot",
   "license": "CC BY-SA 4.0",
   "url": "https://commons.wikimedia.org/wiki/File:Brazzaville_-_Basilique_Sainte-Anne-du-Congo.jpg"
+ },
+ "alger": {
+  "title": "Alger Casbah 03.jpg",
+  "artist": "Paebi",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Alger_Casbah_03.jpg"
+ },
+ "cotonou": {
+  "title": "Cotonouskyline.jpg",
+  "artist": "MVN",
+  "license": "CC BY 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Cotonouskyline.jpg"
  }
 }

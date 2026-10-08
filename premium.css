@@ -3303,3 +3303,12 @@ html[data-boot="contact"] #contact{display:block!important}
 .cat-tile.off:hover .cat-from{background:#f1f1f1;color:inherit}
 .cat-tile.off .cat-go{visibility:hidden}
 .airline-note{display:block;margin-top:6px;font-size:12px;color:#6b7a72;text-align:center}
+
+/* Carte de vol : colonne prix/réservation qui ne déborde plus */
+.flight-card{grid-template-columns:230px minmax(0,1fr) 270px}
+.flight-buy{justify-items:stretch;text-align:center;min-width:0}
+.flight-buy strong{font-size:44px}
+.flight-buy .btn{white-space:normal;text-align:center;line-height:1.25;padding:12px 14px;min-height:46px;margin-top:10px}
+.flight-buy .airline-note{text-align:center}
+.flight-buy .meta,.flight-buy small{overflow-wrap:anywhere}
+@media(max-width:1100px){.flight-card{grid-template-columns:200px minmax(0,1fr) 240px}}
