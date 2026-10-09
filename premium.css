@@ -3987,3 +3987,59 @@ img,video,iframe{max-width:100%}
 .dm-lb figcaption b{font-size:1rem}
 .dm-lb figcaption small{font-size:.74rem;opacity:.7}
 .dm-lb img{max-height:78vh}
+
+/* ===== Lot 16 : choisir pour moi, vols sans dates, offre voiture développée, voitures d'une destination ===== */
+.hh-search{max-width:780px}
+.hh-search-btns{display:flex;gap:8px;flex:none}
+.hh-search .hh-surprise{background:transparent;color:#0f3b2e;border:1.5px solid #0f3b2e;box-shadow:none;gap:8px;transition:background .2s,color .2s,transform .2s}
+.hh-search .hh-surprise:hover{background:#0f3b2e;color:#fff;transform:translateY(-1px)}
+.hh-search .hh-surprise .tv-icon{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:transform .5s}
+.hh-search .hh-surprise:hover .tv-icon{transform:rotate(180deg) scale(1.15)}
+@media(max-width:760px){.hh-search-btns{width:100%}.hh-search-btns .btn{flex:1;width:auto!important;padding:0 14px}}
+.flight-meta-row.no-dates{grid-template-columns:1fr 1.3fr}
+@media(max-width:560px){.flight-meta-row.no-dates{grid-template-columns:1fr!important}}
+.flight-route-row{margin-bottom:2px}
+
+/* offre voiture : présentation avant le prix */
+.rsv-offer{background:linear-gradient(180deg,#fff,#fbf8f1)}
+.rsv-offer .eyebrow{display:block;margin-bottom:6px}
+.rsv-offer h3{margin-bottom:8px}
+.rsv-offer h3 small{font:500 15px Inter,sans-serif;color:#7b857f}
+.rsv-lead{margin:0 0 18px;color:#44505a;line-height:1.65;font-size:16px}
+.rsv-lead b{color:#0f3b2e}
+.rsv-hl{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.rsv-hl li{display:grid;gap:3px;padding:14px 16px;border:1px solid #ece6d8;border-radius:14px;background:#fff;transition:transform .2s,box-shadow .2s,border-color .2s}
+.rsv-hl li:hover{transform:translateY(-2px);border-color:#c6a76b;box-shadow:0 14px 30px -22px rgba(15,59,46,.6)}
+.rsv-hl b{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#a38848}
+.rsv-hl span{color:#203a31;font-weight:600;line-height:1.4;font-size:14.5px}
+.rsv-teaser{display:grid;gap:6px}
+.rsv-teaser p{margin:0;color:#6b7570;font-size:14px}
+.rsv-teaser a{font-weight:700;color:#075f4b;text-decoration:none}
+.rsv-teaser a:hover{text-decoration:underline}
+#rsvPriceAnchor{display:block;scroll-margin-top:110px}
+
+/* locations de voitures sur la page d'une destination */
+.dp-cars{display:grid;gap:14px}
+.car-mini{display:grid;grid-template-columns:200px 1fr auto;gap:18px;align-items:center;padding:12px;border:1px solid #e8e2d4;border-radius:18px;background:#fff;box-shadow:0 18px 36px -30px rgba(15,59,46,.55);transition:transform .25s,box-shadow .25s}
+.car-mini:hover{transform:translateY(-2px);box-shadow:0 24px 44px -28px rgba(15,59,46,.6)}
+.cm-img{position:relative;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:#eef2f0}
+.cm-img img{width:100%;height:100%;object-fit:cover}
+.cm-img span{position:absolute;left:8px;top:8px;padding:3px 9px;border-radius:999px;background:rgba(8,39,31,.82);color:#fff;font-size:11px;font-weight:700}
+.cm-body h4{margin:0 0 4px;font:600 21px/1.2 "Cormorant Garamond",Georgia,serif;color:#0f3b2e}
+.cm-body h4 small{font:500 12px Inter,sans-serif;color:#7b857f}
+.cm-lessor{display:flex;align-items:center;gap:6px;margin:0 0 8px;color:#5f6a64;font-size:13.5px}
+.cm-lessor .tv-icon{width:14px;height:14px}
+.cm-specs{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.cm-specs li{padding:3px 10px;border-radius:999px;background:#f3efe6;color:#44505a;font-size:12.5px;font-weight:600}
+.cm-price{display:grid;justify-items:end;gap:2px;text-align:right}
+.cm-price small{color:#7b857f;font-size:12px}
+.cm-price b{font:600 30px/1 "Cormorant Garamond",Georgia,serif;color:#0f3b2e}
+.cm-price em{font-style:normal;color:#7b857f;font-size:13px;margin-bottom:8px}
+@media(max-width:760px){.car-mini{grid-template-columns:110px 1fr;gap:12px}.cm-price{grid-column:1/-1;grid-template-columns:auto auto 1fr auto;align-items:center;justify-items:start;gap:6px;text-align:left;padding-top:4px;border-top:1px dashed #e8e2d4}.cm-price em{margin:0}.cm-price .btn{justify-self:end}}
+.dp-extra{display:contents}
+.dp-extra[hidden]{display:none}
+
+/* pack : date limite de réservation */
+.pd-closing{display:flex;align-items:center;gap:8px;margin:12px 0 0;padding:9px 12px;border-radius:12px;background:#eef6f2;color:#0f4a3b;font-size:13.5px;font-weight:600}
+.pd-closing .tv-icon{width:17px;height:17px;flex:none}
+.pd-closing.soon{background:#fff3e0;color:#9a5a05}

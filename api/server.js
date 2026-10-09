@@ -126,7 +126,7 @@ const notify = (to, mail, replyTo) => { if (to) sendMail({ to, ...mail, ...(repl
 const bookingDetails = (b, vehicleName) => {
   const total = b.total_estimate != null ? Number(b.total_estimate) : null, paid = b.payment_status === 'paid' ? Number(b.paid_amount || b.commission_amount || 0) : null;
   return [['Référence', bookingRef(b.id)], ['Véhicule', vehicleName], ['Client', b.customer_name], ['Du', [mailDay(b.start_date), b.start_time].filter(Boolean).join(' · ')], ['Au', [mailDay(b.end_date), b.end_time].filter(Boolean).join(' · ')],
-    ['Total', total != null ? `${total} €` : ''], ['Commission TripVision (10 %)', paid != null ? `${paid} €` : ''], ['À régler à l’agence', total != null && paid != null ? `${Math.max(0, Math.round((total - paid) * 100) / 100)} €` : '']];
+    ['Total', total != null ? `${total} €` : ''], ['Payé en ligne (acompte)', paid != null ? `${paid} €` : ''], ['À régler à l’agence', total != null && paid != null ? `${Math.max(0, Math.round((total - paid) * 100) / 100)} €` : '']];
 };
 async function notifyBookingStatus(booking, status) {
   if (status === 'pending') return;
@@ -254,7 +254,7 @@ const vehicleBase = z.object({
   model: z.string().min(2), category: z.string().min(2), passengers: z.coerce.number().int().positive(), transmission: z.string().min(2),
   doors: z.coerce.number().int().positive(), bags: z.coerce.number().int().min(0).max(30).default(0), airConditioning: z.boolean().default(true),
   fuelType: z.string().trim().max(30).optional(), volumeM3: z.coerce.number().positive().max(60).optional(), payloadKg: z.coerce.number().positive().max(20000).optional(),
-  priceDay: z.coerce.number().positive(), priceWeek: z.coerce.number().positive({ message: 'Le prix par semaine est obligatoire.' }), priceMonth: z.coerce.number().positive({ message: 'Le prix par mois est obligatoire.' }), priceYear: z.coerce.number().positive().optional(),
+  priceDay: z.coerce.number().positive(), priceWeek: z.coerce.number().positive({ message: 'Le prix par semaine est obligatoire.' }), priceMonth: z.coerce.number().positive({ message: 'Le prix par mois est obligatoire.' }),
   oldPriceDay: z.coerce.number().positive().optional(),
   pickupAddress: z.string().min(2), city: z.string().trim().max(120).optional(),
   country: z.string().trim().max(120).optional().refine((c) => !c || countryCodeByName(c) === 'FR', { message: 'Les locations de voitures sont pour l’instant disponibles uniquement en France.' }),
@@ -262,23 +262,26 @@ const vehicleBase = z.object({
   officeHoursWeek: z.record(z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']), z.object({ open: z.string().regex(/^\d{2}:\d{2}$/), close: z.string().regex(/^\d{2}:\d{2}$/) }).nullable()).refine((w) => Object.values(w).some(Boolean), { message: 'Indiquez les horaires d’ouverture de l’agence (au moins un jour).' }),
   availableFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Indiquez la date à partir de laquelle le véhicule est louable.'), availableUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Indiquez la date jusqu’à laquelle le véhicule est louable.'),
   includedCustom: z.array(z.string().trim().min(1).max(120)).max(12).optional(),
-  returnLocations: z.array(z.object({ key: z.string().trim().min(1).max(40), name: z.string().trim().min(1).max(120), address: z.string().trim().max(200).optional(), fee: z.coerce.number().min(0).max(5000).optional() })).min(1, 'Indiquez au moins un lieu où le véhicule peut être déposé.').max(15),
+  // Restitution dans un autre lieu que le retrait : impossible, possible sans frais, ou avec un montant fixé par le loueur.
+  returnPolicy: z.enum(['none', 'free', 'fee']).default('none'), returnFee: z.coerce.number().min(0).max(5000).optional(),
+  returnLocations: z.array(z.object({ key: z.string().trim().min(1).max(40), name: z.string().trim().min(1).max(120), address: z.string().trim().max(200).optional() })).max(15).optional(),
+  youngDriverAge: z.coerce.number().int().min(19).max(30).optional(), youngDriverFee: z.coerce.number().min(0).max(1000).optional(), youngDriverPricing: z.enum(['day', 'once']).default('day'),
   blocks: z.array(z.object({ start: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/), end: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/), reason: z.string().trim().max(120).optional() })).max(60).optional(),
-  images: z.array(z.string().max(500)).max(10).optional(), image: z.string().optional(),
-  spin: z.array(z.string().max(500)).max(72).optional(),
   lessorName: z.string().trim().max(120).optional(), returnLocation: z.string().trim().max(200).optional(),
   deposit: z.coerce.number().min(0).max(100000).optional(), excess: z.coerce.number().min(0).max(100000).optional(), minAge: z.coerce.number().int().min(18).max(99).optional(),
   unlimitedKm: z.boolean().default(false), kmPerDay: z.coerce.number().int().positive().max(5000).optional(), extraKmPrice: z.coerce.number().min(0).max(100).optional(),
   fuelPolicy: z.string().trim().max(80).optional(),
   freeCancelHours: z.coerce.number().int().min(0).max(720).default(0), freeModification: z.boolean().default(false),
   theftProtection: z.boolean().default(false), fullInsurance: z.boolean().default(false), insuranceType: z.string().trim().max(120).optional(),
-  commissionPct: z.coerce.number().min(1).max(100).optional(), protectionPricePerDay: z.coerce.number().min(0).max(1000).optional(), taxesIncluded: z.boolean().default(true),
-  differentReturnAllowed: z.boolean().default(false), differentReturnFee: z.string().max(60).optional(),
+  taxesIncluded: z.boolean().default(true),
   rentalConditions: z.string().trim().max(3000).optional(), tips: z.string().trim().max(600).optional(),
   extras: z.array(extraSchema).max(8).optional(),
 });
 const untilAfterFrom = [(v) => v.availableUntil >= v.availableFrom, { message: 'La fin de la période de location doit suivre son début.', path: ['availableUntil'] }];
-const vehicleSchema = vehicleBase.refine(...untilAfterFrom);
+const returnRule = [(v) => v.returnPolicy === 'none' || (v.returnLocations || []).length > 0, { message: 'Indiquez au moins un lieu où le véhicule peut être déposé.', path: ['returnLocations'] }];
+const returnFeeRule = [(v) => v.returnPolicy !== 'fee' || Number(v.returnFee) > 0, { message: 'Indiquez le montant des frais de restitution dans un autre lieu.', path: ['returnFee'] }];
+const youngRule = [(v) => !(Number(v.youngDriverFee) > 0) || Boolean(v.youngDriverAge), { message: 'Indiquez en dessous de quel âge les frais jeune conducteur s’appliquent.', path: ['youngDriverAge'] }];
+const vehicleSchema = vehicleBase.refine(...untilAfterFrom).refine(...returnRule).refine(...returnFeeRule).refine(...youngRule);
 
 // Dès qu'une réservation est faite, l'annonce quitte le site jusqu'à la fin de la location ; ensuite elle passe en brouillon et le loueur la republie.
 async function reserveVehicle(vehicleId, bookingId, endDate, endTime) {
@@ -341,26 +344,28 @@ function weekText(w) {
 
 // Construit les détails stockés d'une annonce à partir du formulaire (même règle pour le back-office et l'espace partenaire).
 function buildVehicleDetails(v, old = {}) {
-  const images = v.images !== undefined ? cleanImages(v.images) : cleanImages(old.images?.length ? old.images : [v.image || old.image]);
   return {
     ...old,
     passengers: v.passengers, doors: v.doors, bags: v.bags, transmission: v.transmission, airConditioning: v.airConditioning,
-    priceYear: v.priceYear ?? null, fuelType: v.fuelType || null, volumeM3: v.volumeM3 ?? null, payloadKg: v.payloadKg ?? null, oldPriceDay: v.oldPriceDay ?? null,
+    priceYear: null, fuelType: v.fuelType || null, volumeM3: v.volumeM3 ?? null, payloadKg: v.payloadKg ?? null, oldPriceDay: v.oldPriceDay ?? null,
     officeHoursWeek: v.officeHoursWeek ?? old.officeHoursWeek ?? null, includedCustom: v.includedCustom !== undefined ? v.includedCustom : (old.includedCustom || []),
     officeHours: v.officeHoursWeek ? weekText(v.officeHoursWeek) : (v.officeHours || null), pickupInstructions: v.pickupInstructions || null,
-    returnLocations: v.returnLocations !== undefined ? v.returnLocations.map(({ key, name, address, fee }) => ({ key, name, address: address || null, fee: fee || 0 })) : (old.returnLocations?.length ? old.returnLocations : (old.returnLocation ? [{ key: 'main', name: old.returnLocation, address: null, fee: 0 }] : [])),
-    lessorName: v.lessorName || old.lessorName || null, spin: v.spin !== undefined ? cleanImages(v.spin, 72) : (old.spin || []),
+    returnPolicy: v.returnPolicy, returnFee: v.returnPolicy === 'fee' ? Number(v.returnFee) : 0,
+    returnLocations: v.returnPolicy === 'none' ? [] : (v.returnLocations || []).map(({ key, name, address }) => ({ key, name, address: address || null })),
+    lessorName: v.lessorName || old.lessorName || null,
     deposit: v.deposit ?? null, excess: v.excess ?? null, minAge: v.minAge ?? null,
+    youngDriverAge: Number(v.youngDriverFee) > 0 ? v.youngDriverAge : null, youngDriverFee: Number(v.youngDriverFee) > 0 ? Number(v.youngDriverFee) : null, youngDriverPricing: v.youngDriverPricing || 'day',
     unlimitedKm: v.unlimitedKm, kmPerDay: v.unlimitedKm ? null : (v.kmPerDay ?? null), extraKmPrice: v.extraKmPrice ?? null,
     includedKm: v.unlimitedKm ? 'Kilométrage illimité' : (v.kmPerDay ? `${v.kmPerDay} km/jour` : null), fuelPolicy: v.fuelPolicy || null,
     freeCancelHours: v.freeCancelHours, freeCancel: v.freeCancelHours > 0, freeModification: v.freeModification,
     theftProtection: v.theftProtection, fullInsurance: v.fullInsurance, insuranceType: v.insuranceType || null,
-    availableFrom: v.availableFrom, availableUntil: v.availableUntil, commissionPct: v.commissionPct ?? null, protectionPricePerDay: v.protectionPricePerDay ?? null, taxesIncluded: v.taxesIncluded,
-    differentReturnAllowed: v.differentReturnAllowed, differentReturnFee: v.differentReturnFee || null,
+    availableFrom: v.availableFrom, availableUntil: v.availableUntil, taxesIncluded: v.taxesIncluded,
+    differentReturnAllowed: v.returnPolicy !== 'none', differentReturnFee: v.returnPolicy === 'fee' ? `${Number(v.returnFee)} €` : null,
     rentalConditions: v.rentalConditions || null, tips: v.tips || null,
     extras: (v.extras || []).map(({ key, name, description, pricePerDay, pricing, maxQty }) => ({ key, name, description: description || null, pricePerDay, pricing: pricing || 'day', maxQty: maxQty || 1 })),
     city: v.city ?? old.city ?? '', country: v.country ?? old.country ?? '',
-    images, image: images[0] || null,
+    // L'image affichée est l'image type de la catégorie, choisie par TripVision.
+    images: [], image: null, spin: [],
   };
 }
 const bookingSchema = z.object({
@@ -426,20 +431,54 @@ function mapPartner(p) {
     created_at: p.created_at, updated_at: p.updated_at,
   };
 }
+// ---------- Réglages du site et images types des catégories (relus régulièrement, lus sans attente par les mappers) ----------
+const settings = { franchisePerDay: 7 };
+const categoryImageByName = new Map();
+async function loadSettings() {
+  try {
+    const { rows } = await query('SELECT key, value FROM site_settings');
+    for (const r of rows) if (r.key === 'franchise_protection_per_day') settings.franchisePerDay = Math.max(0, Number(r.value) || 0);
+  } catch (err) { console.error('Réglages :', err.message); }
+}
+async function loadCategoryImages() {
+  try {
+    const { rows } = await query('SELECT name, image FROM vehicle_categories');
+    categoryImageByName.clear();
+    for (const r of rows) if (r.image) categoryImageByName.set(String(r.name).toLowerCase(), r.image);
+  } catch (err) { console.error('Images des catégories :', err.message); }
+}
+loadSettings(); loadCategoryImages();
+setInterval(() => { loadSettings(); loadCategoryImages(); }, 60000);
+const categoryImageOf = (name) => absImage(categoryImageByName.get(String(name || '').toLowerCase())) || categoryImages[name] || null;
+
+// Restitution dans un autre lieu : le loueur choisit « impossible », « sans frais » ou « avec frais » (un seul montant).
+function returnOptionsOf(d, pickupAddress) {
+  const same = { key: 'same', name: 'À l’agence de retrait', address: pickupAddress || null, fee: 0, same: true };
+  if (d.returnPolicy) {
+    if (d.returnPolicy === 'none') return [same];
+    const fee = d.returnPolicy === 'fee' ? Number(d.returnFee) || 0 : 0;
+    return [same, ...(d.returnLocations || []).map(l => ({ key: l.key, name: l.name, address: l.address || null, fee }))];
+  }
+  // Annonces créées avant ce réglage : chaque lieu garde son supplément.
+  const legacy = (d.returnLocations || []).map(l => ({ key: l.key, name: l.name, address: l.address || null, fee: Number(l.fee) || 0 }));
+  return legacy.length ? legacy : [same];
+}
 function mapVehicle(v, partnerTradeName) {
   const details = v.details || {};
+  const returnOptions = returnOptionsOf(details, v.pickup_address);
+  const others = returnOptions.filter(o => !o.same);
+  const stdImage = categoryImageOf(v.category) || Object.values(categoryImages)[0];
   return {
     id: v.id, partner_id: v.partner_id, status: v.status,
     model: v.model, category: v.category, pickupAddress: v.pickup_address,
     priceDay: Number(v.price_day), priceWeek: v.price_week == null ? null : Number(v.price_week), priceMonth: v.price_month == null ? null : Number(v.price_month), priceYear: details.priceYear ?? null,
-    ...details, commissionPct: COMMISSION_PCT,
+    ...details, commissionPct: COMMISSION_PCT, protectionPricePerDay: settings.franchisePerDay,
+    returnOptions, returnPolicy: details.returnPolicy || (!others.length ? 'none' : others.some(o => o.fee > 0) ? 'fee' : 'free'), returnFee: details.returnPolicy ? Number(details.returnFee) || 0 : Math.max(0, ...others.map(o => o.fee)),
     name: v.model, city: details.city || v.pickup_address, country: details.country || '', price: Number(v.price_day), seats: details.passengers,
     transmission: details.transmission, free_cancel: !!details.freeCancel, insurance: !!details.fullInsurance,
     unlimited: String(details.includedKm || '').toLowerCase().includes('illimité'),
     partner_company: partnerTradeName || details.lessorName || (v.partner_id ? 'Partenaire' : 'TripVision'),
-    spin: cleanImages(details.spin, 72).map(absImage),
-    image: absImage(cleanImages(details.images)[0] || details.image) || categoryImages[v.category] || Object.values(categoryImages)[0],
-    images: (cleanImages(details.images).length ? cleanImages(details.images) : (details.image ? [details.image] : [])).map(absImage),
+    spin: [], image: stdImage, images: [stdImage],
     publish_at: v.publish_at, created_at: v.created_at, updated_at: v.updated_at,
   };
 }
@@ -695,9 +734,13 @@ app.post('/api/client/requests/:id/cancel', auth('client'), h(async (req, res) =
 }));
 
 // ---------- Public ----------
+// Un pack se réserve au plus tard la veille du départ (dès le jour J, c'est fermé) ; une offre de vol disparaît quand sa date est passée.
+// Ensuite l'offre s'archive : elle reste visible dans le back-office.
+const PARIS_TODAY = `(now() AT TIME ZONE 'Europe/Paris')::date`;
+const LIVE_DATES = `(start_date IS NULL OR (type = 'pack' AND start_date > ${PARIS_TODAY}) OR (type <> 'pack' AND start_date >= ${PARIS_TODAY}))`;
 app.get('/api/public/offers', h(async (req, res) => {
   const params = [];
-  let sql = `SELECT * FROM offers WHERE status = 'active' AND deleted_at IS NULL AND (publish_at IS NULL OR publish_at <= now())`;
+  let sql = `SELECT * FROM offers WHERE status = 'active' AND deleted_at IS NULL AND (publish_at IS NULL OR publish_at <= now()) AND ${LIVE_DATES}`;
   if (req.query.type) { params.push(req.query.type); sql += ` AND type = $${params.length}`; }
   sql += ' ORDER BY created_at DESC';
   const { rows } = await query(sql, params);
@@ -781,9 +824,9 @@ app.post('/api/public/offer-requests', h(async (req, res) => {
   const b = offerRequestSchema.parse(req.body);
   const ip = clientIp(req);
   if (await isLockedOut(`contact:${ip}`, ip)) return res.status(429).json({ error: 'TOO_MANY_ATTEMPTS' });
-  const { rows } = await query(`SELECT * FROM offers WHERE id = $1 AND status = 'active' AND deleted_at IS NULL AND (publish_at IS NULL OR publish_at <= now())`, [b.offerId]);
+  const { rows } = await query(`SELECT * FROM offers WHERE id = $1 AND status = 'active' AND deleted_at IS NULL AND (publish_at IS NULL OR publish_at <= now()) AND ${LIVE_DATES}`, [b.offerId]);
   const o = rows[0];
-  if (!o) return res.status(404).json({ error: 'NOT_FOUND' });
+  if (!o) return res.status(404).json({ error: 'NOT_FOUND', message: 'Cette offre n’est plus réservable.' });
   // Un vol se réserve avec la seule adresse e-mail ; un pack demande un compte client.
   const client = await optionalClient(req);
   if (o.type === 'pack' && !client) return res.status(401).json({ error: 'ACCOUNT_REQUIRED', message: 'Créez un compte ou connectez-vous pour réserver un pack.' });
@@ -845,13 +888,13 @@ async function announceBooking(row) {
   const ctx = await vehicleContext(row.vehicle_id);
   const details = bookingDetails(row, ctx.name);
   const confirmed = row.status === 'confirmed';
-  notify(ctx.partnerMail, notificationEmail({ subject: `${confirmed ? 'Nouvelle réservation confirmée' : 'Nouvelle demande de réservation'} — ${ctx.name}`, title: confirmed ? 'Nouvelle réservation confirmée' : 'Nouvelle demande de réservation', intro: confirmed ? 'Un client vient de réserver et de payer en ligne un de vos véhicules. Aucune validation n’est nécessaire : le solde est à encaisser lors du retrait. TripVision prélève 10 % du prix de la location, déjà réglés en ligne par le client.' : 'Un client vient de demander la réservation d’un de vos véhicules. Consultez-la et confirmez-la depuis votre espace.', details, buttonLabel: 'Voir dans mon espace', url: espaceLink('bookings') }));
+  notify(ctx.partnerMail, notificationEmail({ subject: `${confirmed ? 'Nouvelle réservation confirmée' : 'Nouvelle demande de réservation'} — ${ctx.name}`, title: confirmed ? 'Nouvelle réservation confirmée' : 'Nouvelle demande de réservation', intro: confirmed ? 'Un client vient de réserver et de payer en ligne un de vos véhicules. Aucune validation n’est nécessaire : le client a réglé 10 % du total en ligne, le solde est à encaisser lors du retrait.' : 'Un client vient de demander la réservation d’un de vos véhicules. Consultez-la et confirmez-la depuis votre espace.', details, buttonLabel: 'Voir dans mon espace', url: espaceLink('bookings') }));
   pushNotification(ctx.partnerUserId, { kind: 'booking', title: confirmed ? 'Nouvelle réservation confirmée' : 'Nouvelle demande de réservation', body: `${bookingRef(row.id)} · ${ctx.name}`, link: 'bookings', refId: row.id });
   pushNotification('staff', { kind: 'booking', title: 'Nouvelle réservation', body: `${bookingRef(row.id)} · ${ctx.name}`, link: 'bookings', refId: row.id });
   notify(STAFF_EMAIL, notificationEmail({ subject: `[TripVision] Nouvelle réservation ${bookingRef(row.id)}`, title: 'Nouvelle réservation', intro: confirmed ? 'Une réservation vient d’être payée et confirmée automatiquement.' : 'Une demande de réservation vient d’être enregistrée.', details, buttonLabel: 'Ouvrir le back-office', url: staffLink('bookings') }), row.customer_email);
   // Le client est prévenu directement (message dans son espace + e-mail).
   pushNotification(await clientUserId(row.customer_email), { kind: 'booking', title: confirmed ? 'Réservation confirmée' : 'Réservation enregistrée', body: `${bookingRef(row.id)} · ${ctx.name}`, link: 'orders', refId: row.id });
-  notify(row.customer_email, notificationEmail({ subject: confirmed ? 'Votre réservation TripVision est confirmée' : 'Votre réservation TripVision est enregistrée', title: confirmed ? 'Réservation confirmée' : 'Réservation enregistrée', intro: confirmed ? 'Merci ! Votre paiement est reçu et votre véhicule est réservé. Il vous reste à régler le solde au loueur lors du retrait.' : 'Merci ! Votre réservation est enregistrée.', details: details.filter(([k]) => k !== 'Client'), buttonLabel: 'Voir ma réservation', url: espaceLink('orders') }));
+  notify(row.customer_email, notificationEmail({ subject: confirmed ? 'Votre réservation TripVision est confirmée' : 'Votre réservation TripVision est enregistrée', title: confirmed ? 'Réservation confirmée' : 'Réservation enregistrée', intro: confirmed ? 'Merci, votre réservation est confirmée ! Votre paiement est bien enregistré. Il vous reste à régler le solde directement au loueur lors du retrait du véhicule.' : 'Merci ! Votre réservation est enregistrée.', details: details.filter(([k]) => k !== 'Client'), buttonLabel: 'Voir ma réservation', url: espaceLink('orders') }));
 }
 
 // ---------- Réservation d'un pack avec paiement en ligne ----------
@@ -871,7 +914,7 @@ async function announcePack(r) {
   notify(STAFF_EMAIL, notificationEmail({ subject: `[TripVision] ${paid ? 'Pack réservé et payé' : 'Nouvelle demande de pack'} ${ref}`, title: paid ? 'Pack réservé et payé' : 'Nouvelle demande de pack', intro: paid ? `${mailText(r.customer_name)} vient de réserver et de payer un séjour.` : `${mailText(r.customer_name)} souhaite réserver un séjour.`, details: [...details, ['Client', r.customer_name]], buttonLabel: 'Ouvrir le back-office', url: staffLink('bookings') }), r.customer_email);
   pushNotification('staff', { kind: 'request', title: paid ? 'Pack réservé et payé' : 'Nouvelle demande de pack', body: `${ref} · ${r.customer_name}`, link: 'bookings', refId: String(r.id) });
   pushNotification(await clientUserId(r.customer_email), { kind: 'request', title: paid ? 'Réservation confirmée' : 'Demande enregistrée', body: `${ref} · ${r.offer_title}`, link: 'orders', refId: String(r.id) });
-  notify(r.customer_email, notificationEmail({ subject: paid ? 'Votre réservation TripVision est confirmée' : 'Votre demande TripVision est bien reçue', title: paid ? 'Réservation confirmée' : 'Demande bien reçue', intro: paid ? 'Merci ! Votre paiement est reçu et votre séjour est réservé. Retrouvez le détail et votre justificatif dans votre espace.' : 'Merci ! Nous avons bien reçu votre demande et revenons vers vous très vite pour la confirmer.', details, buttonLabel: 'Voir ma réservation', url: espaceLink('orders') }));
+  notify(r.customer_email, notificationEmail({ subject: paid ? 'Votre réservation TripVision est confirmée' : 'Votre demande TripVision est bien reçue', title: paid ? 'Réservation confirmée' : 'Demande bien reçue', intro: paid ? 'Merci, votre séjour est confirmé ! Votre paiement est bien enregistré. Retrouvez le détail de votre réservation et votre justificatif dans votre espace client.' : 'Merci ! Nous avons bien reçu votre demande et revenons vers vous très vite pour la confirmer.', details, buttonLabel: 'Voir ma réservation', url: espaceLink('orders') }));
 }
 async function failPack(id) {
   const { rows } = await query(`UPDATE offer_requests SET payment_status = 'failed', status = 'cancelled', status_changed_at = now() WHERE id = $1 AND payment_status = 'awaiting' RETURNING id`, [id]);
@@ -899,9 +942,9 @@ app.post('/api/pack-bookings', auth('client'), h(async (req, res) => {
   const b = packBookingSchema.parse(req.body);
   const ip = clientIp(req);
   if (await isLockedOut(`contact:${ip}`, ip)) return res.status(429).json({ error: 'TOO_MANY_ATTEMPTS' });
-  const { rows } = await query(`SELECT * FROM offers WHERE id = $1 AND type = 'pack' AND status = 'active' AND deleted_at IS NULL AND (publish_at IS NULL OR publish_at <= now())`, [b.offerId]);
+  const { rows } = await query(`SELECT * FROM offers WHERE id = $1 AND type = 'pack' AND status = 'active' AND deleted_at IS NULL AND (publish_at IS NULL OR publish_at <= now()) AND ${LIVE_DATES}`, [b.offerId]);
   const o = rows[0];
-  if (!o) return res.status(404).json({ error: 'NOT_FOUND' });
+  if (!o) return res.status(404).json({ error: 'OFFER_CLOSED', message: 'Les réservations de ce séjour sont closes : un pack se réserve au plus tard la veille du départ.' });
   await recordFailedAttempt(`contact:${ip}`, ip);
   const total = Number(o.price) * b.travelers;
   const name = b.name || req.user.name || req.user.email.split('@')[0];
@@ -1025,12 +1068,12 @@ const rentalDays = (b) => {
   // Chaque tranche de 24 h entamée est facturée : 24 h 01 = 2 jours.
   return Number.isFinite(minutes) && minutes > 0 ? Math.max(1, Math.ceil(minutes / 1440)) : 1;
 };
-// TripVision prélève 10 % du prix de la location (hors options), quelle que soit la durée.
+// Ce qui se règle en ligne à la réservation : 10 % du total de la location, options, protection et frais compris. Le solde se paie au loueur.
 const COMMISSION_PCT = 10;
-const commissionOf = (rentalPrice) => Math.round(Number(rentalPrice) * COMMISSION_PCT) / 100;
+const commissionOf = (total) => Math.round(Number(total) * COMMISSION_PCT) / 100;
 const conditionsSnapshot = (d, lessor) => ({
   lessor, deposit: d.deposit ?? null, excess: d.excess ?? null, minAge: d.minAge ?? null, mileage: d.includedKm ?? null, extraKmPrice: d.extraKmPrice ?? null, fuelPolicy: d.fuelPolicy ?? null,
-  freeCancelHours: d.freeCancelHours ?? 0, freeModification: !!d.freeModification, insuranceType: d.insuranceType ?? null, officeHours: d.officeHours ?? null, conditions: d.rentalConditions ?? null,
+  freeCancelHours: d.freeCancelHours ?? 0, freeModification: !!d.freeModification, insuranceType: d.insuranceType ?? null, youngDriver: d.youngDriverFee > 0 ? { age: d.youngDriverAge, fee: d.youngDriverFee, pricing: d.youngDriverPricing || 'day' } : null, officeHours: d.officeHours ?? null, conditions: d.rentalConditions ?? null,
 });
 
 app.post('/api/bookings', auth('client'), h(async (req, res) => {
@@ -1058,17 +1101,24 @@ app.post('/api/bookings', auth('client'), h(async (req, res) => {
     const unit = Number(x.pricePerDay);
     return { key: x.key, name: x.name, qty, pricePerDay: unit, pricing: x.pricing || 'day', total: unit * qty * (x.pricing === 'once' ? 1 : days) };
   });
-  const loc = (d.returnLocations || []).find(l => l.key === b.returnKey);
+  const options = returnOptionsOf(d, veh.pickup_address);
+  const loc = options.find(l => l.key === (b.returnKey || 'same')) || options[0];
   const returnAddr = loc ? [loc.name, loc.address].filter(Boolean).join(' · ') : (b.returnAddress || null);
-  if (loc && loc.fee > 0) chosen.push({ key: 'return', name: `Restitution : ${loc.name}`, qty: 1, pricePerDay: Number(loc.fee), pricing: 'once', total: Number(loc.fee) });
-  if (b.protection && d.protectionPricePerDay > 0) chosen.push({ key: 'protection', name: 'Protection de la franchise', pricePerDay: Number(d.protectionPricePerDay), total: Number(d.protectionPricePerDay) * days });
+  if (loc && loc.fee > 0) chosen.push({ key: 'return', name: `Restitution dans un autre lieu : ${loc.name}`, qty: 1, pricePerDay: Number(loc.fee), pricing: 'once', total: Number(loc.fee) });
+  // Frais jeune conducteur, fixés par le loueur : par jour ou en forfait unique.
+  if (d.youngDriverFee > 0 && d.youngDriverAge && b.driverAge && b.driverAge < d.youngDriverAge) {
+    const once = d.youngDriverPricing === 'once', fee = Number(d.youngDriverFee);
+    chosen.push({ key: 'young', name: `Conducteur de moins de ${d.youngDriverAge} ans`, qty: 1, pricePerDay: fee, pricing: once ? 'once' : 'day', total: once ? fee : fee * days });
+  }
+  // Protection de la franchise : prix fixe, le même pour toutes les voitures (réglé par TripVision).
+  if (b.protection && settings.franchisePerDay > 0) chosen.push({ key: 'protection', name: 'Protection de la franchise', pricePerDay: settings.franchisePerDay, total: settings.franchisePerDay * days });
   const baseRental = rentalTotal(Number(veh.price_day), Number(veh.price_week) || 0, Number(veh.price_month) || 0, Number(d.priceYear) || 0, days);
   const total = baseRental + chosen.reduce((n, x) => n + x.total, 0);
   const snapshot = conditionsSnapshot(d, veh.trade_name || 'TripVision');
   const { rows } = await query(
     `INSERT INTO bookings(vehicle_id, customer_name, customer_email, customer_phone, pickup_address, return_address, start_date, start_time, end_date, end_time, driver_age, message, extras, conditions_snapshot, conditions_accepted_at, total_estimate, payment_status, cancel_token, commission_amount)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,NULL,$15,$16,$17,$18) RETURNING *`,
-    [b.vehicleId, b.name, b.email, b.phone || null, b.pickupAddress || null, returnAddr, b.startDate || null, b.startTime || null, b.endDate || null, b.endTime || null, b.driverAge || null, b.message || null, JSON.stringify(chosen), JSON.stringify(snapshot), total, paymentsEnabled ? 'awaiting' : 'none', randomBytes(24).toString('hex'), commissionOf(baseRental)]
+    [b.vehicleId, b.name, b.email, b.phone || null, b.pickupAddress || null, returnAddr, b.startDate || null, b.startTime || null, b.endDate || null, b.endTime || null, b.driverAge || null, b.message || null, JSON.stringify(chosen), JSON.stringify(snapshot), total, paymentsEnabled ? 'awaiting' : 'none', randomBytes(24).toString('hex'), commissionOf(total)]
   );
   await reserveVehicle(veh.id, rows[0].id, b.endDate, b.endTime);
   if (!paymentsEnabled) {
@@ -1077,8 +1127,8 @@ app.post('/api/bookings', auth('client'), h(async (req, res) => {
   }
   // Paiement en ligne : la réservation attend le paiement ; l'annonce est retenue pendant ce temps.
   const reference = bookingRef(rows[0].id);
-  // Seule la commission TripVision se règle en ligne ; le solde est payé au loueur au retrait du véhicule.
-  const lines = [{ label: `Commission TripVision · ${String(veh.model).replace(/ ou similaire$/i, '')} (${days} jour${days > 1 ? 's' : ''})`, amount: Number(rows[0].commission_amount) }];
+  // Seul l'acompte se règle en ligne ; le solde est payé au loueur au retrait du véhicule.
+  const lines = [{ label: `Acompte de réservation · ${String(veh.model).replace(/ ou similaire$/i, '')} (${days} jour${days > 1 ? 's' : ''})`, amount: Number(rows[0].commission_amount) }];
   try {
     const session = await createCheckout({ bookingId: rows[0].id, reference, cancelToken: rows[0].cancel_token, email: rows[0].customer_email, lines, appUrl: APP_URL });
     await query('UPDATE bookings SET stripe_session_id = $1 WHERE id = $2', [session.id, rows[0].id]);
@@ -1183,6 +1233,83 @@ app.get('/api/admin/dashboard', auth(...BACKOFFICE_ROLES), h(async (_req, res) =
   });
 }));
 
+// ---------- Suivi des réservations, réglages, e-mails des vols, rythme de publication ----------
+// Combien de réservations ont été faites ces 7 derniers jours, ce mois-ci et cette année (voitures, packs, vols). Trace seulement : TripVision n'annule rien.
+app.get('/api/admin/booking-stats', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
+  const { rows } = await query(`
+    WITH ev AS (
+      SELECT 'car' AS kind, created_at FROM bookings WHERE payment_status NOT IN ('awaiting', 'failed')
+      UNION ALL SELECT offer_type AS kind, created_at FROM offer_requests WHERE payment_status NOT IN ('awaiting', 'failed')
+    ), edges AS (
+      SELECT (now() - interval '7 days') AS wk, date_trunc('month', now()) AS mo, date_trunc('year', now()) AS yr
+    )
+    SELECT k.kind,
+      count(*) FILTER (WHERE ev.created_at >= e.wk)::int AS week,
+      count(*) FILTER (WHERE ev.created_at >= e.mo)::int AS month,
+      count(*) FILTER (WHERE ev.created_at >= e.yr)::int AS year
+    FROM (VALUES ('car'), ('pack'), ('flight')) AS k(kind) CROSS JOIN edges e LEFT JOIN ev ON ev.kind = k.kind
+    GROUP BY k.kind`);
+  const out = { week: { car: 0, pack: 0, flight: 0, total: 0 }, month: { car: 0, pack: 0, flight: 0, total: 0 }, year: { car: 0, pack: 0, flight: 0, total: 0 } };
+  for (const r of rows) for (const p of ['week', 'month', 'year']) { out[p][r.kind] = r[p]; out[p].total += r[p]; }
+  res.json(out);
+}));
+
+const settingsSchema = z.object({ franchisePerDay: z.coerce.number().min(0).max(200) });
+app.get('/api/admin/settings', auth(...BACKOFFICE_ROLES), can('settings.manage'), h(async (_req, res) => {
+  await loadSettings();
+  res.json({ franchisePerDay: settings.franchisePerDay });
+}));
+app.put('/api/admin/settings', auth(...BACKOFFICE_ROLES), can('settings.manage'), h(async (req, res) => {
+  const b = settingsSchema.parse(req.body);
+  await query(`INSERT INTO site_settings(key, value, updated_at, updated_by) VALUES ('franchise_protection_per_day', $1::jsonb, now(), $2)
+               ON CONFLICT (key) DO UPDATE SET value = $1::jsonb, updated_at = now(), updated_by = $2`, [JSON.stringify(b.franchisePerDay), req.user.name || req.user.email]);
+  settings.franchisePerDay = b.franchisePerDay;
+  await audit(req.user.id, 'update_settings', 'settings', null, clientIp(req));
+  res.json({ franchisePerDay: settings.franchisePerDay });
+}));
+
+// Avant d'ouvrir le site de la compagnie, le visiteur laisse son e-mail (obligatoire). Il reste facultatif d'accepter les offres par e-mail.
+const flightLeadSchema = z.object({ offerId: z.string().uuid(), email: z.string().trim().email().max(160), consent: z.boolean().optional() });
+app.post('/api/public/flight-leads', h(async (req, res) => {
+  const b = flightLeadSchema.parse(req.body);
+  const ip = clientIp(req);
+  if (await isLockedOut(`lead:${ip}`, ip)) return res.status(429).json({ error: 'TOO_MANY_ATTEMPTS' });
+  const { rows } = await query(`SELECT id, title, from_city, to_city, details FROM offers WHERE id = $1 AND type = 'flight' AND status = 'active' AND deleted_at IS NULL`, [b.offerId]);
+  const o = rows[0];
+  if (!o) return res.status(404).json({ error: 'NOT_FOUND' });
+  await recordFailedAttempt(`lead:${ip}`, ip);
+  const email = b.email.toLowerCase();
+  await query('INSERT INTO flight_leads(offer_id, airline, route, email, consent) VALUES ($1,$2,$3,$4,$5)', [o.id, o.details?.flight?.airline || null, `${o.from_city || '—'} → ${o.to_city}`, email, Boolean(b.consent)]);
+  await recordContact({ email, source: 'vol', consent: b.consent, count: 0 });
+  res.status(201).json({ ok: true });
+}));
+app.get('/api/admin/flight-leads', auth(...BACKOFFICE_ROLES), can('mailing.export'), h(async (_req, res) => {
+  const { rows } = await query('SELECT id, airline, route, email, consent, created_at FROM flight_leads ORDER BY created_at DESC LIMIT 300');
+  const { rows: st } = await query(`SELECT count(*)::int AS total, count(*) FILTER (WHERE created_at >= now() - interval '7 days')::int AS week, count(*) FILTER (WHERE created_at >= date_trunc('month', now()))::int AS month FROM flight_leads`);
+  res.json({ leads: rows, stats: st[0] });
+}));
+
+// De nouvelles offres doivent être publiées au moins toutes les 48 h.
+const FRESH_HOURS = 48;
+async function freshness() {
+  const { rows } = await query(`SELECT max(created_at) AS last, count(*) FILTER (WHERE created_at >= now() - interval '48 hours')::int AS recent, count(*) FILTER (WHERE created_at >= now() - interval '7 days')::int AS week FROM offers WHERE deleted_at IS NULL`);
+  const last = rows[0].last ? new Date(rows[0].last) : null;
+  const hours = last ? Math.floor((Date.now() - last.getTime()) / 3600000) : null;
+  return { last, hours, limit: FRESH_HOURS, overdue: hours === null || hours >= FRESH_HOURS, recent: rows[0].recent, week: rows[0].week };
+}
+app.get('/api/admin/freshness', auth(...BACKOFFICE_ROLES), h(async (_req, res) => res.json(await freshness())));
+async function checkFreshness() {
+  const f = await freshness();
+  if (!f.overdue) return;
+  const { rows } = await query("SELECT 1 FROM notifications WHERE audience = 'staff' AND kind = 'freshness' AND created_at > now() - interval '24 hours' LIMIT 1");
+  if (rows[0]) return;
+  const body = f.hours === null ? 'Aucune offre n’est encore publiée.' : `La dernière offre date d’il y a ${f.hours} h : il en faut de nouvelles au moins toutes les ${FRESH_HOURS} h.`;
+  await pushNotification('staff', { kind: 'freshness', title: 'Pensez à publier de nouvelles offres', body, link: 'offers' });
+  notify(STAFF_EMAIL, notificationEmail({ subject: '[TripVision] De nouvelles offres sont attendues', title: 'De nouvelles offres sont attendues', intro: body, buttonLabel: 'Publier une offre', url: staffLink('offers') }));
+}
+setInterval(() => checkFreshness().catch((e) => console.error('Rythme de publication :', e.message)), 60 * 60 * 1000);
+setTimeout(() => checkFreshness().catch(() => {}), 30000);
+
 const offerCover = (o) => cleanImages(o.images)[0] || normalizeImage(o.image) || null;
 const offerDetails = (o) => ({ images: cleanImages(o.images), ...(o.type === 'flight' && o.flight ? { flight: o.flight } : {}) });
 
@@ -1238,7 +1365,7 @@ app.delete('/api/admin/offers/:id', auth(...BACKOFFICE_ROLES), can('offers.delet
   res.json({ ok: true });
 }));
 
-const adminVehicleSchema = vehicleBase.extend({ partnerId: z.string().uuid().nullable().optional(), publishAt: publishAtSchema, draft: z.boolean().optional() }).refine(...untilAfterFrom);
+const adminVehicleSchema = vehicleBase.extend({ partnerId: z.string().uuid().nullable().optional(), publishAt: publishAtSchema, draft: z.boolean().optional() }).refine(...untilAfterFrom).refine(...returnRule).refine(...returnFeeRule).refine(...youngRule);
 
 app.post('/api/admin/vehicles', auth(...BACKOFFICE_ROLES), can('vehicles.create'), h(async (req, res) => {
   const v = adminVehicleSchema.parse(req.body);
@@ -1310,8 +1437,11 @@ app.delete('/api/admin/vehicles/:id', auth(...BACKOFFICE_ROLES), can('vehicles.d
   res.json({ ok: true });
 }));
 
+// TripVision garde la trace des réservations faites auprès des loueurs et des compagnies : c'est à eux de les annuler.
+const NO_CANCEL_TEXT = 'TripVision n’annule pas les réservations faites auprès d’un loueur ou d’une compagnie : nous en gardons la trace.';
 app.patch('/api/admin/bookings/:id/status', auth(...BACKOFFICE_ROLES), can('bookings.manage'), h(async (req, res) => {
   const { status } = statusSchema(['pending', 'confirmed', 'inactive']).parse(req.body);
+  if (status === 'inactive') return res.status(403).json({ error: 'NO_CANCEL', message: NO_CANCEL_TEXT });
   const { rows: owner } = await query('SELECT v.partner_id FROM bookings b JOIN vehicles v ON v.id = b.vehicle_id WHERE b.id = $1', [req.params.id]);
   if (owner[0]?.partner_id) return res.status(403).json({ error: 'PARTNER_BOOKING', message: 'Cette réservation appartient à un partenaire : seul le partenaire peut la modifier.' });
   const { rows } = await query('UPDATE bookings SET status = $1, status_changed_at = now(), staff_seen_at = COALESCE(staff_seen_at, now()) WHERE id = $2 RETURNING *', [status, req.params.id]);
@@ -1324,6 +1454,7 @@ app.patch('/api/admin/bookings/:id/status', auth(...BACKOFFICE_ROLES), can('book
 
 app.patch('/api/admin/offer-requests/:id/status', auth(...BACKOFFICE_ROLES), can('bookings.manage'), h(async (req, res) => {
   const { status } = statusSchema(['pending', 'confirmed', 'cancelled']).parse(req.body);
+  if (status === 'cancelled') return res.status(403).json({ error: 'NO_CANCEL', message: NO_CANCEL_TEXT });
   const { rows } = await query('UPDATE offer_requests SET status = $1, status_changed_at = now(), staff_seen_at = COALESCE(staff_seen_at, now()) WHERE id = $2 RETURNING *', [status, req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
   if (status === 'cancelled') await refundPack(rows[0]);
@@ -1369,9 +1500,32 @@ app.post('/api/admin/partner-applications/:id/reject', auth(...BACKOFFICE_ROLES)
 }));
 
 // ---------- Messagerie partenaire <-> équipe ----------
-const chatMessageSchema = z.object({ message: z.string().trim().min(1).max(4000) });
-const chatThreadInfo = (t) => ({ id: t.id, subject: t.subject, status: t.status, partner_name: t.partner_name, partner_email: t.partner_email, kind: t.kind, created_at: t.created_at, updated_at: t.updated_at, closed_at: t.closed_at, closed_by: t.closed_by });
-const chatMessages = async (threadId) => (await query('SELECT id, sender, body, created_at FROM chat_messages WHERE thread_id = $1 ORDER BY created_at ASC', [threadId])).rows;
+const attachmentSchema = z.object({ url: z.string().regex(/^\/uploads\/[0-9a-f-]{36}$/i), name: z.string().trim().max(120), mime: z.string().max(60), size: z.coerce.number().int().min(0).max(8 * 1024 * 1024) });
+const chatMessageSchema = z.object({ message: z.string().trim().max(4000).default(''), attachments: z.array(attachmentSchema).max(3).default([]) })
+  .refine((m) => m.message.length > 0 || m.attachments.length > 0, { message: 'Écrivez un message ou joignez un fichier.', path: ['message'] });
+const chatThreadInfo = (t) => ({
+  id: t.id, subject: t.subject, status: t.status, partner_name: t.partner_name, partner_email: t.partner_email, kind: t.kind, created_at: t.created_at, updated_at: t.updated_at,
+  closed_at: t.closed_at, closed_by: t.closed_by, auto_closed: t.auto_closed, assigned_to: t.assigned_to, assigned_name: t.assigned_name, first_response_at: t.first_response_at, rating: t.rating, rating_comment: t.rating_comment,
+});
+// Le client et le partenaire ne voient jamais les notes internes de l'équipe.
+const chatMessages = async (threadId, forStaff = false) => (await query(
+  `SELECT id, sender, body, created_at, author, attachments FROM chat_messages WHERE thread_id = $1 ${forStaff ? '' : "AND sender <> 'note'"} ORDER BY created_at ASC`, [threadId])).rows;
+const CHAT_FILE_TYPES = {
+  ...IMAGE_SIGNATURES,
+  'application/pdf': (b) => b.length > 5 && b.subarray(0, 5).toString('ascii') === '%PDF-',
+};
+const rawChatFile = express.raw({ type: Object.keys(CHAT_FILE_TYPES), limit: '8mb' });
+async function storeChatFile(req, res) {
+  const mime = String(req.headers['content-type'] || '').split(';')[0].trim();
+  const body = req.body;
+  if (!CHAT_FILE_TYPES[mime] || !Buffer.isBuffer(body) || body.length === 0 || !CHAT_FILE_TYPES[mime](body)) return res.status(400).json({ error: 'INVALID_FILE', message: 'Formats acceptés : JPG, PNG, WebP ou PDF (8 Mo maximum).' });
+  const { rows } = await query('INSERT INTO files(mime, size, data, created_by) VALUES ($1,$2,$3,$4) RETURNING id', [mime, body.length, body, req.user.id]);
+  let name = 'fichier';
+  try { name = decodeURIComponent(String(req.headers['x-file-name'] || 'fichier')).replace(/[^\p{L}\p{N}._ -]/gu, '').slice(0, 120) || 'fichier'; } catch { /* nom par défaut */ }
+  res.status(201).json({ url: `/uploads/${rows[0].id}`, name, mime, size: body.length });
+}
+app.post('/api/chat/uploads', auth('partner', 'client'), rawChatFile, h(storeChatFile));
+app.post('/api/admin/chat-uploads', auth(...BACKOFFICE_ROLES), rawChatFile, h(storeChatFile));
 
 async function ownVehicle(userId, id) {
   const { rows } = await query(
@@ -1444,7 +1598,8 @@ app.patch('/api/partner/bookings/:id/status', auth('partner'), h(async (req, res
 
 const CHAT_ROLES = ['partner', 'client'];
 const MAX_OPEN_THREADS = 5;
-const newThreadSchema = z.object({ subject: z.string().trim().min(2).max(120), message: z.string().trim().min(1).max(4000) });
+const newThreadSchema = z.object({ subject: z.string().trim().min(2).max(120), message: z.string().trim().max(4000).default(''), attachments: z.array(attachmentSchema).max(3).default([]) })
+  .refine((m) => m.message.length > 0 || m.attachments.length > 0, { message: 'Écrivez un message ou joignez un fichier.', path: ['message'] });
 async function chatIdentity(user) {
   const { rows } = await query('SELECT trade_name, contact_email FROM partners WHERE user_id = $1 AND deleted_at IS NULL', [user.id]);
   return { name: rows[0]?.trade_name || user.name || user.email, email: rows[0]?.contact_email || user.email };
@@ -1458,19 +1613,19 @@ function alertStaffOfMessage(thread, user, fresh) {
 
 app.get('/api/chat/threads', auth(...CHAT_ROLES), h(async (req, res) => {
   const { rows } = await query(
-    `SELECT t.id, t.subject, t.status, t.created_at, t.updated_at, t.closed_at, t.unread_partner AS unread,
-            (SELECT body FROM chat_messages m WHERE m.thread_id = t.id AND m.sender <> 'system' ORDER BY m.created_at DESC LIMIT 1) AS last_message
-     FROM chat_threads t WHERE t.partner_user_id = $1 ORDER BY (t.status = 'open') DESC, t.updated_at DESC LIMIT 100`, [req.user.id]);
+    `SELECT t.id, t.subject, t.status, t.created_at, t.updated_at, t.closed_at, t.auto_closed, t.rating, t.unread_partner AS unread,
+            (SELECT body FROM chat_messages m WHERE m.thread_id = t.id AND m.sender NOT IN ('system', 'note') ORDER BY m.created_at DESC LIMIT 1) AS last_message
+     FROM chat_threads t WHERE t.partner_user_id = $1 ORDER BY (t.status <> 'closed') DESC, t.updated_at DESC LIMIT 100`, [req.user.id]);
   res.json(rows);
 }));
 app.post('/api/chat/threads', auth(...CHAT_ROLES), h(async (req, res) => {
   const b = newThreadSchema.parse(req.body);
-  const { rows: open } = await query(`SELECT count(*)::int AS n FROM chat_threads WHERE partner_user_id = $1 AND status = 'open'`, [req.user.id]);
+  const { rows: open } = await query(`SELECT count(*)::int AS n FROM chat_threads WHERE partner_user_id = $1 AND status <> 'closed'`, [req.user.id]);
   if (open[0].n >= MAX_OPEN_THREADS) return res.status(409).json({ error: 'TOO_MANY_THREADS', message: `Vous avez déjà ${MAX_OPEN_THREADS} conversations ouvertes. Poursuivez-en une ou attendez sa clôture.` });
   const who = await chatIdentity(req.user);
   const { rows } = await query('INSERT INTO chat_threads(partner_user_id, partner_name, partner_email, kind, subject) VALUES ($1,$2,$3,$4,$5) RETURNING *', [req.user.id, who.name, who.email, req.user.role, b.subject]);
   const thread = rows[0];
-  await query("INSERT INTO chat_messages(thread_id, sender, body) VALUES ($1,'partner',$2)", [thread.id, b.message]);
+  await query("INSERT INTO chat_messages(thread_id, sender, body, author, attachments) VALUES ($1,'partner',$2,$3,$4)", [thread.id, b.message, who.name, JSON.stringify(b.attachments || [])]);
   await query('UPDATE chat_threads SET unread_admin = 1 WHERE id = $1', [thread.id]);
   alertStaffOfMessage(thread, req.user, true);
   res.status(201).json({ id: thread.id });
@@ -1482,14 +1637,26 @@ app.get('/api/chat/threads/:id', auth(...CHAT_ROLES), h(async (req, res) => {
   res.json({ thread: chatThreadInfo(t), messages: await chatMessages(t.id) });
 }));
 app.post('/api/chat/threads/:id/messages', auth(...CHAT_ROLES), h(async (req, res) => {
-  const { message: text } = chatMessageSchema.parse(req.body);
+  const { message: text, attachments } = chatMessageSchema.parse(req.body);
   const t = await ownThread(req.user, req.params.id);
   if (!t) return res.status(404).json({ error: 'NOT_FOUND' });
   if (t.status === 'closed') return res.status(409).json({ error: 'THREAD_CLOSED', message: 'Cette conversation est clôturée. Démarrez-en une nouvelle si besoin.' });
-  const { rows } = await query("INSERT INTO chat_messages(thread_id, sender, body) VALUES ($1,'partner',$2) RETURNING id, sender, body, created_at", [t.id, text]);
-  await query('UPDATE chat_threads SET unread_admin = unread_admin + 1, updated_at = now() WHERE id = $1', [t.id]);
+  const { rows } = await query("INSERT INTO chat_messages(thread_id, sender, body, author, attachments) VALUES ($1,'partner',$2,$3,$4) RETURNING id, sender, body, created_at, author, attachments", [t.id, text, t.partner_name, JSON.stringify(attachments)]);
+  // Le client a répondu : la conversation repasse à « ouverte » (l'équipe doit répondre).
+  await query("UPDATE chat_threads SET unread_admin = unread_admin + 1, status = 'open', updated_at = now() WHERE id = $1", [t.id]);
   alertStaffOfMessage(t, req.user, false);
   res.status(201).json({ message: rows[0] });
+}));
+// Note de satisfaction, donnée une seule fois après la clôture.
+app.post('/api/chat/threads/:id/rating', auth(...CHAT_ROLES), h(async (req, res) => {
+  const b = z.object({ rating: z.coerce.number().int().min(1).max(5), comment: z.string().trim().max(500).optional() }).parse(req.body);
+  const t = await ownThread(req.user, req.params.id);
+  if (!t) return res.status(404).json({ error: 'NOT_FOUND' });
+  if (t.status !== 'closed') return res.status(409).json({ error: 'NOT_CLOSED', message: 'Vous pourrez noter la conversation une fois clôturée.' });
+  if (t.rating) return res.status(409).json({ error: 'ALREADY_RATED', message: 'Merci, vous avez déjà donné votre avis.' });
+  await query('UPDATE chat_threads SET rating = $2, rating_comment = $3 WHERE id = $1', [t.id, b.rating, b.comment || null]);
+  pushNotification('staff', { kind: 'chat', title: `Avis reçu : ${b.rating}/5`, body: `${t.partner_name} · ${t.subject}`, link: 'chats' });
+  res.json({ ok: true });
 }));
 
 // ---------- Tendances : ce que les visiteurs consultent, cliquent, cherchent et réservent ----------
@@ -1655,53 +1822,128 @@ app.post('/api/admin/offer-requests/:id/seen', auth(...BACKOFFICE_ROLES), h(asyn
   res.json({ ok: true });
 }));
 
+const CHAT_AUTO_CLOSE_DAYS = 7;
 app.get('/api/admin/chats', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
   const { rows } = await query(
-    `SELECT t.id, t.subject, t.status, t.partner_name, t.partner_email, t.kind, t.created_at, t.updated_at, t.closed_at, t.closed_by, t.unread_admin AS unread,
-            (SELECT count(*)::int FROM chat_messages m WHERE m.thread_id = t.id AND m.sender <> 'system') AS messages,
-            (SELECT body FROM chat_messages m WHERE m.thread_id = t.id AND m.sender <> 'system' ORDER BY m.created_at DESC LIMIT 1) AS last_message,
-            (SELECT sender FROM chat_messages m WHERE m.thread_id = t.id AND m.sender <> 'system' ORDER BY m.created_at DESC LIMIT 1) AS last_sender
-     FROM chat_threads t ORDER BY (t.status = 'open') DESC, t.updated_at DESC LIMIT 400`
+    `SELECT t.id, t.subject, t.status, t.partner_name, t.partner_email, t.kind, t.created_at, t.updated_at, t.closed_at, t.closed_by, t.auto_closed, t.unread_admin AS unread,
+            t.assigned_to, t.assigned_name, t.first_response_at, t.rating,
+            (SELECT count(*)::int FROM chat_messages m WHERE m.thread_id = t.id AND m.sender NOT IN ('system', 'note')) AS messages,
+            (SELECT body FROM chat_messages m WHERE m.thread_id = t.id AND m.sender NOT IN ('system', 'note') ORDER BY m.created_at DESC LIMIT 1) AS last_message,
+            (SELECT sender FROM chat_messages m WHERE m.thread_id = t.id AND m.sender NOT IN ('system', 'note') ORDER BY m.created_at DESC LIMIT 1) AS last_sender
+     FROM chat_threads t ORDER BY (t.status <> 'closed') DESC, (t.status = 'open') DESC, t.updated_at DESC LIMIT 400`
   );
   res.json(rows);
+}));
+
+// Chiffres de la messagerie : délai de première réponse, satisfaction, volumes.
+app.get('/api/admin/chats-stats', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
+  const { rows } = await query(`SELECT
+      count(*) FILTER (WHERE status = 'open')::int AS open, count(*) FILTER (WHERE status = 'pending')::int AS pending, count(*) FILTER (WHERE status = 'closed')::int AS closed,
+      count(*) FILTER (WHERE status <> 'closed' AND assigned_to IS NULL)::int AS unassigned,
+      round(avg(extract(epoch FROM (first_response_at - created_at)) / 60) FILTER (WHERE first_response_at IS NOT NULL AND created_at >= now() - interval '30 days'))::int AS first_response_min,
+      round(avg(rating)::numeric, 1) AS rating, count(rating)::int AS rated
+    FROM chat_threads`);
+  const r = rows[0];
+  res.json({ ...r, rating: r.rating == null ? null : Number(r.rating), autoCloseDays: CHAT_AUTO_CLOSE_DAYS });
 }));
 
 app.get('/api/admin/chats/:id', auth(...BACKOFFICE_ROLES), h(async (req, res) => {
   const { rows } = await query('SELECT * FROM chat_threads WHERE id = $1', [req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
   await query('UPDATE chat_threads SET unread_admin = 0 WHERE id = $1', [rows[0].id]);
-  res.json({ thread: chatThreadInfo(rows[0]), messages: await chatMessages(rows[0].id), canManage: hasPermission(req.user, 'chats.manage') });
+  res.json({ thread: chatThreadInfo(rows[0]), messages: await chatMessages(rows[0].id, true), canManage: hasPermission(req.user, 'chats.manage'), me: req.user.id });
 }));
 
 app.post('/api/admin/chats/:id/messages', auth(...BACKOFFICE_ROLES), h(async (req, res) => {
-  const { message: text } = chatMessageSchema.parse(req.body);
+  const { message: text, attachments } = chatMessageSchema.parse(req.body);
   const { rows } = await query('SELECT * FROM chat_threads WHERE id = $1', [req.params.id]);
   const thread = rows[0];
   if (!thread) return res.status(404).json({ error: 'NOT_FOUND' });
   if (thread.status === 'closed') return res.status(409).json({ error: 'THREAD_CLOSED', message: 'Cette conversation est clôturée : rouvrez-la pour répondre.' });
-  const { rows: msgRows } = await query("INSERT INTO chat_messages(thread_id, sender, body) VALUES ($1,'admin',$2) RETURNING id, sender, body, created_at", [thread.id, text]);
-  await query('UPDATE chat_threads SET unread_partner = unread_partner + 1, updated_at = now() WHERE id = $1', [thread.id]);
+  const { rows: msgRows } = await query("INSERT INTO chat_messages(thread_id, sender, body, author, attachments) VALUES ($1,'admin',$2,$3,$4) RETURNING id, sender, body, created_at, author, attachments", [thread.id, text, req.user.name || 'TripVision', JSON.stringify(attachments)]);
+  // Réponse de l'équipe : la conversation attend désormais le client ; la première réponse fixe le délai de réponse et prend la conversation en charge.
+  await query(`UPDATE chat_threads SET unread_partner = unread_partner + 1, status = 'pending', updated_at = now(),
+                 first_response_at = COALESCE(first_response_at, now()),
+                 assigned_to = COALESCE(assigned_to, $2), assigned_name = COALESCE(assigned_name, $3)
+               WHERE id = $1`, [thread.id, req.user.id, req.user.name || req.user.email]);
   pushNotification(thread.partner_user_id, { kind: 'chat', title: 'Vous avez une réponse', body: 'L’équipe TripVision a répondu à votre message.', link: 'chat' });
   const mail = await sendMail({ to: thread.partner_email, ...notificationEmail({ subject: '[TripVision] Vous avez une réponse', title: 'Vous avez une réponse', intro: 'L’équipe TripVision a répondu à votre message. Connectez-vous à votre espace pour le lire et poursuivre la conversation.', buttonLabel: 'Ouvrir ma messagerie', url: espaceLink('chat') }) });
   res.status(201).json({ message: msgRows[0], notified: mail.sent });
 }));
 
-// Clôturer / rouvrir une conversation : réservé à l'IT, à l'admin et aux managers qui en ont reçu le droit.
-const ROLE_LABEL = { it: 'l’équipe IT', admin: 'un administrateur', manager: 'un manager' };
+// Notes internes : visibles uniquement par l'équipe.
+app.post('/api/admin/chats/:id/notes', auth(...BACKOFFICE_ROLES), h(async (req, res) => {
+  const { message: text } = z.object({ message: z.string().trim().min(1).max(2000) }).parse(req.body);
+  const { rows } = await query('SELECT id FROM chat_threads WHERE id = $1', [req.params.id]);
+  if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
+  const { rows: m } = await query("INSERT INTO chat_messages(thread_id, sender, body, author) VALUES ($1,'note',$2,$3) RETURNING id, sender, body, created_at, author, attachments", [req.params.id, text, req.user.name || 'Équipe']);
+  res.status(201).json({ message: m[0] });
+}));
+
+// Attribution : chacun peut prendre une conversation en charge ; confier ou retirer à quelqu'un d'autre demande le droit « Messagerie ».
+app.get('/api/admin/chat-staff', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
+  const { rows } = await query("SELECT id, name, role FROM users WHERE role IN ('it','admin','manager') AND active AND deleted_at IS NULL ORDER BY name");
+  res.json(rows);
+}));
+app.post('/api/admin/chats/:id/assign', auth(...BACKOFFICE_ROLES), h(async (req, res) => {
+  const { to } = z.object({ to: z.string().uuid().nullable() }).parse(req.body);
+  const { rows } = await query('SELECT * FROM chat_threads WHERE id = $1', [req.params.id]);
+  const t = rows[0];
+  if (!t) return res.status(404).json({ error: 'NOT_FOUND' });
+  if (to !== req.user.id && !hasPermission(req.user, 'chats.manage')) return res.status(403).json({ error: 'PERMISSION_DENIED' });
+  let name = null;
+  if (to) {
+    const { rows: u } = await query("SELECT name, email FROM users WHERE id = $1 AND role IN ('it','admin','manager') AND active AND deleted_at IS NULL", [to]);
+    if (!u[0]) return res.status(404).json({ error: 'NOT_FOUND' });
+    name = u[0].name || u[0].email;
+  }
+  await query('UPDATE chat_threads SET assigned_to = $2, assigned_name = $3 WHERE id = $1', [t.id, to, name]);
+  await query("INSERT INTO chat_messages(thread_id, sender, body, author) VALUES ($1,'note',$2,$3)", [t.id, to ? (to === req.user.id ? 'Conversation prise en charge.' : `Conversation confiée à ${name}.`) : 'Conversation remise à disposition de l’équipe.', req.user.name || 'Équipe']);
+  res.json({ ok: true, assigned_to: to, assigned_name: name });
+}));
+
+// Réponses types, partagées par l'équipe.
+app.get('/api/admin/chat-canned', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
+  res.json((await query('SELECT id, title, body FROM chat_canned ORDER BY created_at')).rows);
+}));
+app.post('/api/admin/chat-canned', auth(...BACKOFFICE_ROLES), can('chats.manage'), h(async (req, res) => {
+  const b = z.object({ title: z.string().trim().min(2).max(60), body: z.string().trim().min(2).max(2000) }).parse(req.body);
+  const { rows } = await query('INSERT INTO chat_canned(title, body, created_by) VALUES ($1,$2,$3) RETURNING id, title, body', [b.title, b.body, req.user.name || req.user.email]);
+  res.status(201).json(rows[0]);
+}));
+app.delete('/api/admin/chat-canned/:id', auth(...BACKOFFICE_ROLES), can('chats.manage'), h(async (req, res) => {
+  await query('DELETE FROM chat_canned WHERE id = $1', [req.params.id]);
+  res.json({ ok: true });
+}));
+
+// Clôturer / rouvrir une conversation : réservé à l'IT et aux managers ou agents qui en ont reçu le droit.
+const ROLE_LABEL = { it: 'l’équipe IT', admin: 'un agent', manager: 'un manager' };
 async function setThreadStatus(req, res, status) {
   const { rows } = await query('SELECT * FROM chat_threads WHERE id = $1', [req.params.id]);
   const t = rows[0];
   if (!t) return res.status(404).json({ error: 'NOT_FOUND' });
   if (t.status === status) return res.json({ ok: true, status });
   const closing = status === 'closed';
-  await query(`UPDATE chat_threads SET status = $2, closed_at = ${closing ? 'now()' : 'NULL'}, closed_by = ${closing ? '$3' : 'NULL'}, updated_at = now(), unread_partner = unread_partner + 1 WHERE id = $1`, closing ? [t.id, status, req.user.name || req.user.email] : [t.id, status]);
+  await query(`UPDATE chat_threads SET status = $2, closed_at = ${closing ? 'now()' : 'NULL'}, closed_by = ${closing ? '$3' : 'NULL'}, auto_closed = false, updated_at = now(), unread_partner = unread_partner + 1 WHERE id = $1`, closing ? [t.id, status, req.user.name || req.user.email] : [t.id, status]);
   await query("INSERT INTO chat_messages(thread_id, sender, body) VALUES ($1,'system',$2)", [t.id, closing ? `Conversation clôturée par ${ROLE_LABEL[req.user.role] || 'l’équipe'}.` : `Conversation rouverte par ${ROLE_LABEL[req.user.role] || 'l’équipe'}.`]);
-  pushNotification(t.partner_user_id, { kind: 'chat', title: closing ? 'Conversation clôturée' : 'Conversation rouverte', body: t.subject, link: 'chat' });
+  pushNotification(t.partner_user_id, { kind: 'chat', title: closing ? 'Conversation clôturée' : 'Conversation rouverte', body: closing ? `${t.subject} · donnez-nous votre avis` : t.subject, link: 'chat' });
   await audit(req.user.id, closing ? 'chat_closed' : 'chat_reopened', 'chat_thread', t.id, clientIp(req));
   res.json({ ok: true, status });
 }
 app.post('/api/admin/chats/:id/close', auth(...BACKOFFICE_ROLES), can('chats.manage'), h((req, res) => setThreadStatus(req, res, 'closed')));
 app.post('/api/admin/chats/:id/reopen', auth(...BACKOFFICE_ROLES), can('chats.manage'), h((req, res) => setThreadStatus(req, res, 'open')));
+
+// Clôture automatique : une conversation qui attend le client depuis 7 jours sans réponse est clôturée.
+async function autoCloseChats() {
+  const { rows } = await query(`UPDATE chat_threads SET status = 'closed', closed_at = now(), closed_by = 'Automatique', auto_closed = true, updated_at = now(), unread_partner = unread_partner + 1
+    WHERE status = 'pending' AND updated_at < now() - ($1 || ' days')::interval RETURNING id, partner_user_id, subject`, [String(CHAT_AUTO_CLOSE_DAYS)]);
+  for (const t of rows) {
+    await query("INSERT INTO chat_messages(thread_id, sender, body) VALUES ($1,'system',$2)", [t.id, `Conversation clôturée automatiquement après ${CHAT_AUTO_CLOSE_DAYS} jours sans réponse. Vous pouvez en démarrer une nouvelle à tout moment.`]);
+    pushNotification(t.partner_user_id, { kind: 'chat', title: 'Conversation clôturée', body: `${t.subject} · sans réponse depuis ${CHAT_AUTO_CLOSE_DAYS} jours`, link: 'chat' });
+  }
+}
+setInterval(() => autoCloseChats().catch((e) => console.error('Clôture automatique :', e.message)), 60 * 60 * 1000);
+setTimeout(() => autoCloseChats().catch(() => {}), 45000);
 
 // ---------- Messages de contact ----------
 app.get('/api/admin/messages', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
@@ -1764,7 +2006,7 @@ function accountRights(actor, target) {
   return { edit: manageable && hasPermission(actor, 'accounts.edit'), delete: manageable && hasPermission(actor, 'accounts.delete') };
 }
 
-// Un admin ne peut jamais donner plus de droits qu'il n'en a.
+// Personne ne peut donner plus de droits qu'il n'en a.
 function checkGrantable(actor, permissions, res) {
   const clean = sanitizePermissions(permissions);
   if (Object.keys(clean).some(k => !hasPermission(actor, k))) { res.status(403).json({ error: 'PERMISSION_ESCALATION' }); return null; }
@@ -1797,6 +2039,7 @@ app.post('/api/admin/categories', auth(...BACKOFFICE_ROLES), can('categories.man
   if (dup.length) return res.status(409).json({ error: 'EXISTS', message: 'Cette catégorie existe déjà.' });
   const { rows } = await query('INSERT INTO vehicle_categories(name, image, position, active) VALUES ($1,$2,$3,$4) RETURNING *', [b.name, normalizeImage(b.image) || null, b.position ?? 50, b.active ?? true]);
   await audit(req.user.id, 'create_category', 'category', rows[0].id, clientIp(req));
+  loadCategoryImages();
   res.status(201).json(mapCategory(rows[0]));
 }));
 app.patch('/api/admin/categories/:id', auth(...BACKOFFICE_ROLES), can('categories.manage'), h(async (req, res) => {
@@ -1808,6 +2051,7 @@ app.patch('/api/admin/categories/:id', auth(...BACKOFFICE_ROLES), can('categorie
   const { rows } = await query('UPDATE vehicle_categories SET name = $1, image = $2, position = COALESCE($3, position), active = COALESCE($4, active) WHERE id = $5 RETURNING *', [b.name, normalizeImage(b.image) || null, b.position ?? null, b.active ?? null, req.params.id]);
   if (old[0].name !== b.name) await query('UPDATE vehicles SET category = $1 WHERE lower(category) = lower($2)', [b.name, old[0].name]);
   await audit(req.user.id, 'update_category', 'category', req.params.id, clientIp(req));
+  loadCategoryImages();
   res.json(mapCategory(rows[0]));
 }));
 app.delete('/api/admin/categories/:id', auth(...BACKOFFICE_ROLES), can('categories.manage'), h(async (req, res) => {
@@ -1817,6 +2061,7 @@ app.delete('/api/admin/categories/:id', auth(...BACKOFFICE_ROLES), can('categori
   if (used[0].n) return res.status(409).json({ error: 'IN_USE', message: `${used[0].n} annonce(s) utilisent cette catégorie : changez-les d’abord, ou désactivez la catégorie.` });
   await query('DELETE FROM vehicle_categories WHERE id = $1', [req.params.id]);
   await audit(req.user.id, 'delete_category', 'category', req.params.id, clientIp(req));
+  loadCategoryImages();
   res.json({ ok: true });
 }));
 
@@ -1928,8 +2173,8 @@ app.delete('/api/admin/clients/:id', auth(...BACKOFFICE_ROLES), can('accounts.de
 
 app.get('/api/admin/accounts', auth(...BACKOFFICE_ROLES), h(async (req, res) => {
   if (!hasAnyAccountPermission(req.user)) return res.status(403).json({ error: 'PERMISSION_DENIED' });
-  const { rows } = req.user.role === 'manager'
-    ? await query(`SELECT ${ACCOUNT_COLUMNS} FROM users WHERE deleted_at IS NULL AND role = 'manager' ORDER BY created_at DESC`)
+  const { rows } = req.user.role !== 'it'
+    ? await query(`SELECT ${ACCOUNT_COLUMNS} FROM users WHERE deleted_at IS NULL AND role IN ('manager', 'admin') ORDER BY created_at DESC`)
     : await query(`SELECT ${ACCOUNT_COLUMNS} FROM users WHERE deleted_at IS NULL AND role IN ('it','admin','manager') ORDER BY created_at DESC`);
   res.json(rows.map(u => ({ ...u, permissions: effectivePermissions(u), can: accountRights(req.user, u) })));
 }));
@@ -1937,7 +2182,7 @@ app.get('/api/admin/accounts', auth(...BACKOFFICE_ROLES), h(async (req, res) => 
 app.post('/api/admin/accounts', auth(...BACKOFFICE_ROLES), can('accounts.create'), h(async (req, res) => {
   const body = createAccountSchema.parse(req.body);
   if (!canManageRole(req.user.role, body.role)) return res.status(403).json({ error: 'ROLE_NOT_ALLOWED' });
-  const permissions = body.role === 'manager' ? checkGrantable(req.user, body.permissions, res) : {};
+  const permissions = ['manager', 'admin'].includes(body.role) ? checkGrantable(req.user, body.permissions, res) : {};
   if (!permissions) return;
   const email = body.email.toLowerCase().trim();
   const existing = await query('SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL', [email]);
@@ -1957,7 +2202,7 @@ app.patch('/api/admin/accounts/:id', auth(...BACKOFFICE_ROLES), can('accounts.ed
   const target = await loadAccount(req, res, 'edit');
   if (!target) return;
   if (!canManageRole(req.user.role, body.role)) return res.status(403).json({ error: 'ROLE_NOT_ALLOWED' });
-  const permissions = body.role === 'manager' ? checkGrantable(req.user, body.permissions, res) : {};
+  const permissions = ['manager', 'admin'].includes(body.role) ? checkGrantable(req.user, body.permissions, res) : {};
   if (!permissions) return;
   const email = body.email.toLowerCase().trim();
   const clash = await query('SELECT id FROM users WHERE email = $1 AND id <> $2 AND deleted_at IS NULL', [email, target.id]);

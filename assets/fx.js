@@ -153,12 +153,7 @@
   const countryOf = (city) => window.TV_DEST?.find((d) => plainName(d.name) === plainName(city))?.country || '';
   const plainName = (v) => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s*\([a-z]{3}\)\s*$/i, '').trim().toLowerCase();
   const cityOnly = (v) => String(v || '').replace(/\s*\([A-Za-z]{3}\)\s*$/, '').trim();
-  document.addEventListener('click', (e) => {
-    const a = e.target.closest('.flight-buy a.btn');
-    if (!a || typeof state === 'undefined') return;
-    const o = state.flights.find((x) => String(x.id) === a.closest('[data-offer-id]')?.dataset.offerId);
-    if (o) track('flight_click', o.id, o.to_city, o.country, `${o.from_city || ''} → ${o.to_city || ''}${o.flight?.airline ? ` · ${o.flight.airline}` : ''}`);
-  });
+  // Le clic vers la compagnie est suivi par flight-gate.js, une fois l'e-mail saisi.
   function trackSearch(f) {
     if (f.id === 'flightSimulator') { const c = cityOnly(val(f, 'toCity')); track('search_flight', c, c, countryOf(c), `Vols vers ${c}`); }
     else if (f.id === 'packSimulator') { const c = cityOnly(val(f, 'toCity')); track('search_pack', c, c, countryOf(c), `Week-ends à ${c}`); }
@@ -183,7 +178,7 @@
     btn.innerHTML = `<span class="fx-scene fx-${kind}" aria-hidden="true">${SCENES[kind] || SCENES.car}</span><span class="fx-txt">${text}</span>`;
     return () => { btn.classList.remove('fx-busy'); btn.disabled = false; btn.innerHTML = html; btn.style.minWidth = ''; };
   }
-  /* Une recherche ne part que si les lieux et les dates sont choisis. */
+  /* Une recherche ne part que si les lieux (et les dates, pour voitures et week-ends) sont choisis. */
   const val = (f, n) => String(f.elements[n]?.value || '').trim();
   const plain = (v) => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s*\([a-z]{3}\)\s*$/i, '').trim().toLowerCase();
   const RULES = {
@@ -191,10 +186,6 @@
       if (!val(f, 'fromCity')) return ['Choisissez votre aéroport de départ.', 'fromCity'];
       if (!val(f, 'toCity')) return ['Choisissez votre aéroport d’arrivée.', 'toCity'];
       if (plain(val(f, 'fromCity')) === plain(val(f, 'toCity'))) return ['Le départ et l’arrivée doivent être différents.', 'toCity'];
-      if (!val(f, 'departDate')) return ['Choisissez votre date de départ.', 'departDate'];
-      const oneway = f.elements.tripType?.value === 'oneway';
-      if (!oneway && !val(f, 'returnDate')) return ['Choisissez votre date de retour.', 'returnDate'];
-      if (!oneway && val(f, 'returnDate') < val(f, 'departDate')) return ['La date de retour doit être postérieure à la date de départ.', 'returnDate'];
       return null;
     },
     packSimulator(f) {
@@ -230,18 +221,8 @@
     if (f.dataset.fxGo) { delete f.dataset.fxGo; return; }
     const bad = RULES[f.id]?.(f);
     if (bad) { e.preventDefault(); e.stopImmediatePropagation(); flag(f, bad[1], bad[0]); return; }
+    // L'écran de chargement de la recherche (voiture, avion, hôtel) est affiché par fx2.js à la place des résultats.
     trackSearch(f);
-    if (reduce) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    const btn = e.submitter || f.querySelector('button[type="submit"],button:not([type])');
-    const done = busy(btn, cfg[0], cfg[1]);
-    setTimeout(() => {
-      done();
-      f.dataset.fxGo = '1';
-      try { f.requestSubmit(btn || undefined); } catch { f.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true })); }
-      setTimeout(() => { delete f.dataset.fxGo; }, 50);
-    }, 1050);
   }, true);
 
 

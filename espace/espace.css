@@ -208,3 +208,33 @@ body[data-theme="partner"] .btn.primary:hover { background: #0b5f58; }
   .page-head h1,.page-head h2{font-size:clamp(30px,9vw,44px)}
   .workspace>*{min-width:0}
 }
+
+/* ===== Lot 16 : messagerie (pièces jointes, avis), formulaire véhicule ===== */
+.chat-card .chat-form{grid-template-columns:1fr!important;gap:8px}
+.chat-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:end}
+.chat-files{display:flex;gap:6px;flex-wrap:wrap}.chat-files:empty{display:none}
+.chip-file{display:inline-flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border-radius:999px;background:#e3f4ed;color:#0d7a58;font-size:12px;font-weight:600}
+.chip-file button{width:18px;height:18px;border:0;border-radius:50%;background:rgba(0,0,0,.12);color:inherit;line-height:1;cursor:pointer}
+.file-btn{display:inline-grid;place-items:center;cursor:pointer;min-width:42px;min-height:42px}
+.file-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.atts{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.att.img img{display:block;max-width:160px;max-height:120px;border-radius:8px;border:1px solid rgba(0,0,0,.08)}
+.att.file{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:rgba(0,0,0,.06);color:inherit;text-decoration:none;font-size:12.5px}
+.att.file svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8}
+.bubble.admin .att.file{background:rgba(255,255,255,.2)}
+.chat-rate,.chat-rated{display:flex;gap:12px 16px;align-items:center;flex-wrap:wrap;padding:14px 18px;border-top:1px solid var(--line);background:#fffaf0}
+.chat-rate strong{font-size:14px}
+.chat-rate input[name=comment]{flex:1 1 200px;min-width:0;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.stars{display:inline-flex;flex-direction:row-reverse;gap:2px;font-size:26px;line-height:1}
+.stars label{cursor:pointer;color:#d9d2c3;transition:color .12s,transform .12s}
+.stars label input{position:absolute;opacity:0;pointer-events:none}
+.stars label:hover,.stars label:hover~label,.stars label:has(input:checked),.stars label:has(input:checked)~label{color:#e0a82e}
+.stars label:hover{transform:scale(1.12)}
+.stars.on{flex-direction:row;color:#e0a82e;font-size:22px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.cat-preview{display:flex;gap:14px;align-items:center;padding:12px 14px;border:1px dashed var(--line);border-radius:12px;background:var(--paper)}
+.cat-preview img{width:132px;height:80px;object-fit:cover;border-radius:8px;flex:none}
+.cat-preview span{display:grid;gap:3px;color:var(--muted);font-size:13px;line-height:1.45}
+.cat-preview b{color:var(--ink);font-size:13.5px}
+.rloc-row{grid-template-columns:1fr 1fr auto}
+@media(max-width:600px){.chat-row{grid-template-columns:1fr auto}.chat-row textarea{grid-column:1/-1}.cat-preview{flex-direction:column;align-items:flex-start}.cat-preview img{width:100%;height:auto;aspect-ratio:5/3}}

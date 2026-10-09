@@ -7,8 +7,24 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const CATEGORIES = ['Mini (A)', 'Économique (B)', 'Compacte (C)', 'Intermédiaire (D)', 'Routière (E)', 'SUV et Break', 'Monospace ou Minibus', 'Utilitaire / Van'];
   // Catégories gérées par l'IT et les managers (page « Catégories » du back-office) ; la liste ci-dessus sert de secours.
-  fetch('/api/public/categories').then((r) => r.json()).then((l) => { if (Array.isArray(l) && l.length) CATEGORIES.splice(0, CATEGORIES.length, ...l.map((c) => c.name)); }).catch(() => {});
+  const CAT_IMAGE = {};
+  fetch('/api/public/categories').then((r) => r.json()).then((l) => {
+    if (!Array.isArray(l) || !l.length) return;
+    CATEGORIES.splice(0, CATEGORIES.length, ...l.map((c) => c.name));
+    l.forEach((c) => { CAT_IMAGE[c.name] = c.image || ''; });
+    document.querySelectorAll('[data-cat-preview]').forEach((box) => paintCatPreview(box));
+  }).catch(() => {});
+  // L'image de l'annonce est l'image type de la catégorie choisie : ni le loueur ni le back-office ne téléversent de photo par véhicule.
+  const paintCatPreview = (box) => {
+    const sel = box.closest('form')?.elements.namedItem('category');
+    const name = sel?.value || '';
+    const url = CAT_IMAGE[name];
+    box.innerHTML = url ? `<img src="${esc(url)}" alt=""><span><b>Image de l’annonce</b>Image type de la catégorie « ${esc(name)} » : elle s’affiche automatiquement sur le site.</span>` : `<span><b>Image de l’annonce</b>L’image type de la catégorie s’affichera automatiquement sur le site.</span>`;
+  };
+  document.addEventListener('change', (e) => { if (e.target.matches?.('select[name=category]')) e.target.form?.querySelectorAll('[data-cat-preview]').forEach(paintCatPreview); });
   const FUEL_TYPES = ['Essence', 'Diesel', 'Hybride', 'Électrique', 'GPL'];
+  const MIN_AGES = [['', 'Pas d’âge minimum (18 ans, majorité)'], ...[19, 20, 21, 22, 23, 24, 25, 26, 27, 30].map((n) => [n, `${n} ans minimum`])];
+  const YOUNG_AGES = [['', 'Aucun supplément jeune conducteur'], ...[21, 22, 23, 24, 25, 26, 27, 28, 30].map((n) => [n, `Pour les moins de ${n} ans`])];
   const FUEL_POLICIES = [['', 'Non précisée'], 'Plein / plein', 'Même niveau au retour', 'Plein prépayé', 'Plein-vide'];
   const CANCEL = [[0, 'Pas d’annulation gratuite'], [24, 'Gratuite jusqu’à 24 h avant'], [48, 'Gratuite jusqu’à 48 h avant'], [72, 'Gratuite jusqu’à 72 h avant'], [168, 'Gratuite jusqu’à 7 jours avant'], [336, 'Gratuite jusqu’à 14 jours avant']];
   const PRESETS = {
@@ -47,7 +63,6 @@
     <div class="rloc-row" data-key="${esc(l.key || `loc_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`)}">
       <label>Lieu de restitution<input data-lf="name" required maxlength="120" value="${esc(l.name || '')}" placeholder="Ex. Aéroport CDG - Terminal 2"></label>
       <label>Adresse précise (facultatif)<input data-lf="address" maxlength="200" value="${esc(l.address || '')}" placeholder="Ex. Niveau -1, parking P2"></label>
-      <label>Supplément (€, facultatif)<input data-lf="fee" type="number" min="0" step="0.01" value="${esc(l.fee ? l.fee : '')}" placeholder="0"></label>
       <button type="button" class="btn small danger" data-rloc-remove>Retirer</button>
     </div>`;
   const blockRow = (b = {}) => `
@@ -58,7 +73,7 @@
       <button type="button" class="btn small danger" data-blk-remove>Retirer</button>
     </div>`;
 
-  function html(v = null, { gallery = '', spinGallery = '', lessor = false, availability = null } = {}) {
+  function html(v = null, { lessor = false, availability = null } = {}) {
     const x = v || {};
     const fuelPolicies = !x.fuelPolicy || FUEL_POLICIES.some((f) => (Array.isArray(f) ? f[0] : f) === x.fuelPolicy) ? FUEL_POLICIES : [...FUEL_POLICIES, x.fuelPolicy];
     const unlimited = Boolean(x.unlimitedKm);
@@ -75,8 +90,7 @@
       ${input('Volume utile (m³, utilitaires)', `name="volumeM3" type="number" min="0" step="0.1" placeholder="Ex. 6" value="${esc(num(x.volumeM3))}"`)}
       ${input('Charge utile (kg, utilitaires)', `name="payloadKg" type="number" min="0" placeholder="Ex. 1000" value="${esc(num(x.payloadKg))}"`)}
       <div class="perm-grid full">${toggle('airConditioning', 'Climatisation', x.airConditioning !== false)}</div>
-      ${gallery}
-      ${spinGallery ? `${section('Vue à 360° (facultatif)')}${hint('Téléversez soit UNE photo panoramique 360° (format 2:1, prise avec un appareil 360°), soit 12 à 36 photos prises en faisant le tour du véhicule, dans l’ordre. Le site propose alors un visualiseur à 360° : on bouge la souris pour tourner.')}${spinGallery}` : ''}
+      <div class="full cat-preview" data-cat-preview></div>
       ${availability ? `${section('Disponibilité')}
       ${hint('Dès qu’un client réserve, l’annonce disparaît du site jusqu’à la fin de la location, puis passe en brouillon : vous la republiez quand le véhicule est prêt. Vous pouvez aussi bloquer des périodes à la main.')}
       <div class="full extras-box" data-blocks>
@@ -89,12 +103,11 @@
       ${input('Louable à partir du', `name="availableFrom" type="date" required value="${esc(x.availableFrom || '')}"`)}
       ${input('Louable jusqu’au', `name="availableUntil" type="date" required value="${esc(x.availableUntil || '')}"`)}
       ${section('Tarifs')}
-      ${hint('Les prix par jour, par semaine et par mois sont obligatoires ; le prix par an est facultatif. Le site retient automatiquement la formule la moins chère pour la durée choisie. Chaque tranche de 24 h entamée est comptée : 24 h 01 = 2 jours.')}
-      ${hint('Ces prix sont les prix de location que le client paie au total. À la réservation, le client règle en ligne uniquement la commission de TripVision, soit 10 % du prix de la location (quelle que soit la durée, hors options) : pour une location à 200 €, TripVision prélève 20 € ; les 180 € restants vous sont payés à l’agence lors du retrait du véhicule.')}
+      ${hint('Les prix par jour, par semaine et par mois sont obligatoires. Le site retient automatiquement la formule la moins chère pour la durée choisie. Chaque tranche de 24 h entamée est comptée : 24 h 01 = 2 jours.')}
+      ${hint('Ces prix sont ceux que le client paie au total. À la réservation, il règle en ligne un acompte de 10 % du total de sa location (options comprises) ; le solde vous est payé à l’agence lors du retrait du véhicule.')}
       ${input('Prix par jour (€)', `name="priceDay" type="number" min="1" step="0.01" required value="${esc(num(x.priceDay))}"`)}
       ${input('Prix par semaine (€)', `name="priceWeek" type="number" min="1" step="0.01" required value="${esc(num(x.priceWeek))}"`)}
       ${input('Prix par mois (€)', `name="priceMonth" type="number" min="1" step="0.01" required value="${esc(num(x.priceMonth))}"`)}
-      ${input('Prix par an (€, facultatif)', `name="priceYear" type="number" min="1" step="0.01" value="${esc(num(x.priceYear))}"`)}
       ${input('Ancien prix par jour barré (€, facultatif)', `name="oldPriceDay" type="number" min="1" step="0.01" placeholder="Affiche une remise sur le site" value="${esc(num(x.oldPriceDay))}"`)}
       ${input('Dépôt de garantie (€, facultatif)', `name="deposit" type="number" min="0" step="1" placeholder="500" value="${esc(num(x.deposit))}"`)}
       ${input('Franchise (€, facultatif)', `name="excess" type="number" min="0" step="1" placeholder="1200" value="${esc(num(x.excess))}"`)}
@@ -104,15 +117,10 @@
       ${input('Adresse de retrait', `name="pickupAddress" required minlength="2" placeholder="Adresse de l’agence" value="${esc(x.pickupAddress || '')}"`, true)}
       <span class="dz-label full">Horaires d’ouverture de l’agence (obligatoire) <em>cliquez sur un jour pour l’ouvrir ou le fermer, puis choisissez l’heure</em></span>
       ${hoursHtml(x.officeHoursWeek || defaultWeek())}
-      <div class="full extras-box" data-rlocs>
-        <span class="dz-label">Lieux où le véhicule peut être déposé (obligatoire) <em>le client en choisit un à la réservation</em></span>
-        <div class="extras-rows" data-rloc-rows>${(x.returnLocations || (x.returnLocation ? [{ name: x.returnLocation }] : [])).map(locRow).join('')}</div>
-        <div class="extras-add"><button type="button" class="chip-btn" data-rloc-add>+ Ajouter un lieu</button><button type="button" class="chip-btn" data-rloc-same>+ Même lieu que le retrait</button></div>
-      </div>
       ${input('Comment retrouver l’agence', `name="pickupInstructions" maxlength="500" placeholder="Ex. Navette gratuite devant le terminal 2" value="${esc(x.pickupInstructions || '')}"`)}
       ${section('Inclus dans le prix')}
       ${hint('Cochez uniquement ce qui est réellement inclus : cela s’affiche sur le site sous « Inclus dans le prix ».')}
-      <div class="perm-grid full">${toggle('freeModification', 'Modifications gratuites', x.freeModification)}${toggle('theftProtection', 'Protection contre le vol', x.theftProtection)}${toggle('fullInsurance', 'Assurance tous risques', x.fullInsurance)}${toggle('taxesIncluded', 'Taxes locales incluses', x.taxesIncluded !== false)}${toggle('differentReturnAllowed', 'Retour dans une autre agence possible', x.differentReturnAllowed)}</div>
+      <div class="perm-grid full">${toggle('freeModification', 'Modifications gratuites', x.freeModification)}${toggle('theftProtection', 'Protection contre le vol', x.theftProtection)}${toggle('fullInsurance', 'Assurance tous risques', x.fullInsurance)}${toggle('taxesIncluded', 'Taxes locales incluses', x.taxesIncluded !== false)}</div>
       <div class="full extras-box" data-incl>
         <span class="dz-label">Autres éléments inclus dans le prix <em>écrits par vous : ils s’affichent avec une coche sur le site</em></span>
         <div class="extras-rows" data-incl-rows>${(x.includedCustom || []).map(inclRow).join('')}</div>
@@ -124,11 +132,23 @@
       ${input('Kilométrage inclus (km / jour)', `name="kmPerDay" type="number" min="1" placeholder="250" ${unlimited ? 'disabled' : ''} value="${esc(num(x.kmPerDay))}"`)}
       ${input('Supplément par km en plus (€)', `name="extraKmPrice" type="number" min="0" step="0.01" placeholder="0.20" value="${esc(num(x.extraKmPrice))}"`)}
       ${select('Politique carburant', 'fuelPolicy', fuelPolicies, x.fuelPolicy)}
-      ${input('Âge minimum du conducteur (facultatif)', `name="minAge" type="number" min="18" max="99" placeholder="21" value="${esc(num(x.minAge))}"`)}
-      ${input('Frais de retour dans une autre agence', `name="differentReturnFee" maxlength="60" placeholder="Ex. 50 €" value="${esc(x.differentReturnFee || '')}"`)}
-      ${section('Protection de la franchise (facultatif)')}
-      ${hint('Proposée au client à la réservation. Laissez vide si vous ne la vendez pas.')}
-      ${input('Prix de la protection (€ / jour)', `name="protectionPricePerDay" type="number" min="0" step="0.01" placeholder="Ex. 5.50" value="${esc(num(x.protectionPricePerDay))}"`)}
+      ${section('Âge du conducteur')}
+      ${hint('Indiquez à partir de quel âge votre véhicule est loué, et si les conducteurs plus jeunes paient un supplément.')}
+      ${select('Âge minimum du conducteur', 'minAge', MIN_AGES, x.minAge ?? '', {})}
+      ${select('Conducteur jeune : supplément', 'youngDriverAge', YOUNG_AGES, x.youngDriverFee > 0 ? (x.youngDriverAge ?? '') : '', {})}
+      ${input('Montant du supplément (€)', `name="youngDriverFee" type="number" min="0" step="0.01" placeholder="Ex. 25" ${x.youngDriverFee > 0 ? '' : 'disabled'} value="${esc(x.youngDriverFee > 0 ? x.youngDriverFee : '')}"`)}
+      ${select('Facturation du supplément', 'youngDriverPricing', [['day', 'Par jour de location'], ['once', 'Forfait unique']], x.youngDriverPricing || 'day', {})}
+      ${section('Restitution dans un autre lieu')}
+      ${hint('Le client peut-il rendre le véhicule ailleurs qu’à l’agence où il l’a retiré ? Ces frais sont ajoutés au total de la location.')}
+      ${select('Restitution dans un autre lieu', 'returnPolicy', [['none', 'Non : retour à l’agence de retrait uniquement'], ['free', 'Oui, sans frais supplémentaires'], ['fee', 'Oui, avec des frais supplémentaires']], x.returnPolicy || (x.returnLocations?.length ? (x.returnLocations.some((l) => Number(l.fee) > 0) ? 'fee' : 'free') : 'none'), {})}
+      ${input('Montant des frais (€)', `name="returnFee" type="number" min="0.01" step="0.01" placeholder="Ex. 50" value="${esc(x.returnFee > 0 ? x.returnFee : (x.returnLocations || []).reduce((n, l) => Math.max(n, Number(l.fee) || 0), 0) || '')}"`)}
+      <div class="full extras-box" data-rlocs>
+        <span class="dz-label">Lieux où le véhicule peut être rendu <em>en plus de l’agence de retrait ; le client en choisit un à la réservation</em></span>
+        <div class="extras-rows" data-rloc-rows>${(x.returnLocations || (x.returnLocation ? [{ name: x.returnLocation }] : [])).map(locRow).join('')}</div>
+        <div class="extras-add"><button type="button" class="chip-btn" data-rloc-add>+ Ajouter un lieu</button></div>
+      </div>
+      ${section('Protection de la franchise')}
+      ${hint('Fixée par TripVision, au même prix pour toutes les voitures : le client peut l’ajouter à sa réservation. Rien à saisir ici.')}
       ${section('Options payantes (facultatif)')}
       ${hint('Ajoutez les options proposées avec ce véhicule : nom, description, prix, quantité maximale. Le client les choisit pendant sa réservation.')}
       <div class="full extras-box" data-extras>
@@ -146,8 +166,11 @@
     const val = (n) => (g(n)?.value ?? '').trim();
     const n = (name) => (val(name) === '' ? undefined : Number(val(name)));
     const unlimited = g('unlimitedKm').checked;
+    const policy = val('returnPolicy') || 'none';
     const checkRows = [...f.querySelectorAll('.rloc-row')].filter((row) => row.querySelector('[data-lf=name]').value.trim());
-    if (!checkRows.length) throw new Error('Indiquez au moins un lieu où le véhicule peut être déposé.');
+    if (policy !== 'none' && !checkRows.length) throw new Error('Indiquez au moins un lieu où le véhicule peut être rendu.');
+    if (policy === 'fee' && !(n('returnFee') > 0)) throw new Error('Indiquez le montant des frais de restitution dans un autre lieu.');
+    if (n('youngDriverAge') && !(n('youngDriverFee') > 0)) throw new Error('Indiquez le montant du supplément jeune conducteur.');
     if (!DAYS.some(([k]) => f.querySelector(`[data-hd=${k}]`).checked)) throw new Error('Indiquez les horaires d’ouverture de l’agence (au moins un jour).');
     if (val('availableUntil') < val('availableFrom')) throw new Error('La fin de la période de location doit suivre son début.');
     const extras = [...f.querySelectorAll('.extra-row')].map((row) => {
@@ -157,20 +180,35 @@
     return {
       model: val('model'), category: val('category'), passengers: n('passengers'), doors: n('doors'), bags: n('bags') ?? 0, transmission: val('transmission'), fuelType: val('fuelType') || undefined,
       volumeM3: n('volumeM3'), payloadKg: n('payloadKg'), airConditioning: g('airConditioning').checked,
-      availableFrom: val('availableFrom'), availableUntil: val('availableUntil'), priceDay: n('priceDay'), priceWeek: n('priceWeek'), priceMonth: n('priceMonth'), priceYear: n('priceYear'), oldPriceDay: n('oldPriceDay'), deposit: n('deposit'), excess: n('excess'),
+      availableFrom: val('availableFrom'), availableUntil: val('availableUntil'), priceDay: n('priceDay'), priceWeek: n('priceWeek'), priceMonth: n('priceMonth'), oldPriceDay: n('oldPriceDay'), deposit: n('deposit'), excess: n('excess'),
       city: val('city'), country: 'France', pickupAddress: val('pickupAddress'),
       officeHoursWeek: Object.fromEntries(DAYS.map(([k]) => [k, f.querySelector(`[data-hd=${k}]`).checked ? { open: f.querySelector(`[data-ho=${k}]`).value || '08:00', close: f.querySelector(`[data-hc=${k}]`).value || '18:00' } : null])),
       includedCustom: [...f.querySelectorAll('[data-if]')].map((i) => i.value.trim()).filter(Boolean),
-      returnLocations: [...f.querySelectorAll('.rloc-row')].map((row) => { const v = (k) => row.querySelector(`[data-lf=${k}]`).value.trim(); return { key: row.dataset.key, name: v('name'), address: v('address') || undefined, fee: v('fee') ? Number(v('fee')) : undefined }; }).filter((l) => l.name), lessorName: g('lessorName') ? val('lessorName') || undefined : undefined,
-      spin: g('spin') ? JSON.parse(g('spin').value || '[]') : undefined,
+      returnPolicy: policy, returnFee: policy === 'fee' ? n('returnFee') : undefined,
+      returnLocations: policy === 'none' ? [] : [...f.querySelectorAll('.rloc-row')].map((row) => { const v = (k) => row.querySelector(`[data-lf=${k}]`).value.trim(); return { key: row.dataset.key, name: v('name'), address: v('address') || undefined }; }).filter((l) => l.name),
+      lessorName: g('lessorName') ? val('lessorName') || undefined : undefined,
       blocks: f.querySelector('[data-blocks]') ? [...f.querySelectorAll('.blk-row')].map((row) => { const v = (k) => row.querySelector(`[data-bf=${k}]`).value; return { start: v('start'), end: v('end'), reason: v('reason').trim() || undefined }; }) : undefined, pickupInstructions: val('pickupInstructions') || undefined,
       freeModification: g('freeModification').checked, theftProtection: g('theftProtection').checked, fullInsurance: g('fullInsurance').checked, taxesIncluded: g('taxesIncluded').checked,
-      differentReturnAllowed: g('differentReturnAllowed').checked, freeCancelHours: n('freeCancelHours') ?? 0, insuranceType: val('insuranceType') || undefined,
+      freeCancelHours: n('freeCancelHours') ?? 0, insuranceType: val('insuranceType') || undefined,
       unlimitedKm: unlimited, kmPerDay: unlimited ? undefined : n('kmPerDay'), extraKmPrice: n('extraKmPrice'), fuelPolicy: val('fuelPolicy') || undefined,
-      minAge: n('minAge'), differentReturnFee: val('differentReturnFee') || undefined, protectionPricePerDay: n('protectionPricePerDay'),
+      minAge: n('minAge'), youngDriverAge: n('youngDriverAge'), youngDriverFee: n('youngDriverAge') ? n('youngDriverFee') : undefined, youngDriverPricing: val('youngDriverPricing') || 'day',
       rentalConditions: val('rentalConditions') || undefined, tips: val('tips') || undefined, extras,
     };
   }
+
+  // Champs qui n'ont de sens que selon un choix : frais de restitution, supplément jeune conducteur.
+  const syncConditional = (f) => {
+    if (!f?.elements) return;
+    const policy = f.elements.namedItem('returnPolicy')?.value;
+    const fee = f.elements.namedItem('returnFee');
+    if (fee) { fee.closest('label').hidden = policy !== 'fee'; fee.disabled = policy !== 'fee'; }
+    const box = f.querySelector('[data-rlocs]');
+    if (box) box.hidden = policy === 'none';
+    const young = f.elements.namedItem('youngDriverAge'), yfee = f.elements.namedItem('youngDriverFee'), ypr = f.elements.namedItem('youngDriverPricing');
+    if (young && yfee) { const on = Boolean(young.value); yfee.disabled = !on; yfee.closest('label').hidden = !on; ypr.closest('label').hidden = !on; }
+  };
+  document.addEventListener('change', (e) => { if (e.target.matches?.('select[name=returnPolicy], select[name=youngDriverAge]')) syncConditional(e.target.form); });
+  new MutationObserver((muts) => { for (const m of muts) for (const n of m.addedNodes) if (n.nodeType === 1) { const f = n.matches?.('form') ? n : n.querySelector?.('form'); if (f) { syncConditional(f); f.querySelectorAll('[data-cat-preview]').forEach(paintCatPreview); } } }).observe(document.body, { childList: true, subtree: true });
 
   document.addEventListener('change', (e) => {
     if (!e.target.matches?.('input[name=unlimitedKm]')) return;
@@ -202,10 +240,7 @@
     if (rl) {
       const rows = rl.querySelector('[data-rloc-rows]');
       if (e.target.closest('[data-rloc-add]')) { rows.insertAdjacentHTML('beforeend', locRow()); rows.lastElementChild.querySelector('input').focus(); }
-      else if (e.target.closest('[data-rloc-same]')) {
-        const addr = rl.closest('form')?.elements.namedItem('pickupAddress')?.value || '';
-        rows.insertAdjacentHTML('beforeend', locRow({ name: addr ? `Même agence : ${addr}` : 'Même agence que le retrait' }));
-      } else if (e.target.closest('[data-rloc-remove]')) e.target.closest('.rloc-row').remove();
+      else if (e.target.closest('[data-rloc-remove]')) e.target.closest('.rloc-row').remove();
     }
     const bl = e.target.closest?.('[data-blocks]');
     if (bl) {

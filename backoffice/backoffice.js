@@ -1,5 +1,5 @@
 const BO = ['it', 'admin', 'manager'];
-const GOV = ['it', 'admin'];
+const GOV = ['it', 'manager']; // journal d’audit
 const ICONS = {
   overview: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
   vehicles: '<path d="M5 17h14M3 13l2-6a2 2 0 0 1 1.9-1.4h10.2A2 2 0 0 1 19 7l2 6v4h-2M3 13v4h2M3 13h18"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="16.5" cy="17" r="1.8"/>',
@@ -28,6 +28,8 @@ const ICONS = {
   close: '<path d="M6 6l12 12M18 6 6 18"/>',
   upload: '<path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
   profile: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  clock2: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
 };
 const icon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 const EYE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -45,30 +47,32 @@ const SECTIONS = [
   { id: 'messages', label: 'Messages de contact', group: 'ops', nav: false, allow: () => true },
   { id: 'chats', label: 'Messagerie', group: 'ops', allow: () => true },
   { id: 'trends', label: 'Tendances', group: 'ops', allow: () => true },
-  { id: 'partners', label: 'Partenaires', group: 'gov', allow: () => isGov() || can('partners.manage') },
-  { id: 'applications', label: 'Candidatures', group: 'gov', allow: () => isGov() || can('partners.manage') },
-  { id: 'clients', label: 'Clients', group: 'gov', allow: () => isGov() || ACCOUNT_PERMS.some(can) },
+  { id: 'partners', label: 'Partenaires', group: 'gov', allow: () => can('partners.manage') },
+  { id: 'applications', label: 'Candidatures', group: 'gov', allow: () => can('partners.manage') },
+  { id: 'clients', label: 'Clients', group: 'gov', allow: () => ACCOUNT_PERMS.some(can) },
   { id: 'mailing', label: 'Mailing', group: 'gov', allow: () => can('mailing.export') },
-  { id: 'accounts', label: 'Comptes internes', group: 'gov', allow: () => isGov() || ACCOUNT_PERMS.some(can) },
+  { id: 'accounts', label: 'Comptes internes', group: 'gov', allow: () => ACCOUNT_PERMS.some(can) },
+  { id: 'settings', label: 'Réglages', group: 'gov', allow: () => can('settings.manage') },
   { id: 'audit', label: 'Journal d’audit', group: 'gov', allow: () => isGov() },
   { id: 'connections', label: 'Connexions', group: 'tech', allow: () => user?.role === 'it' },
   { id: 'health', label: 'Santé système', group: 'tech', allow: () => user?.role === 'it' },
   { id: 'profile', label: 'Mon profil', group: 'me', allow: () => true },
 ];
-const ROLE_LABELS = { it: 'IT', admin: 'Admin', manager: 'Manager' };
-const MANAGEABLE = { it: ['it', 'admin', 'manager'], admin: ['manager'], manager: ['manager'] };
+const ROLE_LABELS = { it: 'IT', admin: 'Agent', manager: 'Manager' };
+const MANAGEABLE = { it: ['it', 'manager', 'admin'], manager: ['manager', 'admin'], admin: [] };
 const PERM_GROUPS = [
   ['Annonces véhicules', [['vehicles.create', 'Ajouter'], ['vehicles.edit', 'Valider, publier, masquer, programmer'], ['vehicles.delete', 'Supprimer']]],
   ['Offres vols & packs', [['offers.create', 'Créer'], ['offers.edit', 'Activer, désactiver, programmer'], ['offers.delete', 'Supprimer']]],
-  ['Réservations', [['bookings.manage', 'Confirmer et annuler']]],
+  ['Réservations', [['bookings.manage', 'Confirmer les réservations (l’annulation reste au loueur)']]],
   ['Partenaires', [['partners.manage', 'Créer, valider, suspendre'], ['partners.delete', 'Supprimer']]],
   ['Mailing', [['mailing.export', 'Consulter et exporter les contacts']]],
   ['Catégories de voitures', [['categories.manage', 'Créer, modifier, ordonner les catégories']]],
-  ['Messagerie', [['chats.manage', 'Clôturer et rouvrir les conversations']]],
+  ['Messagerie', [['chats.manage', 'Clôturer, rouvrir, attribuer les conversations, gérer les réponses types']]],
+  ['Réglages', [['settings.manage', 'Modifier le prix de la protection de la franchise']]],
   ['Comptes internes', [['accounts.create', 'Créer'], ['accounts.edit', 'Modifier, bloquer, réinitialiser'], ['accounts.delete', 'Supprimer']]],
 ];
 const ALL_PERMS = PERM_GROUPS.flatMap(([, items]) => items.map(([k]) => k));
-const DEFAULT_ADMIN_PERMS = ['vehicles.create', 'vehicles.edit', 'offers.create', 'offers.edit', 'bookings.manage'];
+const DEFAULT_PERMS = { admin: ['vehicles.create', 'vehicles.edit', 'offers.create', 'offers.edit'], manager: ['vehicles.create', 'vehicles.edit', 'offers.create', 'offers.edit', 'bookings.manage', 'mailing.export', 'categories.manage', 'chats.manage'] };
 const ERRORS = {
   FORBIDDEN: 'Action non autorisée pour votre rôle.',
   PERMISSION_DENIED: 'Vous n’avez pas la permission d’effectuer cette action.',
@@ -94,7 +98,7 @@ const DATA = { categories: [], mailing: [], clients: [], offers: [], vehicles: [
 
 const $ = (sel) => document.querySelector(sel);
 const isGov = () => GOV.includes(user?.role);
-const can = (key) => isGov() || perms[key] === true;
+const can = (key) => user?.role === 'it' || perms[key] === true;
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const money = (v) => v == null || v === '' ? '—' : Number(v).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
 const fmtDate = (v) => v ? new Date(v).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
@@ -114,7 +118,12 @@ const badge = (s, label) => {
 };
 const isScheduled = (item) => ['active', 'approved'].includes(item.status) && item.publish_at && new Date(item.publish_at) > new Date();
 const isLive = (item) => ['active', 'approved'].includes(item.status) && !isScheduled(item);
-const pubBadge = (item) => item.rentedUntil
+// Un pack est archivé dès le jour du départ (plus réservable) ; un vol quand sa date est passée. Il reste consultable ici.
+const todayIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const isArchived = (o) => Boolean(o.type && o.start_date && (o.type === 'pack' ? String(o.start_date).slice(0, 10) <= todayIso() : String(o.start_date).slice(0, 10) < todayIso()));
+const pubBadge = (item) => isArchived(item)
+  ? '<span class="badge plain">Archivée</span><span class="muted">départ passé</span>'
+  : item.rentedUntil
   ? `<span class="badge warn">Loué</span><span class="muted">jusqu’au ${fmtDate(item.rentedUntil)}</span>`
   : item.afterRental && item.status === 'inactive'
   ? '<span class="badge plain">Brouillon</span><span class="muted">location terminée</span>'
@@ -123,7 +132,7 @@ const pubBadge = (item) => item.rentedUntil
   : badge(item.status);
 
 const fa = (attrs) => Object.entries(attrs).map(([k, v]) => ` data-f-${k}="${esc(v)}"`).join('');
-const pubKey = (item) => (item.rentedUntil ? 'rented' : item.afterRental && item.status === 'inactive' ? 'draft' : isScheduled(item) ? 'scheduled' : item.status);
+const pubKey = (item) => (isArchived(item) ? 'archived' : item.rentedUntil ? 'rented' : item.afterRental && item.status === 'inactive' ? 'draft' : isScheduled(item) ? 'scheduled' : item.status);
 const uniq = (list) => [...new Set(list.filter(Boolean))].sort().map(v => [v, v]);
 const hotelSummary = (o) => [esc(o.hotel_name), o.hotel_stars ? '★'.repeat(Number(o.hotel_stars)) : '', o.hotel_nights ? `${o.hotel_nights} nuit${Number(o.hotel_nights) > 1 ? 's' : ''}` : '', esc(o.hotel_board)].filter(Boolean).join(' · ');
 
@@ -396,11 +405,11 @@ function formCard(id, title, subtitle, fields, submitLabel) {
     </form>`;
 }
 
+const statsCards = (st) => `<div class="stat-trio">${[['7 derniers jours', 'week'], ['Ce mois-ci', 'month'], ['Cette année', 'year']].map(([label, k]) => `<div class="stat-card"><span>${label}</span><strong>${st[k].total}</strong><em>${plural(st[k].car, 'voiture', 'voitures')} · ${plural(st[k].pack, 'pack', 'packs')} · ${plural(st[k].flight, 'vol', 'vols')}</em></div>`).join('')}</div>`;
 const refOfRequest = (r) => `TV-${String(r.id).slice(0, 8).toUpperCase()}`;
 const requestActions = (r) => [
-  can('bookings.manage') && r.status !== 'confirmed' && actionBtn('request-confirm', r.id, 'Confirmer', 'primary'),
-  can('bookings.manage') && r.status !== 'cancelled' && actionBtn('request-cancel', r.id, 'Annuler', 'danger'),
-].filter(Boolean).join('');
+  can('bookings.manage') && r.status === 'pending' && actionBtn('request-confirm', r.id, 'Confirmer', 'primary'),
+].filter(Boolean).join('') || '<span class="muted">Trace conservée</span>';
 const actionBtn = (action, id, label, cls = '') => `<button class="btn small ${cls}" type="button" data-action="${action}" data-id="${esc(id)}">${label}</button>`;
 const siteBtn = (kind, item, label) => {
   const href = kind === 'offer' ? `/?offer=${encodeURIComponent(item.id)}` : `/?annonce=${encodeURIComponent(item.id)}`;
@@ -526,23 +535,42 @@ const confirmCall = ({ eyebrow, title, message, confirmLabel, tone = 'primary', 
 });
 
 /* ---------- Panneau de détail ---------- */
-async function openChat(id) {
+const CH = { mode: 'reply', files: [], staff: null };
+const chatBadge = (t) => t.status === 'closed' ? `<span class="badge off">${t.auto_closed ? 'Clôturée (auto)' : 'Clôturée'}</span>` : t.status === 'pending' ? '<span class="badge plain">En attente du client</span>' : t.unread > 0 ? `<span class="badge warn">${t.unread} non lu${t.unread > 1 ? 's' : ''}</span>` : '<span class="badge ok">À traiter</span>';
+const attHtml = (list) => (list || []).map(a => /^image\//.test(a.mime) ? `<a class="att img" href="${esc(a.url)}" target="_blank" rel="noopener"><img src="${esc(a.url)}" alt="${esc(a.name)}" loading="lazy"></a>` : `<a class="att file" href="${esc(a.url)}" target="_blank" rel="noopener">${icon('applications')}<span>${esc(a.name)}</span></a>`).join('');
+const chatBubble = (m, t) => m.sender === 'system'
+  ? `<div class="bubble system"><span>${esc(m.body)}</span><small>${fmtDate(m.created_at)}</small></div>`
+  : m.sender === 'note'
+    ? `<div class="bubble note"><b>Note interne · ${esc(m.author || 'Équipe')}</b><span>${esc(m.body)}</span><small>${fmtDate(m.created_at)} · invisible pour le client</small></div>`
+    : `<div class="bubble ${m.sender}">${m.body ? `<span>${esc(m.body)}</span>` : ''}${m.attachments?.length ? `<div class="atts">${attHtml(m.attachments)}</div>` : ''}<small>${m.sender === 'admin' ? esc(m.author || 'Équipe') : esc(t.partner_name)} · ${fmtDate(m.created_at)}</small></div>`;
+async function openChat(id, keepDraft = false) {
   try {
     const d = await api(`/admin/chats/${id}`);
     refreshBadges();
-    const t = d.thread, closed = t.status === 'closed';
-    const bubbles = d.messages.map(m => m.sender === 'system'
-      ? `<div class="bubble system"><span>${esc(m.body)}</span><small>${fmtDate(m.created_at)}</small></div>`
-      : `<div class="bubble ${m.sender}"><span>${esc(m.body)}</span><small>${m.sender === 'admin' ? 'Vous' : esc(t.partner_name)} · ${fmtDate(m.created_at)}</small></div>`).join('') || '<p class="muted">Aucun message pour le moment.</p>';
+    if (!keepDraft) { CH.mode = 'reply'; CH.files = []; }
+    if (d.canManage && !CH.staff) CH.staff = await api('/admin/chat-staff').catch(() => []);
+    const canned = DATA.canned || await api('/admin/chat-canned').catch(() => []);
+    DATA.canned = canned;
+    const t = d.thread, closed = t.status === 'closed', mine = t.assigned_to === d.me;
+    const bubbles = d.messages.map(m => chatBubble(m, t)).join('') || '<p class="muted">Aucun message pour le moment.</p>';
     const toggle = d.canManage ? (closed ? actionBtn('chat-reopen', id, 'Rouvrir la conversation', 'primary') : actionBtn('chat-close', id, 'Clôturer la conversation', 'danger')) : '';
+    const resp = t.first_response_at ? Math.max(0, Math.round((new Date(t.first_response_at) - new Date(t.created_at)) / 60000)) : null;
+    const assign = `<div class="chat-assign"><span>${t.assigned_name ? `Attribuée à <b>${esc(t.assigned_name)}</b>` : 'Non attribuée'}</span>${!closed && !mine ? actionBtn('chat-take', id, 'Prendre en charge') : ''}${d.canManage && !closed && CH.staff?.length ? `<select data-chat-assign="${esc(id)}" aria-label="Attribuer à"><option value="">Attribuer à…</option>${CH.staff.map(u => `<option value="${esc(u.id)}" ${u.id === t.assigned_to ? 'selected' : ''}>${esc(u.name)} · ${esc(ROLE_LABELS[u.role] || u.role)}</option>`).join('')}${t.assigned_to ? '<option value="none">Retirer l’attribution</option>' : ''}</select>` : ''}</div>`;
+    const meta = `<div class="chat-meta">${resp != null ? `<span>${icon('clock')} 1ʳᵉ réponse en ${resp < 60 ? `${resp} min` : `${Math.round(resp / 6) / 10} h`}</span>` : '<span>Pas encore de réponse</span>'}${t.rating ? `<span class="rating" title="${t.rating}/5">${'★'.repeat(t.rating)}${'☆'.repeat(5 - t.rating)}</span>${t.rating_comment ? `<em>« ${esc(t.rating_comment)} »</em>` : ''}` : closed ? '<span class="muted">Avis du client : pas encore donné</span>' : ''}</div>`;
+    const cannedSel = canned.length ? `<select data-chat-canned aria-label="Réponses types"><option value="">Réponses types…</option>${canned.map(c => `<option value="${esc(c.id)}">${esc(c.title)}</option>`).join('')}</select>` : '';
     $('#drawer').innerHTML = `
       <header class="drawer-head"><div><span class="eyebrow">Messagerie ${t.kind === 'client' ? 'client' : 'partenaire'}</span><h3>${esc(t.subject || 'Conversation')}</h3>
-        <div class="drawer-status"><span class="badge ${closed ? 'off' : 'ok'}">${closed ? 'Clôturée' : 'Ouverte'}</span><span class="muted">${esc(t.partner_name)} · ${esc(t.partner_email)}</span></div></div>
+        <div class="drawer-status">${chatBadge({ ...t, unread: 0 })}<span class="muted">${esc(t.partner_name)} · ${esc(t.partner_email)}</span></div>${assign}${meta}</div>
         <button class="icon-btn light" type="button" data-action="close-drawer" aria-label="Fermer">${icon('close')}</button></header>
       <div class="drawer-body chat-body">${bubbles}</div>
       ${closed
         ? `<footer class="drawer-foot chat-closed"><p class="muted">Conversation clôturée${t.closed_by ? ` par ${esc(t.closed_by)}` : ''}. ${d.canManage ? 'Rouvrez-la pour répondre.' : 'Seule une personne autorisée peut la rouvrir.'}</p>${toggle}</footer>`
-        : `<form id="chatReplyForm" class="drawer-foot chat-form" data-thread="${esc(id)}"><textarea name="message" required maxlength="4000" rows="2" placeholder="Votre réponse…"></textarea><div class="chat-form-actions">${toggle}<button class="btn primary" type="submit">Envoyer</button></div></form>`}`;
+        : `<form id="chatReplyForm" class="drawer-foot chat-form" data-thread="${esc(id)}">
+            <div class="chat-tabs" role="tablist"><button type="button" class="${CH.mode === 'reply' ? 'on' : ''}" data-chat-mode="reply">Répondre au ${t.kind === 'client' ? 'client' : 'partenaire'}</button><button type="button" class="${CH.mode === 'note' ? 'on' : ''}" data-chat-mode="note">Note interne</button></div>
+            <textarea name="message" ${CH.mode === 'note' ? 'required' : ''} maxlength="4000" rows="3" placeholder="${CH.mode === 'note' ? 'Note visible uniquement par l’équipe…' : 'Votre réponse…'}"></textarea>
+            <div class="chat-files" id="chatFiles">${chatFileChips()}</div>
+            <div class="chat-form-actions"><label class="btn small file-btn" ${CH.mode === 'note' ? 'hidden' : ''}>${icon('upload')} Joindre<input type="file" id="chatFile" accept="image/jpeg,image/png,image/webp,application/pdf" multiple hidden></label>${CH.mode === 'note' ? '' : cannedSel}${toggle}<button class="btn primary" type="submit">${CH.mode === 'note' ? 'Ajouter la note' : 'Envoyer'}</button></div>
+          </form>`}`;
     $('#drawer').hidden = false;
     $('#overlay').hidden = false;
     document.body.classList.add('drawer-open');
@@ -550,6 +578,43 @@ async function openChat(id) {
     body.scrollTop = body.scrollHeight;
   } catch (err) { if (!(err instanceof ApiError)) console.error(err); toast(err.message); }
 }
+const chatFileChips = () => CH.files.map((f, i) => `<span class="chip-file">${esc(f.name)}<button type="button" data-chat-unfile="${i}" aria-label="Retirer">×</button></span>`).join('');
+async function uploadChatFile(file) {
+  if (file.size > 8 * 1024 * 1024) throw new ApiError('Fichier trop lourd (8 Mo maximum).');
+  const res = await fetch('/api/admin/chat-uploads', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': file.type, 'X-File-Name': encodeURIComponent(file.name) }, body: file });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError(data.message || 'Fichier refusé : JPG, PNG, WebP ou PDF.');
+  return data;
+}
+document.addEventListener('click', (e) => {
+  const m = e.target.closest('[data-chat-mode]');
+  if (m) { const f = document.getElementById('chatReplyForm'); const draft = f?.elements.message.value || ''; CH.mode = m.dataset.chatMode; openChat(f.dataset.thread, true).then(() => { const t = document.querySelector('#chatReplyForm textarea'); if (t) { t.value = draft; t.focus(); } }); return; }
+  const u = e.target.closest('[data-chat-unfile]');
+  if (u) { CH.files.splice(Number(u.dataset.chatUnfile), 1); document.getElementById('chatFiles').innerHTML = chatFileChips(); }
+});
+document.addEventListener('change', async (e) => {
+  if (e.target.id === 'chatFile') {
+    const list = [...e.target.files];
+    e.target.value = '';
+    for (const f of list) {
+      if (CH.files.length >= 3) { toast('3 fichiers au maximum par message.'); break; }
+      try { toast(`Téléversement de ${f.name}…`); CH.files.push(await uploadChatFile(f)); document.getElementById('chatFiles').innerHTML = chatFileChips(); } catch (err) { toast(err.message); }
+    }
+    return;
+  }
+  if (e.target.matches?.('[data-chat-canned]')) {
+    const c = (DATA.canned || []).find(x => x.id === e.target.value);
+    const ta = document.querySelector('#chatReplyForm textarea');
+    if (c && ta) { ta.value = ta.value ? `${ta.value}\n${c.body}` : c.body; ta.focus(); }
+    e.target.value = '';
+    return;
+  }
+  if (e.target.matches?.('[data-chat-assign]')) {
+    const to = e.target.value;
+    if (!to) return;
+    try { await api(`/admin/chats/${e.target.dataset.chatAssign}/assign`, { method: 'POST', body: JSON.stringify({ to: to === 'none' ? null : to }) }); toast(to === 'none' ? 'Attribution retirée.' : 'Conversation attribuée.'); await openChat(e.target.dataset.chatAssign, true); if (currentSection() === 'chats') render(); } catch (err) { toast(err.message); }
+  }
+});
 
 async function openClientDrawer(id) {
   try {
@@ -578,7 +643,7 @@ async function openClientDrawer(id) {
 
 function closeDrawer() { document.body.classList.remove('drawer-open'); $('#drawer').hidden = true; $('#overlay').hidden = true; $('#drawer').innerHTML = ''; }
 
-const NOTIF_ICON = { booking: 'bookings', request: 'offers', contact: 'messages', chat: 'chats', application: 'applications', vehicle: 'vehicles' };
+const NOTIF_ICON = { booking: 'bookings', request: 'offers', contact: 'messages', chat: 'chats', application: 'applications', vehicle: 'vehicles', freshness: 'clock' };
 const ago = (iso) => {
   const m = Math.round((Date.now() - new Date(iso)) / 60000);
   if (m < 1) return 'à l’instant';
@@ -632,7 +697,7 @@ function detailContent(kind, id) {
       body: kv([
         ['Trajet', `${esc(o.from_city || '—')} → ${esc(o.to_city)}`], ['Pays', esc(o.country)], ['Prix', `${money(o.price)}${o.old_price ? ` <s class="muted">${money(o.old_price)}</s>` : ''}`],
         o.hotel_name && ['Hôtel inclus', hotelSummary(o)], ...flightRows(o), ['Étiquette', esc(o.badge)], ['Partenaire', esc(o.partner_name)], ['Dates', `${fmtDay(o.start_date)} → ${fmtDay(o.end_date)}`],
-        ['Mise en ligne', isScheduled(o) ? `Programmée le ${fmtDate(o.publish_at)}` : isLive(o) ? 'En ligne' : 'Hors ligne'], ['Créée le', fmtDate(o.created_at)], ['Description', esc(o.description)],
+        ['Mise en ligne', isArchived(o) ? 'Archivée : le départ est passé, l’offre n’est plus visible sur le site' : isScheduled(o) ? `Programmée le ${fmtDate(o.publish_at)}` : isLive(o) ? 'En ligne' : 'Hors ligne'], ['Réservations', o.type === 'pack' && o.start_date ? `Possibles jusqu’à la veille du départ (${fmtDay(new Date(new Date(String(o.start_date).slice(0, 10)).getTime() - 864e5).toISOString())})` : ''], ['Créée le', fmtDate(o.created_at)], ['Description', esc(o.description)],
       ]),
       actions: offerActions(o, true),
     };
@@ -643,8 +708,8 @@ function detailContent(kind, id) {
       eyebrow: 'Annonce véhicule', title: v.model, image: v.image, images: v.images, status: pubBadge(v),
       body: kv([
         ['Catégorie', esc(v.category)], ['Partenaire', esc(v.partner_company)], ['Ville', [v.city !== v.pickupAddress && esc(v.city), esc(v.country)].filter(Boolean).join(', ')], ['Retrait', esc(v.pickupAddress)],
-        ['Tarifs', [`${money(v.priceDay)}/jour`, v.priceWeek && `${money(v.priceWeek)}/sem.`, v.priceMonth && `${money(v.priceMonth)}/mois`, v.priceYear && `${money(v.priceYear)}/an`].filter(Boolean).join(' · ')], ['Places / portes', `${esc(v.passengers)} / ${esc(v.doors)}`], ['Boîte', esc(v.transmission)],
-        ['Bagages / carburant', `${esc(v.bags ?? '—')} / ${esc(v.fuelType || '—')}`], ['Dépôt de garantie', v.deposit == null ? '—' : money(v.deposit)], ['Franchise', v.excess == null ? '—' : money(v.excess)], ['Assurance', esc(v.insuranceType || [v.theftProtection && 'Protection vol', v.fullInsurance && 'Tous risques'].filter(Boolean).join(', ') || '—')], ['Kilométrage', esc(v.includedKm)], ['Politique carburant', esc(v.fuelPolicy)], ['Annulation', v.freeCancelHours > 0 ? `Gratuite jusqu’à ${esc(v.freeCancelHours)} h avant` : 'Pas d’annulation gratuite'], ['Protection franchise', v.protectionPricePerDay ? `${money(v.protectionPricePerDay)}/j` : '—'], ['Options payantes', (v.extras || []).map(e => `${esc(e.name)} ${money(e.pricePerDay)}/j`).join(', ')],
+        ['Tarifs', [`${money(v.priceDay)}/jour`, v.priceWeek && `${money(v.priceWeek)}/sem.`, v.priceMonth && `${money(v.priceMonth)}/mois`].filter(Boolean).join(' · ')], ['Places / portes', `${esc(v.passengers)} / ${esc(v.doors)}`], ['Boîte', esc(v.transmission)],
+        ['Bagages / carburant', `${esc(v.bags ?? '—')} / ${esc(v.fuelType || '—')}`], ['Dépôt de garantie', v.deposit == null ? '—' : money(v.deposit)], ['Franchise', v.excess == null ? '—' : money(v.excess)], ['Assurance', esc(v.insuranceType || [v.theftProtection && 'Protection vol', v.fullInsurance && 'Tous risques'].filter(Boolean).join(', ') || '—')], ['Kilométrage', esc(v.includedKm)], ['Politique carburant', esc(v.fuelPolicy)], ['Annulation', v.freeCancelHours > 0 ? `Gratuite jusqu’à ${esc(v.freeCancelHours)} h avant` : 'Pas d’annulation gratuite'], ['Protection franchise', v.protectionPricePerDay ? `${money(v.protectionPricePerDay)}/j (prix fixe TripVision)` : '—'], ['Âge du conducteur', [v.minAge ? `${esc(v.minAge)} ans minimum` : '18 ans minimum', v.youngDriverFee > 0 && `moins de ${esc(v.youngDriverAge)} ans : + ${money(v.youngDriverFee)}${v.youngDriverPricing === 'once' ? ' (forfait)' : '/jour'}`].filter(Boolean).join(' · ')], ['Restitution ailleurs', v.returnPolicy === 'fee' ? `Possible, + ${money(v.returnFee)}` : v.returnPolicy === 'free' ? 'Possible, sans frais' : 'Non'], ['Options payantes', (v.extras || []).map(e => `${esc(e.name)} ${money(e.pricePerDay)}/j`).join(', ')],
         ['Options', [v.airConditioning && 'Climatisation', v.fullInsurance && 'Assurance tous risques', v.theftProtection && 'Protection vol', v.freeCancel && 'Annulation gratuite', v.freeModification && 'Modification gratuite'].filter(Boolean).join(', ')],
         ['Conditions', esc(v.rentalConditions)], ['Mise en ligne', isScheduled(v) ? `Programmée le ${fmtDate(v.publish_at)}` : isLive(v) ? 'En ligne' : 'Hors ligne'], ['Ajoutée le', fmtDate(v.created_at)],
       ]),
@@ -659,7 +724,7 @@ function detailContent(kind, id) {
         ['Client', esc(b.customer_name)], ['E-mail', esc(b.customer_email)], ['Téléphone', esc(b.customer_phone)], ['Véhicule', esc(b.vehicle_name)], ['Entreprise', esc(b.company)],
         ['Départ', `${fmtDay(b.start_date)} ${esc(b.start_time || '')}`], ['Retour', `${fmtDay(b.end_date)} ${esc(b.end_time || '')}`],
         ['Lieu de retrait', esc(b.pickup_address)], ['Lieu de retour', esc(b.return_address)], ['Âge du conducteur', b.driver_age ? `${esc(b.driver_age)} ans${b.young_driver_notice ? ' (jeune conducteur)' : ''}` : ''],
-        ['Total', money(b.total_estimate)], ['Paiement', b.payment_status === 'paid' ? `Payé en ligne : commission ${money(b.paid_amount)} · reste ${money(b.pay_on_pickup)} à régler au loueur` : b.payment_status === 'refunded' ? 'Remboursé' : ''], ['Options choisies', (b.extras || []).map(x => `${x.qty > 1 ? x.qty + ' × ' : ''}${esc(x.name)} (${money(x.total)})`).join(', ')], ['Total estimé', b.total_estimate == null ? '' : money(b.total_estimate)],
+        ['Total', money(b.total_estimate)], ['Paiement', b.payment_status === 'paid' ? `Payé en ligne : ${money(b.paid_amount)} · reste ${money(b.pay_on_pickup)} à régler au loueur` : b.payment_status === 'refunded' ? 'Remboursé' : ''], ['Options choisies', (b.extras || []).map(x => `${x.qty > 1 ? x.qty + ' × ' : ''}${esc(x.name)} (${money(x.total)})`).join(', ')], ['Total estimé', b.total_estimate == null ? '' : money(b.total_estimate)],
         ['Message', esc(b.message)], ['Reçue le', fmtDate(b.created_at)],
       ]),
       actions: bookingActions(b),
@@ -724,7 +789,7 @@ function offerActions(o, withExtras = false) {
     siteBtn('offer', o, 'Voir l’offre'),
     can('offers.edit') && actionBtn('offer-edit', o.id, 'Modifier'),
     can('offers.edit') && (withExtras || false) && actionBtn('offer-schedule', o.id, `${icon('clock')} Programmer`),
-    can('offers.edit') && (o.status === 'active' ? actionBtn('offer-deactivate', o.id, 'Désactiver', 'danger') : actionBtn('offer-activate', o.id, 'Activer', 'primary')),
+    !isArchived(o) && can('offers.edit') && (o.status === 'active' ? actionBtn('offer-deactivate', o.id, 'Désactiver', 'danger') : actionBtn('offer-activate', o.id, 'Activer', 'primary')),
     can('offers.delete') && actionBtn('offer-delete', o.id, 'Supprimer', 'danger'),
   ].filter(Boolean).join('');
 }
@@ -738,12 +803,11 @@ function vehicleActions(v, withExtras = false) {
   ].filter(Boolean).join('');
 }
 function bookingActions(b) {
-  // Les réservations d'un partenaire ne se modifient que par le partenaire (même l'IT ne peut pas les annuler).
-  if (b.partner_owned) return '<span class="muted">Géré par le partenaire</span>';
+  // TripVision garde la trace des réservations : elles se gèrent (et s'annulent) auprès du loueur, jamais ici.
+  if (b.partner_owned) return '<span class="muted">Géré par le loueur</span>';
   return [
-    can('bookings.manage') && b.status !== 'confirmed' && actionBtn('booking-confirm', b.id, 'Confirmer', 'primary'),
-    can('bookings.manage') && b.status !== 'inactive' && actionBtn('booking-cancel', b.id, 'Annuler', 'danger'),
-  ].filter(Boolean).join('');
+    can('bookings.manage') && b.status === 'pending' && actionBtn('booking-confirm', b.id, 'Confirmer', 'primary'),
+  ].filter(Boolean).join('') || '<span class="muted">Trace conservée</span>';
 }
 function partnerActions(p) {
   return [
@@ -757,13 +821,13 @@ function partnerActions(p) {
 /* ---------- Écrans ---------- */
 const RENDERERS = {
   async overview() {
-    const d = await api('/admin/dashboard');
+    const [d, fr, st] = await Promise.all([api('/admin/dashboard'), api('/admin/freshness').catch(() => null), api('/admin/booking-stats').catch(() => null)]);
     Object.assign(DATA, { offers: d.offers, vehicles: d.vehicles, bookings: d.bookings, partners: d.partners });
     const pendingVehicles = d.vehicles.filter(v => v.status === 'pending').length;
     const pendingPartners = d.partners.filter(p => p.status === 'pending').length;
     const pendingBookings = d.bookings.filter(b => b.status === 'pending').length;
     const pendingRequests = (d.offerRequests || []).filter(r => r.status === 'pending').length;
-    const canPartners = isGov() || can('partners.manage');
+    const canPartners = can('partners.manage');
     const unreadMessages = d.unreadMessages || 0;
     const pendingApplications = canPartners ? (d.pendingApplications || 0) : 0;
     const unreadChats = d.unreadChats || 0;
@@ -783,6 +847,14 @@ const RENDERERS = {
       ...d.vehicles.filter(isScheduled).map(v => ({ kind: 'vehicle', label: 'Annonce', item: v, title: v.model })),
     ].sort((a, b) => new Date(a.item.publish_at) - new Date(b.item.publish_at)).slice(0, 5);
     const recent = d.bookings.slice(0, 5);
+    const pct = fr && fr.hours != null ? Math.min(100, Math.round(fr.hours / fr.limit * 100)) : 100;
+    const fresh = fr ? `<section class="card fresh ${fr.overdue ? 'late' : pct >= 75 ? 'soon' : 'ok'}">
+        <div class="fresh-ic">${icon('clock')}</div>
+        <div class="fresh-main"><h3>${fr.overdue ? 'De nouvelles offres sont attendues' : 'Rythme de publication : à jour'}</h3>
+          <p>${fr.hours == null ? 'Aucune offre n’est encore publiée.' : fr.overdue ? `La dernière offre date d’il y a ${fr.hours} h : il en faut de nouvelles au moins toutes les ${fr.limit} h.` : `Dernière offre il y a ${fr.hours} h · la prochaine est attendue dans les ${fr.limit - fr.hours} h.`} <span class="muted">${plural(fr.week, 'offre créée', 'offres créées')} ces 7 jours.</span></p>
+          <div class="fresh-bar" aria-hidden="true"><i style="width:${pct}%"></i></div></div>
+        ${can('offers.create') ? '<a class="btn primary" href="#offers">+ Publier une offre</a>' : ''}
+      </section>` : '';
     return `
       <section class="hero">
         <div>
@@ -792,12 +864,14 @@ const RENDERERS = {
         </div>
         <div class="hero-count"><strong>${total}</strong><span>${total > 1 ? 'Actions en attente' : 'Action en attente'}</span></div>
       </section>
+      ${fresh}
       <div class="kpis">
         ${canPartners ? `<div class="kpi"><div class="kpi-icon">${icon('partners')}</div><div><strong>${d.partners.length}</strong><span>Partenaires</span></div></div>` : ''}
         <div class="kpi"><div class="kpi-icon">${icon('vehicles')}</div><div><strong>${d.vehicles.length}</strong><span>Annonces</span></div></div>
         <div class="kpi"><div class="kpi-icon">${icon('offers')}</div><div><strong>${d.offers.length}</strong><span>Vols &amp; packs</span></div></div>
         <div class="kpi"><div class="kpi-icon">${icon('bookings')}</div><div><strong>${d.bookings.length + (d.offerRequests || []).length}</strong><span>Réservations & demandes</span></div></div>
       </div>
+      ${st ? `<section class="card"><div class="card-head"><div><h3>Réservations enregistrées</h3><p>Voitures, packs et vols réservés : TripVision en garde la trace.</p></div><a class="btn small" href="#bookings">Voir le suivi</a></div>${statsCards(st)}</section>` : ''}
       <section class="card">
         <div class="card-head"><div><h3>À traiter</h3><p>Ce qui demande une décision de votre part</p></div><button class="btn small" type="button" data-action="reload" title="Actualiser les données">${icon('refresh')} Actualiser</button></div>
         <div class="todo">${todo.map(([n, label, to]) => `<a href="#${to}"><b>${n}</b><span>${label}</span><i>→</i></a>`).join('')}</div>
@@ -838,11 +912,11 @@ const RENDERERS = {
     return pageHead('Opérations', 'Vols <em>& packs</em>', 'Cliquez sur une offre pour la consulter. Publiez-la tout de suite ou programmez-la.',
       can('offers.create') ? '<button class="btn" type="button" data-action="offer-new-flight">+ Nouveau vol</button><button class="btn primary" type="button" data-action="offer-new-pack">+ Nouveau pack</button>' : '')
       + '<div class="pills" role="group" aria-label="Filtrer par type"><button type="button" class="pill active" data-type-filter="all">Tous</button><button type="button" class="pill" data-type-filter="flight">Vols</button><button type="button" class="pill" data-type-filter="pack">Packs</button></div>'
-      + tableCard({ id: 'tblOffers', title: 'Offres', count: plural(offers.length, 'offre', 'offres'), head: ['Type', 'Titre', 'Destination', 'Prix', 'Publication', ''], rows, empty: 'Aucune offre', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['active', 'En ligne'], ['scheduled', 'Programmée'], ['inactive', 'Désactivée']] }, { key: 'country', label: 'Pays', options: uniq(offers.map(o => o.country)) }] });
+      + tableCard({ id: 'tblOffers', title: 'Offres', count: plural(offers.length, 'offre', 'offres'), head: ['Type', 'Titre', 'Destination', 'Prix', 'Publication', ''], rows, empty: 'Aucune offre', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['active', 'En ligne'], ['scheduled', 'Programmée'], ['inactive', 'Désactivée'], ['archived', 'Archivée']] }, { key: 'country', label: 'Pays', options: uniq(offers.map(o => o.country)) }] });
   },
 
   async bookings() {
-    const { bookings, offerRequests } = await api('/admin/dashboard');
+    const [{ bookings, offerRequests }, st, leadsData] = await Promise.all([api('/admin/dashboard'), api('/admin/booking-stats').catch(() => null), can('mailing.export') ? api('/admin/flight-leads').catch(() => null) : Promise.resolve(null)]);
     DATA.bookings = bookings;
     DATA.requests = offerRequests || [];
     const rows = bookings.map(b => `<tr class="clickable"${fa({ status: b.status })} data-detail="booking" data-id="${esc(b.id)}">
@@ -859,9 +933,13 @@ const RENDERERS = {
       <td class="num">${r.travelers} · ${money(r.total)}</td>
       <td>${badge(r.status === 'cancelled' ? 'inactive' : r.status)}${r.payment_status === 'paid' ? ` <span class="badge ok">Payé ${esc(money(r.paid_amount))}</span>` : r.payment_status === 'refunded' ? ' <span class="badge off">Remboursé</span>' : ''}</td>
       <td class="actions"><span class="row-actions">${requestActions(r)}</span></td></tr>`).join('');
+    const leadRows = (leadsData?.leads || []).map(l => `<tr data-f-consent="${l.consent ? 'yes' : 'no'}"><td class="num">${fmtDate(l.created_at)}</td><td><strong>${esc(l.email)}</strong></td><td>${esc(l.route)}</td><td>${esc(l.airline || '—')}</td><td>${l.consent ? '<span class="badge ok">Oui</span>' : '<span class="badge plain">Non</span>'}</td></tr>`).join('');
     return pageHead('Opérations', 'Suivi <em>des réservations</em>', 'Cliquez sur une réservation pour voir tous les détails.')
-      + tableCard({ id: 'tblRequests', title: 'Demandes vols & packs', count: plural(DATA.requests.length, 'demande', 'demandes'), head: ['Référence', 'Client', 'Offre', 'Voyageurs · Total', 'Statut', ''], rows: reqRows, empty: 'Aucune demande de vol ou de pack', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['pending', 'En attente'], ['confirmed', 'Confirmée'], ['cancelled', 'Annulée']] }, { key: 'type', label: 'Type', options: [['flight', 'Vols'], ['pack', 'Packs']] }] })
-      + tableCard({ id: 'tblBookings', title: 'Réservations', count: plural(bookings.length, 'réservation', 'réservations'), head: ['Référence', 'Client', 'Véhicule', 'Dates', 'Statut', ''], rows, empty: 'Aucune réservation', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['pending', 'En attente'], ['confirmed', 'Confirmée'], ['inactive', 'Annulée']] }] });
+      + (st ? `<section class="card"><div class="card-head"><div><h3>Réservations enregistrées</h3><p>Nombre de réservations faites sur la période, tous services confondus.</p></div></div>${statsCards(st)}</section>` : '')
+      + `<div class="info-strip">${icon('alert')}<p>TripVision garde la <b>trace</b> de chaque réservation. Une réservation faite auprès d’un loueur ou d’une compagnie ne s’annule pas depuis le back-office : c’est au loueur ou à la compagnie de le faire.</p></div>`
+      + tableCard({ id: 'tblRequests', title: 'Demandes vols & packs', count: plural(DATA.requests.length, 'demande', 'demandes'), head: ['Référence', 'Client', 'Offre', 'Voyageurs · Total', 'Statut', ''], rows: reqRows, empty: 'Aucune demande de vol ou de pack', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['pending', 'En attente'], ['confirmed', 'Confirmée'], ['cancelled', 'Annulée par la compagnie ou le loueur']] }, { key: 'type', label: 'Type', options: [['flight', 'Vols'], ['pack', 'Packs']] }] })
+      + tableCard({ id: 'tblBookings', title: 'Réservations', count: plural(bookings.length, 'réservation', 'réservations'), head: ['Référence', 'Client', 'Véhicule', 'Dates', 'Statut', ''], rows, empty: 'Aucune réservation', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['pending', 'En attente'], ['confirmed', 'Confirmée'], ['inactive', 'Annulée par le loueur']] }] })
+      + (leadsData ? tableCard({ id: 'tblLeads', title: 'Clics vers les compagnies', count: `${plural(leadsData.stats.week, 'e-mail', 'e-mails')} ces 7 jours · ${plural(leadsData.stats.total, 'au total', 'au total')}`, head: ['Date', 'E-mail laissé', 'Trajet', 'Compagnie', 'Accord offres'], rows: leadRows, empty: 'Aucun clic pour le moment', cols: 5, filters: [{ key: 'consent', label: 'Accord offres', options: [['yes', 'Oui'], ['no', 'Non']] }] }) : '');
   },
 
   async notifications() {
@@ -940,17 +1018,39 @@ const RENDERERS = {
       + `</div>`;
   },
 
+  async settings() {
+    const st = await api('/admin/settings');
+    return pageHead('Gouvernance', '<em>Réglages</em>', 'Les prix et paramètres communs à tout le site.')
+      + `<form id="settingsForm" class="card">
+        <div class="card-head"><div><h3>Protection de la franchise</h3><p>Prix fixe par jour, identique pour toutes les voitures. Les loueurs ne le modifient pas : le client peut l’ajouter à sa réservation.</p></div></div>
+        <div class="form-grid">
+          ${field('Prix de la protection (€ par jour)', `name="franchisePerDay" type="number" min="0" max="200" step="0.01" required value="${esc(st.franchisePerDay)}"`)}
+          <p class="muted full">Mettez 0 pour ne plus proposer la protection. Le changement s’applique tout de suite à toutes les annonces.</p>
+          <div class="form-actions"><button class="btn primary" type="submit">Enregistrer le prix</button></div>
+        </div>
+      </form>`;
+  },
+
   async chats() {
-    const list = await api('/admin/chats');
+    const [list, st, canned] = await Promise.all([api('/admin/chats'), api('/admin/chats-stats').catch(() => null), api('/admin/chat-canned').catch(() => [])]);
     DATA.chats = list;
+    DATA.canned = canned;
+    const min = (m) => (m == null ? '—' : m < 60 ? `${m} min` : m < 1440 ? `${Math.round(m / 60 * 10) / 10} h` : `${Math.round(m / 1440 * 10) / 10} j`);
+    const kpi = (ic, v, label) => `<div class="kpi"><div class="kpi-icon">${icon(ic)}</div><div><strong>${v}</strong><span>${label}</span></div></div>`;
+    const kpis = st ? `<div class="kpis">${kpi('chats', st.open, 'À traiter')}${kpi('clock', st.pending, 'En attente du client')}${kpi('check', st.closed, 'Clôturées')}${kpi('clock', min(st.first_response_min), '1ʳᵉ réponse (30 j)')}${kpi('profile', st.rated ? `${String(st.rating).replace('.', ',')} / 5` : '—', `Satisfaction${st.rated ? ` · ${plural(st.rated, 'avis', 'avis')}` : ''}`)}</div>` : '';
     const open = list.filter(t => t.status !== 'closed').length;
-    const rows = list.map(t => `<tr class="clickable"${fa({ state: t.status === 'closed' ? 'closed' : t.unread > 0 ? 'unread' : 'open' })} data-detail="chat" data-id="${esc(t.id)}">
+    const rows = list.map(t => `<tr class="clickable"${fa({ state: t.status === 'closed' ? 'closed' : t.status === 'pending' ? 'pending' : t.unread > 0 ? 'unread' : 'open', owner: t.assigned_to === user.id ? 'mine' : t.assigned_to ? 'other' : 'none' })} data-detail="chat" data-id="${esc(t.id)}">
       <td><strong>${esc(t.subject || 'Conversation')}</strong><span class="muted">${esc(t.partner_name)} · ${t.kind === 'client' ? 'Client' : 'Partenaire'}</span></td>
       <td>${t.last_sender === 'admin' ? '<span class="muted">Vous : </span>' : ''}${esc(String(t.last_message || '').slice(0, 90))}<span class="muted">${t.messages} message${t.messages > 1 ? 's' : ''}</span></td>
+      <td>${t.assigned_name ? `<span class="who-sm"><span class="avatar sm">${esc(initials(t.assigned_name))}</span>${esc(t.assigned_name)}</span>` : '<span class="muted">Non attribuée</span>'}</td>
       <td class="num">${fmtDate(t.updated_at)}</td>
-      <td>${t.status === 'closed' ? '<span class="badge off">Clôturée</span>' : t.unread > 0 ? `<span class="badge warn">${t.unread} non lu${t.unread > 1 ? 's' : ''}</span>` : badge('active', 'Ouverte')}</td></tr>`).join('');
-    return pageHead('Opérations', 'Messagerie <em>clients & partenaires</em>', 'Chaque conversation a son sujet et peut être clôturée puis rouverte par les personnes autorisées. Cliquez sur une conversation pour la lire et répondre.')
-      + tableCard({ id: 'tblChats', title: 'Conversations', count: `${open} ouverte${open > 1 ? 's' : ''} · ${list.length} au total`, head: ['Sujet', 'Dernier message', 'Mise à jour', 'État'], rows, empty: 'Aucune conversation', cols: 4, filters: [{ key: 'state', label: 'État', options: [['unread', 'Non lues'], ['open', 'Ouvertes'], ['closed', 'Clôturées']] }] });
+      <td>${chatBadge(t)}${t.rating ? `<span class="rating" title="${t.rating}/5">${'★'.repeat(t.rating)}${'☆'.repeat(5 - t.rating)}</span>` : ''}</td></tr>`).join('');
+    const cannedCard = `<section class="card"><div class="card-head"><div><h3>Réponses types</h3><p>Des réponses toutes prêtes, à insérer en un clic dans une conversation.</p></div>${can('chats.manage') ? '<button class="btn small primary" type="button" data-action="canned-add">+ Nouvelle réponse type</button>' : ''}</div>
+      <div class="canned-list">${canned.map(c => `<div class="canned"><div><strong>${esc(c.title)}</strong><p>${esc(c.body)}</p></div>${can('chats.manage') ? `<button class="btn small danger" type="button" data-action="canned-del" data-id="${esc(c.id)}">Retirer</button>` : ''}</div>`).join('') || '<p class="muted">Aucune réponse type.</p>'}</div></section>`;
+    return pageHead('Opérations', 'Messagerie <em>clients & partenaires</em>', 'Chaque conversation a son statut : à traiter, en attente du client ou clôturée (automatiquement après ' + (st?.autoCloseDays || 7) + ' jours sans réponse). Prenez-la en charge, ajoutez des notes internes et répondez avec vos réponses types.')
+      + kpis
+      + tableCard({ id: 'tblChats', title: 'Conversations', count: `${open} en cours · ${list.length} au total`, head: ['Sujet', 'Dernier message', 'Attribuée à', 'Mise à jour', 'Statut'], rows, empty: 'Aucune conversation', cols: 5, filters: [{ key: 'state', label: 'Statut', options: [['unread', 'Non lues'], ['open', 'À traiter'], ['pending', 'En attente du client'], ['closed', 'Clôturées']] }, { key: 'owner', label: 'Attribution', options: [['mine', 'Mes conversations'], ['none', 'Non attribuées'], ['other', 'Attribuées à un collègue']] }] })
+      + cannedCard;
   },
 
   async partners() {
@@ -990,7 +1090,7 @@ const RENDERERS = {
       ].filter(Boolean).join('');
       return `<tr${fa({ role: a.role, state: a.active ? 'active' : 'blocked' })}>
         <td><div class="who"><span class="avatar sm">${esc(initials(a.name))}</span><div><strong>${esc(a.name)}${self ? ' <span class="badge plain">Vous</span>' : ''}</strong><span class="muted">${esc(a.email)}</span></div></div></td>
-        <td><span class="badge plain">${esc(ROLE_LABELS[a.role])}</span>${a.role === 'manager' ? `<span class="muted">${plural(count, 'droit', 'droits')}</span>` : '<span class="muted">Accès complet</span>'}</td>
+        <td><span class="badge plain">${esc(ROLE_LABELS[a.role])}</span>${a.role !== 'it' ? `<span class="muted">${plural(count, 'droit', 'droits')}</span>` : '<span class="muted">Accès complet</span>'}</td>
         <td>${a.active ? badge('active', 'Actif') : badge('inactive', 'Bloqué')}${a.reset_requested_at ? `<span class="badge warn" title="${fmtDate(a.reset_requested_at)}">Mot de passe oublié</span>` : ''}</td>
         <td class="num">${a.last_login_at ? fmtDate(a.last_login_at) : 'Jamais'}</td>
         <td class="actions"><span class="row-actions">${actions || '<span class="muted">—</span>'}</span></td></tr>`;
@@ -998,7 +1098,7 @@ const RENDERERS = {
     const creatable = can('accounts.create') && (MANAGEABLE[user.role] || []).length;
     return pageHead('Gouvernance', 'Comptes <em>internes</em>', 'Définissez précisément ce que chaque compte peut faire. Nul ne peut agir sur un rôle supérieur ni sur son propre compte.',
       creatable ? `<button class="btn primary" type="button" data-action="account-new">+ Nouveau compte</button>` : '')
-      + tableCard({ id: 'tblAccounts', title: 'Équipe interne', count: plural(list.length, 'compte', 'comptes'), head: ['Utilisateur', 'Rôle', 'État', 'Dernière connexion', ''], rows, empty: 'Aucun compte', cols: 5, filters: [{ key: 'role', label: 'Rôle', options: [['it', 'IT'], ['admin', 'Admin'], ['manager', 'Manager']] }, { key: 'state', label: 'État', options: [['active', 'Actif'], ['blocked', 'Bloqué']] }] });
+      + tableCard({ id: 'tblAccounts', title: 'Équipe interne', count: plural(list.length, 'compte', 'comptes'), head: ['Utilisateur', 'Rôle', 'État', 'Dernière connexion', ''], rows, empty: 'Aucun compte', cols: 5, filters: [{ key: 'role', label: 'Rôle', options: [['it', 'IT'], ['manager', 'Manager'], ['admin', 'Agent']] }, { key: 'state', label: 'État', options: [['active', 'Actif'], ['blocked', 'Bloqué']] }] });
   },
 
   async clients() {
@@ -1075,7 +1175,7 @@ const RENDERERS = {
       <td><span class="badge plain">${esc(ROLE_LABELS[r.role] || r.role)}</span></td><td>${esc(r.ip_address || '')}</td>
       <td class="muted">${esc((r.user_agent || '').slice(0, 70))}</td></tr>`).join('');
     return pageHead('Technique', 'Historique <em>des connexions</em>', 'Qui s’est connecté, quand, et depuis quel appareil.')
-      + tableCard({ id: 'tblConn', title: 'Connexions', count: plural(list.length, 'connexion', 'connexions'), head: ['Date', 'Utilisateur', 'Rôle', 'IP', 'Navigateur'], rows, empty: 'Aucune connexion', cols: 5, filters: [{ key: 'role', label: 'Rôle', options: [['it', 'IT'], ['admin', 'Admin'], ['manager', 'Manager']] }] });
+      + tableCard({ id: 'tblConn', title: 'Connexions', count: plural(list.length, 'connexion', 'connexions'), head: ['Date', 'Utilisateur', 'Rôle', 'IP', 'Navigateur'], rows, empty: 'Aucune connexion', cols: 5, filters: [{ key: 'role', label: 'Rôle', options: [['it', 'IT'], ['manager', 'Manager'], ['admin', 'Agent']] }] });
   },
 
   async profile() {
@@ -1097,7 +1197,7 @@ const RENDERERS = {
           ${field('Prénom', `name="firstName" required maxlength="60" autocomplete="given-name" value="${esc(u.firstName)}"`)}
           ${field('Nom', `name="lastName" required maxlength="60" autocomplete="family-name" value="${esc(u.lastName)}"`)}
           ${field('Téléphone', `name="phone" type="tel" maxlength="30" autocomplete="tel" placeholder="+33 6 00 00 00 00" value="${esc(u.phone)}"`)}
-          ${field('Adresse e-mail', `value="${esc(u.email)}" disabled title="L’e-mail est votre identifiant de connexion, contactez un administrateur pour le modifier"`)}
+          ${field('Adresse e-mail', `value="${esc(u.email)}" disabled title="L’e-mail est votre identifiant de connexion, contactez le service IT ou un manager pour le modifier"`)}
           <div class="form-actions"><button class="btn primary" type="submit">Enregistrer les modifications</button></div>
         </div>
       </form>`;
@@ -1113,7 +1213,7 @@ const RENDERERS = {
       </form>`;
     const rights = `
       <section class="card">
-        <div class="card-head"><div><h3>Mes droits</h3><p>${me.user.role === 'manager' ? 'Définis par un administrateur ou le service IT.' : 'Votre rôle dispose d’un accès complet.'}</p></div></div>
+        <div class="card-head"><div><h3>Mes droits</h3><p>${me.user.role === 'it' ? 'Votre rôle dispose d’un accès complet.' : 'Définis par le service IT ou un manager.'}</p></div></div>
         <div class="card-body">${granted.length ? `<div class="chips">${granted.map(g => `<span class="badge ok">${esc(g)}</span>`).join('')}</div>` : '<p class="muted">Aucun droit particulier : lecture seule.</p>'}</div>
       </section>`;
     return pageHead('Compte', 'Mon <em>profil</em>', 'Gérez vos informations personnelles et la sécurité de votre accès.') + identity + info + security + rights;
@@ -1134,25 +1234,26 @@ const RENDERERS = {
 /* ---------- Formulaire compte (création / modification) ---------- */
 function accountFormBody(account) {
   const roles = MANAGEABLE[user.role] || [];
-  const current = account?.permissions || Object.fromEntries(DEFAULT_ADMIN_PERMS.map(k => [k, true]));
+  const defaults = (r) => Object.fromEntries((DEFAULT_PERMS[r] || []).map(k => [k, true]));
+  const current = account?.permissions || defaults(account?.role || roles[roles.length - 1] || 'admin');
   const switches = PERM_GROUPS.map(([group, items]) => `
     <div class="perm-group"><h4>${esc(group)}</h4>${items.map(([key, label]) => `
       <label class="switch ${can(key) ? '' : 'locked'}" ${can(key) ? '' : 'title="Vous ne possédez pas ce droit"'}>
         <input type="checkbox" name="perm_${key}" ${current[key] ? 'checked' : ''} ${can(key) ? '' : 'disabled'}>
         <span class="track" aria-hidden="true"></span><span class="switch-label">${esc(label)}</span>
       </label>`).join('')}</div>`).join('');
-  const role = account?.role || 'manager';
+  const role = account?.role || (roles.includes('admin') ? 'admin' : roles[0] || 'manager');
   return `
-    <div class="form-grid tight">
+    <div class="form-grid tight" ${account ? '' : 'data-new-account'}>
       ${field('Nom complet', `name="name" required minlength="2" value="${esc(account?.name || '')}"`)}
       ${field('Adresse e-mail', `name="email" type="email" required value="${esc(account?.email || '')}"`)}
       <label>Rôle<select name="role">${roles.map(r => `<option value="${r}" ${r === role ? 'selected' : ''}>${ROLE_LABELS[r]}</option>`).join('')}</select></label>
     </div>
-    <div class="perms" ${role === 'manager' ? '' : 'hidden'}>
+    <div class="perms" ${role === 'it' ? 'hidden' : ''}>
       <div class="perms-head"><strong>Niveau d’accès</strong><span class="muted">Cochez ce que ce compte a le droit de faire.</span></div>
       <div class="perm-grid">${switches}</div>
     </div>
-    <p class="perms-full muted" ${role === 'manager' ? 'hidden' : ''}>Les rôles ${ROLE_LABELS.it} et ${ROLE_LABELS.admin} disposent d’un accès complet.</p>`;
+    <p class="perms-full muted" ${role === 'it' ? '' : 'hidden'}>Le rôle ${ROLE_LABELS.it} dispose d’un accès complet.</p>`;
 }
 
 function collectPermissions(form) {
@@ -1175,13 +1276,13 @@ function openVehicleModal(existing = null, availability = { blocks: [], rentals:
     bodyHtml: `
       <div class="form-grid tight">
         <label class="full">Propriétaire de l’annonce<select name="partnerId"><option value="">TripVision (annonce interne, sans partenaire)</option>${partners.map(p => `<option value="${esc(p.id)}" ${v && v.partner_id === p.id ? 'selected' : ''}>${esc(p.tradeName)}${p.status === 'pending' ? ' (en attente de validation)' : ''}</option>`).join('')}</select></label>
-        ${TVVehicleForm.html(v, { gallery: galleryField('Photos de l’annonce', v?.images), spinGallery: galleryField('Photos du tour du véhicule', v?.spin, { name: 'spin', max: 72, cover: false, hint: 'dans l’ordre du tour, glissez pour réordonner' }), lessor: true, availability })}
+        ${TVVehicleForm.html(v, { lessor: true, availability })}
       </div>
       ${editing ? '' : scheduleFields(null, true)}`,
     run: async (f) => {
       const { draft, publishAt } = editing ? { draft: false, publishAt: null } : readSchedule(f);
       const g = (n) => f.elements.namedItem(n);
-      const body = { ...TVVehicleForm.read(f), partnerId: g('partnerId').value || null, images: JSON.parse(g('images').value || '[]') };
+      const body = { ...TVVehicleForm.read(f), partnerId: g('partnerId').value || null };
       if (!body.partnerId && !body.lessorName) throw new ApiError('Indiquez le nom du loueur : il est affiché sur le site avec ses conditions de location.');
       if (!editing) { body.draft = draft; body.publishAt = publishAt; }
       await api(editing ? `/admin/vehicles/${v.id}` : '/admin/vehicles', { method: editing ? 'PATCH' : 'POST', body: JSON.stringify(body) });
@@ -1371,6 +1472,11 @@ const ACT = {
   'close-drawer': () => closeDrawer(),
   'trend-period': async (id) => { DATA.trendPeriod = id; await render(); },
   'chat-close': async (id) => { try { await api(`/admin/chats/${id}/close`, { method: 'POST' }); toast('Conversation clôturée.'); await openChat(id); if (currentSection() === 'chats') render(); } catch (err) { toast(err.message); } },
+  'chat-take': async (id) => { try { await api(`/admin/chats/${id}/assign`, { method: 'POST', body: JSON.stringify({ to: user.id }) }); toast('Conversation prise en charge.'); await openChat(id, true); if (currentSection() === 'chats') render(); } catch (err) { toast(err.message); } },
+  'canned-add': () => openModal({ eyebrow: 'Messagerie', title: 'Nouvelle réponse type', confirmLabel: 'Ajouter', loadingText: 'Ajout…',
+    bodyHtml: `<div class="form-grid"><label class="full">Titre<input name="title" required minlength="2" maxlength="60" placeholder="Ex. Remboursement en cours"></label><label class="full">Texte de la réponse<textarea name="body" required minlength="2" maxlength="2000" rows="5" placeholder="Bonjour, …"></textarea></label></div>`,
+    run: async (f) => { await api('/admin/chat-canned', { method: 'POST', body: JSON.stringify({ title: f.elements.title.value.trim(), body: f.elements.body.value.trim() }) }); DATA.canned = null; return { title: 'Réponse type ajoutée' }; } }),
+  'canned-del': (id) => confirmCall({ eyebrow: 'Messagerie', title: 'Retirer cette réponse type ?', message: 'Elle ne sera plus proposée dans les conversations.', confirmLabel: 'Retirer', tone: 'danger', loading: 'Suppression…', success: 'Réponse type retirée', method: 'DELETE', url: `/admin/chat-canned/${id}` }),
   'chat-reopen': async (id) => { try { await api(`/admin/chats/${id}/reopen`, { method: 'POST' }); toast('Conversation rouverte.'); await openChat(id); if (currentSection() === 'chats') render(); } catch (err) { toast(err.message); } },
 
   'message-toggle': async (id) => {
@@ -1435,9 +1541,7 @@ const ACT = {
   },
   'notif-read-all': async () => { await markSeen('/notifications/read-all'); toast('Notifications marquées comme lues.'); render(); },
   'request-confirm': (id) => confirmCall({ eyebrow: 'Demande', title: `Confirmer ${esc(refOfRequest(find('requests', id)))} ?`, message: 'Le client verra sa demande comme confirmée dans son espace.', confirmLabel: 'Confirmer', loading: 'Confirmation en cours…', success: 'Demande confirmée', url: `/admin/offer-requests/${id}/status`, body: { status: 'confirmed' } }),
-  'request-cancel': (id) => confirmCall({ eyebrow: 'Demande', title: `Annuler ${esc(refOfRequest(find('requests', id)))} ?`, message: 'Le client verra sa demande comme annulée dans son espace.', confirmLabel: 'Annuler la demande', tone: 'danger', loading: 'Annulation en cours…', success: 'Demande annulée', url: `/admin/offer-requests/${id}/status`, body: { status: 'cancelled' } }),
   'booking-confirm': (id) => confirmCall({ eyebrow: 'Réservation', title: `Confirmer ${esc(find('bookings', id).reference)} ?`, message: 'La réservation passera au statut « Confirmé ».', confirmLabel: 'Confirmer', loading: 'Confirmation en cours…', success: 'Réservation confirmée', url: `/admin/bookings/${id}/status`, body: { status: 'confirmed' } }),
-  'booking-cancel': (id) => confirmCall({ eyebrow: 'Réservation', title: `Annuler ${esc(find('bookings', id).reference)} ?`, message: 'La réservation passera au statut « Inactif ».', confirmLabel: 'Annuler la réservation', tone: 'danger', loading: 'Annulation en cours…', success: 'Réservation annulée', url: `/admin/bookings/${id}/status`, body: { status: 'inactive' } }),
 
   'partner-approve': (id) => confirmCall({ eyebrow: 'Partenaire', title: `Valider ${esc(find('partners', id).tradeName)} ?`, message: 'Ses annonces validées pourront apparaître sur le site.', confirmLabel: 'Valider', loading: 'Validation en cours…', success: 'Partenaire validé', url: `/admin/partners/${id}/status`, body: { status: 'approved' } }),
   'partner-suspend': (id) => confirmCall({ eyebrow: 'Partenaire', title: `Suspendre ${esc(find('partners', id).tradeName)} ?`, message: 'Toutes ses annonces seront retirées du site tant qu’il est suspendu.', confirmLabel: 'Suspendre', tone: 'danger', loading: 'Suspension en cours…', success: 'Partenaire suspendu', url: `/admin/partners/${id}/status`, body: { status: 'inactive' } }),
@@ -1447,7 +1551,7 @@ const ACT = {
     eyebrow: 'Nouveau compte', title: 'Créer un compte interne', confirmLabel: 'Créer le compte', loadingText: 'Création du compte…', wide: true, bodyHtml: accountFormBody(null),
     run: async (f) => {
       const role = f.elements.role.value;
-      const body = { name: f.elements.name.value, email: f.elements.email.value, role, permissions: role === 'manager' ? collectPermissions(f) : {} };
+      const body = { name: f.elements.name.value, email: f.elements.email.value, role, permissions: role !== 'it' ? collectPermissions(f) : {} };
       const created = await api('/admin/accounts', { method: 'POST', body: JSON.stringify(body) });
       return { title: 'Compte créé', html: credentialsHtml(created, `${ROLE_LABELS[role]} : ${body.name}`) };
     },
@@ -1458,7 +1562,7 @@ const ACT = {
       eyebrow: 'Compte', title: `Modifier ${a.name}`, confirmLabel: 'Enregistrer', loadingText: 'Enregistrement…', wide: true, bodyHtml: accountFormBody(a),
       run: async (f) => {
         const role = f.elements.role.value;
-        await api(`/admin/accounts/${id}`, { method: 'PATCH', body: JSON.stringify({ name: f.elements.name.value, email: f.elements.email.value, role, permissions: role === 'manager' ? collectPermissions(f) : {} }) });
+        await api(`/admin/accounts/${id}`, { method: 'PATCH', body: JSON.stringify({ name: f.elements.name.value, email: f.elements.email.value, role, permissions: role !== 'it' ? collectPermissions(f) : {} }) });
         return { title: 'Compte mis à jour', text: 'Les nouveaux droits s’appliquent immédiatement.' };
       },
     });
@@ -1525,10 +1629,15 @@ document.addEventListener('change', (e) => {
     if (later && !date.value) date.value = toLocalInput(new Date(Date.now() + 3600e3).toISOString());
   }
   if (e.target.name === 'role' && e.target.closest('.modal')) {
-    const isAdmin = e.target.value === 'manager';
+    const full = e.target.value === 'it';
     const modal = e.target.closest('.modal');
-    modal.querySelector('.perms').hidden = !isAdmin;
-    modal.querySelector('.perms-full').hidden = isAdmin;
+    modal.querySelector('.perms').hidden = full;
+    modal.querySelector('.perms-full').hidden = !full;
+    // Nouveau compte : les droits de départ suivent le rôle choisi.
+    if (!full && modal.querySelector('[data-new-account]')) {
+      const base = new Set(DEFAULT_PERMS[e.target.value] || []);
+      ALL_PERMS.forEach((k) => { const c = modal.querySelector(`[name="perm_${k}"]`); if (c && !c.disabled) c.checked = base.has(k); });
+    }
   }
 });
 
@@ -1562,18 +1671,35 @@ $('#overlay').addEventListener('click', closeDrawer);
 
 document.addEventListener('submit', async (e) => {
   const form = e.target;
-  if (!['loginForm', 'forgotForm', 'activateForm', 'changePasswordForm', 'partnerForm', 'profileForm', 'passwordForm', 'chatReplyForm'].includes(form.id)) return;
+  if (!['loginForm', 'forgotForm', 'activateForm', 'changePasswordForm', 'partnerForm', 'profileForm', 'passwordForm', 'chatReplyForm', 'settingsForm'].includes(form.id)) return;
   e.preventDefault();
   const data = Object.fromEntries(new FormData(form));
   const errorEl = form.id === 'loginForm' ? $('#loginError') : form.id === 'changePasswordForm' ? $('#changePasswordError') : form.id === 'activateForm' ? $('#activateError') : null;
   if (errorEl) errorEl.hidden = true;
   const submit = form.querySelector('button[type=submit]');
 
+  if (form.id === 'settingsForm') {
+    const stop = setLoading(submit, 'Enregistrement…');
+    try {
+      await api('/admin/settings', { method: 'PUT', body: JSON.stringify({ franchisePerDay: Number(data.franchisePerDay) }) });
+      toast('Prix enregistré : il s’applique tout de suite à toutes les voitures.');
+    } catch (err) { if (!(err instanceof ApiError)) console.error(err); toast(err.message); }
+    stop();
+    return;
+  }
+
   if (form.id === 'chatReplyForm') {
     const stopChat = setLoading(submit, 'Envoi…');
+    const note = CH.mode === 'note';
     try {
-      const res = await api(`/admin/chats/${form.dataset.thread}/messages`, { method: 'POST', body: JSON.stringify({ message: data.message }) });
-      toast(res.notified ? 'Réponse envoyée, le partenaire a été prévenu par e-mail.' : 'Réponse enregistrée (l’e-mail de notification n’a pas pu partir).');
+      if (note) await api(`/admin/chats/${form.dataset.thread}/notes`, { method: 'POST', body: JSON.stringify({ message: data.message }) });
+      else {
+        if (!String(data.message || '').trim() && !CH.files.length) throw new ApiError('Écrivez un message ou joignez un fichier.');
+        const res = await api(`/admin/chats/${form.dataset.thread}/messages`, { method: 'POST', body: JSON.stringify({ message: data.message || '', attachments: CH.files }) });
+        toast(res.notified ? 'Réponse envoyée, la personne a été prévenue par e-mail.' : 'Réponse enregistrée (l’e-mail de notification n’a pas pu partir).');
+      }
+      if (note) toast('Note ajoutée.');
+      CH.files = []; CH.mode = 'reply';
       await openChat(form.dataset.thread);
       render();
     } catch (err) {

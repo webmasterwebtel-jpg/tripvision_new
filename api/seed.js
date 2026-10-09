@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import { pool, query } from './db.js';
+import { DEFAULT_AGENT_PERMISSIONS, DEFAULT_MANAGER_PERMISSIONS } from './roles.js';
 
 const requiredEnv = (name) => {
   const value = process.env[name];
@@ -10,7 +11,7 @@ const requiredEnv = (name) => {
 
 const accounts = [
   { email: 'web@webtel.sn', name: 'IT TripVision', role: 'it', password: requiredEnv('IT_PASSWORD') },
-  { email: 'admin@tripvision.fr', name: 'Admin TripVision', role: 'admin', password: requiredEnv('ADMIN_PASSWORD') },
+  { email: 'admin@tripvision.fr', name: 'Agent TripVision', role: 'admin', password: requiredEnv('ADMIN_PASSWORD') },
   { email: 'manager@tripvision.fr', name: 'Manager TripVision', role: 'manager', password: requiredEnv('MANAGER_PASSWORD') },
 ];
 
@@ -23,8 +24,8 @@ async function run() {
     }
     const passwordHash = await bcrypt.hash(acc.password, 10);
     await query(
-      'INSERT INTO users(email, name, role, password_hash, must_change_password) VALUES ($1,$2,$3,$4,false)',
-      [acc.email, acc.name, acc.role, passwordHash]
+      'INSERT INTO users(email, name, role, password_hash, must_change_password, permissions) VALUES ($1,$2,$3,$4,false,$5)',
+      [acc.email, acc.name, acc.role, passwordHash, acc.role === 'manager' ? DEFAULT_MANAGER_PERMISSIONS : acc.role === 'admin' ? DEFAULT_AGENT_PERMISSIONS : {}]
     );
     console.log(`✓ compte ${acc.role} créé : ${acc.email}`);
   }

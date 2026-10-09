@@ -48,10 +48,11 @@
       <section class="dp-section wrap dp-tips"><span class="eyebrow">Avant de partir</span><h2>Conseils <em>pratiques</em></h2>
         <ul>${d.tips.map((t) => `<li>${E(t)}</li>`).join('')}</ul></section>
       <section class="dp-section dp-deals" id="dpDeals"><div class="wrap">
-        <span class="eyebrow">Offres</span><h2>Vols et séjours pour <em>${E(d.name)}</em></h2>
-        ${flights.length ? `<h3 class="dp-sub">Vols disponibles</h3><div class="grid service-grid flight-list">${flights.map((o) => flightCard(o)).join('')}</div>` : ''}
-        ${packs.length ? `<h3 class="dp-sub">Séjours (vol + hôtel)</h3><div class="pack-grid">${packs.map((o) => packCard(o)).join('')}</div>` : ''}
-        ${!flights.length && !packs.length ? `<div class="dp-none"><p>Aucune offre n’est publiée pour ${E(d.name)} en ce moment. De nouvelles offres arrivent régulièrement.</p><a class="btn" href="#flights" data-page-link="flights">Voir tous les vols</a> <a class="btn ghost" href="#packs" data-page-link="packs">Voir les week-ends</a></div>` : ''}
+        <span class="eyebrow">Offres</span><h2>Vols, séjours et voitures à <em>${E(d.name)}</em></h2>
+        ${flights.length ? `<h3 class="dp-sub">Vols disponibles</h3>${limited(flights.map((o) => flightCard(o)), 3, 'vols', 'grid service-grid flight-list')}` : ''}
+        ${packs.length ? `<h3 class="dp-sub">Séjours (vol + hôtel)</h3>${limited(packs.map((o) => packCard(o)), 3, 'séjours', 'pack-grid')}` : ''}
+        <div id="dpCars"></div>
+        <div class="dp-none" id="dpNone" ${flights.length || packs.length ? 'hidden' : ''}><p>Aucune offre n’est publiée pour ${E(d.name)} en ce moment. De nouvelles offres arrivent régulièrement.</p><a class="btn" href="#flights" data-page-link="flights">Voir tous les vols</a> <a class="btn ghost" href="#packs" data-page-link="packs">Voir les week-ends</a></div>
       </div></section>
       <section class="dp-section dp-others"><div class="wrap">
         <span class="eyebrow">Continuer l’exploration</span><h2>Autres <em>destinations</em></h2>
@@ -60,7 +61,50 @@
     if (typeof bindLinks === 'function') bindLinks(root);
     window.TVFX?.track('dest_view', d.slug, d.name, d.country, d.name);
     mountMedia(d);
+    mountCars(d, !flights.length && !packs.length);
   }
+
+  /* ---------- Quelques éléments à la fois, puis « Voir plus » ---------- */
+  function limited(items, n, label, cls) {
+    const more = items.length - n;
+    return `<div class="${cls} dp-limited">${items.map((h, i) => (i < n ? h : `<div class="dp-extra" hidden>${h}</div>`)).join('')}</div>${more > 0 ? `<div class="dg-more"><button type="button" class="btn ghost" data-dp-more>Voir plus de ${label} <small>+${more}</small></button></div>` : ''}`;
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-dp-more]');
+    if (!b) return;
+    const grid = b.parentElement.previousElementSibling;
+    if (!b.dataset.label) b.dataset.label = b.innerHTML;
+    const open = b.dataset.open !== '1';
+    b.dataset.open = open ? '1' : '';
+    grid.querySelectorAll(':scope > .dp-extra').forEach((x) => { x.hidden = !open; });
+    b.innerHTML = open ? 'Voir moins' : b.dataset.label;
+  });
+
+  /* ---------- Voitures à louer dans la ville ---------- */
+  const carMini = (v) => `<article class="car-mini">
+      <div class="cm-img"><img src="${E(v.image || '')}" alt="" loading="lazy" decoding="async"><span>${E(v.category || '')}</span></div>
+      <div class="cm-body"><h4>${E(v.name || v.model)} <small>ou similaire</small></h4>
+        <p class="cm-lessor">${I('pin')} ${E([v.partner_company || 'TripVision', v.city].filter(Boolean).join(' · '))}</p>
+        <ul class="cm-specs">${[v.passengers && `${v.passengers} places`, v.transmission, v.bags != null && `${v.bags} bagage${v.bags > 1 ? 's' : ''}`, v.airConditioning && 'Clim.'].filter(Boolean).map((t) => `<li>${E(t)}</li>`).join('')}</ul></div>
+      <div class="cm-price"><small>à partir de</small><b>${eur(v.priceDay)}</b><em>/ jour</em><button class="btn small" type="button" data-dest-car="${E(v.id)}">Voir l’offre →</button></div>
+    </article>`;
+  async function mountCars(d, onlyCars) {
+    const box = document.getElementById('dpCars'), none = document.getElementById('dpNone');
+    if (!box || typeof api !== 'function') return;
+    let list = [];
+    try { list = await api(`/public/vehicles?city=${encodeURIComponent(d.name)}`); } catch { list = []; }
+    if (document.getElementById('dpCars') !== box) return;
+    list = Array.isArray(list) ? list : [];
+    window.__destCars = new Map(list.map((v) => [String(v.id), v]));
+    if (list.length) box.innerHTML = `<h3 class="dp-sub">Locations de voitures à ${E(d.name)}</h3>${limited(list.map(carMini), 3, 'voitures', 'dp-cars')}`;
+    if (none) none.hidden = !(onlyCars && !list.length);
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-dest-car]');
+    if (!b) return;
+    const v = window.__destCars?.get(b.dataset.destCar);
+    if (v && typeof window.carsOpenVehicle === 'function') window.carsOpenVehicle(v);
+  });
 
   /* ---------- Aperçu d'une destination : 2 photos et 2 vidéos ---------- */
   let mediaManifest = null;
@@ -102,13 +146,21 @@
   });
 
   /* ---------- Fiche d'un pack ---------- */
+  // Un pack se réserve au plus tard la veille du départ.
+  const closeInfo = (o) => {
+    if (!o.start_date) return '';
+    const dep = new Date(`${String(o.start_date).slice(0, 10)}T00:00:00`), last = new Date(dep.getTime() - 864e5);
+    const left = Math.ceil((last.getTime() - new Date().setHours(0, 0, 0, 0)) / 864e5);
+    const when = last.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+    return `<p class="pd-closing ${left <= 3 ? 'soon' : ''}">${I('clock')}<span>${left <= 0 ? `Dernier jour pour réserver : aujourd’hui` : left <= 3 ? `Plus que ${left} jour${left > 1 ? 's' : ''} pour réserver (jusqu’au ${when})` : `Réservation possible jusqu’au ${when}`}</span></p>`;
+  };
   function packPage(id) {
     const root = document.getElementById('packRoot');
     if (!root) return;
     const o = typeof state !== 'undefined' ? state.packs.find((x) => String(x.id) === String(id)) : null;
     if (!o) {
       root.innerHTML = loaded()
-        ? '<div class="wrap dp-missing"><h1>Offre indisponible</h1><p>Ce séjour n’est plus disponible ou n’est pas encore publié.</p><a class="btn" href="#packs" data-page-link="packs">Voir les week-ends</a></div>'
+        ? '<div class="wrap dp-missing"><h1>Offre indisponible</h1><p>Ce séjour n’est plus réservable (les réservations ferment la veille du départ) ou n’est pas encore publié.</p><a class="btn" href="#packs" data-page-link="packs">Voir les week-ends</a></div>'
         : '<div class="wrap dp-missing"><span class="spinner-lg"></span><p>Chargement de l’offre…</p></div>';
       if (typeof bindLinks === 'function') bindLinks(root);
       return;
@@ -149,6 +201,7 @@
             <div class="pd-rows">${o.start_date ? `<div><span>Dates</span><b>${E(day(o.start_date))}${o.end_date ? ' → ' + E(day(o.end_date)) : ''}</b></div>` : ''}${nights ? `<div><span>Durée</span><b>${nights + 1} jours / ${nights} nuits</b></div>` : ''}${o.hotel_board ? `<div><span>Formule</span><b>${E(o.hotel_board)}</b></div>` : ''}</div>
             <label class="pd-trav">Voyageurs<select id="pdTrav">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<option value="${n}" ${n === (window.__pdTrav || 2) ? 'selected' : ''}>${n} voyageur${n > 1 ? 's' : ''}</option>`).join('')}</select></label>
             <div class="pd-total"><span>Total estimé</span><b id="pdTotal" data-price="${Number(o.price)}">${eur(Number(o.price) * (window.__pdTrav || 2))}</b></div>
+            ${closeInfo(o)}
             <button class="btn pd-cta" type="button" data-offer-book="${o.id}">${payOn === false ? 'Réserver ce séjour' : 'Réserver et payer'}</button>
             <p class="pd-fine">${I('lock')} ${payOn === false ? 'Aucun paiement à cette étape : disponibilité et prix vous sont confirmés ensuite.' : 'Paiement sécurisé par carte (Stripe) : votre séjour est confirmé aussitôt.'}</p>
           </div>
@@ -169,7 +222,7 @@
     if (!o) {
       root.dataset.id = '';
       root.innerHTML = loaded()
-        ? '<div class="wrap dp-missing"><h1>Offre indisponible</h1><p>Ce séjour n’est plus disponible ou n’est pas encore publié.</p><a class="btn" href="#packs" data-page-link="packs">Voir les week-ends</a></div>'
+        ? '<div class="wrap dp-missing"><h1>Offre indisponible</h1><p>Ce séjour n’est plus réservable (les réservations ferment la veille du départ) ou n’est pas encore publié.</p><a class="btn" href="#packs" data-page-link="packs">Voir les week-ends</a></div>'
         : '<div class="wrap dp-missing"><span class="spinner-lg"></span><p>Chargement de l’offre…</p></div>';
       if (typeof bindLinks === 'function') bindLinks(root);
       return;
@@ -214,6 +267,7 @@
               <ul class="pr-facts">${o.start_date ? `<li>${I('calendar')}<span>${E(day(o.start_date))}${o.end_date ? ' → ' + E(day(o.end_date)) : ''}</span></li>` : ''}${nights ? `<li>${I('moon')}<span>${nights + 1} jours / ${nights} nuit${nights > 1 ? 's' : ''}</span></li>` : ''}${o.from_city ? `<li>${I('plane')}<span>Vols de ${E(o.from_city)}</span></li>` : ''}${o.hotel_board ? `<li>${I('utensils')}<span>${E(o.hotel_board)}</span></li>` : ''}</ul>
               <div class="pr-price"><span id="prCalc">${start} × ${eur(unit)}</span><strong id="prTotal">${eur(unit * start)}</strong></div>
               <small>Total estimé, par voyageur : ${eur(unit)}</small>
+              ${closeInfo(o)}
               <a class="pr-edit" href="#pack/${E(o.id)}" data-page-link="pack/${E(o.id)}">← Revoir le séjour</a>
             </div>
           </div></aside>
@@ -424,7 +478,7 @@
     } catch (e) { console.error(e); }
     const again = d?.offerId ? `<a class="btn" href="#pack/${E(d.offerId)}" data-page-link="pack/${E(d.offerId)}">Revoir le séjour</a>` : '<a class="btn" href="#packs" data-page-link="packs">Voir les week-ends</a>';
     root.innerHTML = shell(kind, kind === 'paid'
-      ? `<div class="pr-done"><span class="pr-done-ic">${I('check')}</span><h1>Paiement reçu, séjour confirmé !</h1><p>Un e-mail de confirmation vient de vous être envoyé. Retrouvez votre réservation et son justificatif dans votre espace client.</p>
+      ? `<div class="pr-done"><span class="pr-done-ic">${I('check')}</span><h1>Merci, votre séjour est confirmé !</h1><p>Votre paiement est bien enregistré. Un e-mail récapitulatif arrive dans votre boîte de réception, et vous retrouvez votre réservation et son justificatif dans votre espace client.</p>
           <div class="pr-recap"><div><small>Référence</small><b>${E(d.reference)}</b></div><div><small>Séjour</small><b>${E(d.title)}</b></div><div><small>Voyageurs</small><b>${E(d.travelers)}</b></div><div><small>Payé en ligne</small><b>${eur(d.paid ?? d.total)}</b></div></div>
           <div class="pr-done-btns"><a class="btn" href="#login" data-page-link="login">Suivre ma réservation</a><a class="btn ghost" href="#home" data-page-link="home">Retour à l’accueil</a></div></div>`
       : kind === 'pending'

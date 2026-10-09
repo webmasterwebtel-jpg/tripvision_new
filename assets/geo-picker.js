@@ -23,6 +23,7 @@
   .geo-list li.on,.geo-list li[data-i]:hover{background:#eef2f6}
   .geo-list li.geo-head{cursor:default;padding:8px 12px 4px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#7b857f;background:none!important}
   .geo-list .geo-empty{cursor:default;justify-content:center;color:#7b857f}
+  .geo-list li.geo-more{justify-content:center;gap:6px;color:#075f4b;font-weight:600;border-top:1px solid #efebe3;margin-top:4px;border-radius:0 0 8px 8px}.geo-list li.geo-more:hover{background:#eef6f2}.geo-list li.geo-more span{color:#7b857f;font-weight:500}
   .geo-list .geo-code{display:inline-block;min-width:34px;margin-right:8px;padding:1px 6px;border-radius:5px;background:#eef2f6;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:#44505a}`;
   document.head.appendChild(style);
 
@@ -41,6 +42,8 @@
     document.body.appendChild(list);
     list.addEventListener('mousedown', (e) => {
       e.preventDefault();
+      const more = e.target.closest('li.geo-more');
+      if (more) { expanded.set(more.dataset.more, (expanded.get(more.dataset.more) || 0) + 10); show(lastRows); return; }
       const li = e.target.closest('li[data-i]');
       if (li) choose(Number(li.dataset.i));
     });
@@ -61,14 +64,30 @@
     list.style.maxHeight = `${Math.max(160, Math.min(340, window.innerHeight - r.bottom - 16))}px`;
   }
 
-  /* rows : { kind:'row'|'head', ... } */
+  /* rows : { kind:'row'|'head', ... }
+     Chaque rubrique ne montre que quelques lignes ; « Voir plus » déroule le reste. */
+  const SHOWN = 6;
+  let lastRows = [], expanded = new Map(), lastText = null;
   function show(rows) {
-    items = rows.filter((r) => r.kind !== 'head');
+    lastRows = rows;
+    const out = [];
+    let section = { key: '', rows: [] };
+    const flush = () => {
+      const shown = SHOWN + (expanded.get(section.key) || 0);
+      const list = section.rows;
+      // « Voir plus » ajoute 10 lignes à la fois (inutile de dérouler des centaines de villes d'un coup).
+      if (list.length > shown + 1) { out.push(...list.slice(0, shown), { kind: 'more', key: section.key, count: list.length - shown }); } else out.push(...list);
+    };
+    for (const r of rows) {
+      if (r.kind === 'head') { flush(); out.push(r); section = { key: r.label, rows: [] }; } else section.rows.push(r);
+    }
+    flush();
+    items = out.filter((r) => r.kind === 'row');
     idx = -1;
     const l = ensureList();
     let n = 0;
-    l.innerHTML = rows.length
-      ? rows.map((r) => (r.kind === 'head' ? `<li class="geo-head">${esc(r.label)}</li>` : `<li role="option" data-i="${n++}">${r.html}</li>`)).join('')
+    l.innerHTML = out.length
+      ? out.map((r) => (r.kind === 'head' ? `<li class="geo-head">${esc(r.label)}</li>` : r.kind === 'more' ? `<li class="geo-more" data-more="${esc(r.key)}">Voir plus <span>+${r.count}</span></li>` : `<li role="option" data-i="${n++}">${r.html}</li>`)).join('')
       : '<li class="geo-empty">Aucun résultat</li>';
     l.hidden = false;
     place();
@@ -123,7 +142,20 @@
     const type = input.dataset.geo;
     const text = input.value.trim();
     const needle = norm(text);
+    if (text !== lastText) { expanded.clear(); lastText = text; }
     try {
+      // Vols : seulement les aéroports de nos offres, filtrés en tapant (aucune autre destination n'est cherchée).
+      if (type === 'place' && input.dataset.geoOnly === 'offers') {
+        const side = /^from/i.test(input.name) ? 'from' : 'to';
+        const all = window.TV_OFFER_PLACES?.[`${side}Air`] || [];
+        const rows = all.filter((c) => !needle || norm(c.name).includes(needle));
+        if (mine !== seq || active !== input) return;
+        const code = (n) => (String(n).match(/\(([A-Z]{3})\)\s*$/) || [])[1] || '';
+        show(rows.length
+          ? [{ kind: 'head', label: side === 'from' ? 'Aéroports de départ de nos offres' : 'Aéroports d’arrivée de nos offres' }, ...rows.map((c) => ({ kind: 'row', value: c.name, html: `<strong><span class="geo-code">${esc(code(c.name))}</span>${esc(String(c.name).replace(/\s*\([A-Z]{3}\)\s*$/, ''))}</strong><span>Aéroport</span>` }))]
+          : [{ kind: 'head', label: all.length ? 'Aucun aéroport ne correspond' : 'Aucun vol publié pour le moment' }]);
+        return;
+      }
       if (type === 'country') {
         const all = await getCountries(input.dataset.geoRegion || '');
         if (mine !== seq) return;

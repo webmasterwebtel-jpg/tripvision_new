@@ -17,6 +17,7 @@ const ICONS = {
   check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
   close: '<path d="M6 6l12 12M18 6 6 18"/>',
   upload: '<path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
+  doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/>',
   external: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   alert: '<path d="M12 9v4m0 4h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>',
@@ -500,15 +501,25 @@ document.addEventListener('click', (e) => {
 });
 
 /* ---------- Messagerie : plusieurs conversations, ouvertes ou clôturées ---------- */
-const CH = { id: null, view: 'list' };
+const CH = { id: null, view: 'list', files: [] };
 let chatSig = '';
 const TOPICS = () => (user.role === 'partner'
-  ? ['Une réservation', 'Mon annonce ou mes véhicules', 'Paiement ou commission', 'Mon compte', 'Autre question']
+  ? ['Une réservation', 'Mon annonce ou mes véhicules', 'Paiement', 'Mon compte', 'Autre question']
   : ['Ma réservation', 'Paiement ou remboursement', 'Un vol ou un pack', 'Mon compte', 'Autre question']);
 const shortDate = (d) => { const x = new Date(d), t = new Date(); return x.toDateString() === t.toDateString() ? x.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : x.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); };
+const chatState = (t) => t.status === 'closed' ? '<span class="badge plain">Clôturée</span>' : t.status === 'pending' ? '<span class="badge ok">Réponse reçue</span>' : '<span class="badge warn">En cours de traitement</span>';
+const attHtml = (list) => (list || []).map(a => /^image\//.test(a.mime) ? `<a class="att img" href="${esc(a.url)}" target="_blank" rel="noopener"><img src="${esc(a.url)}" alt="${esc(a.name)}" loading="lazy"></a>` : `<a class="att file" href="${esc(a.url)}" target="_blank" rel="noopener">${icon('doc')}<span>${esc(a.name)}</span></a>`).join('');
+const chatChips = () => CH.files.map((f, i) => `<span class="chip-file">${esc(f.name)}<button type="button" data-chat-unfile="${i}" aria-label="Retirer">×</button></span>`).join('');
+async function uploadChatFile(file) {
+  if (file.size > 8 * 1024 * 1024) throw new ApiError('Fichier trop lourd (8 Mo maximum).');
+  const res = await fetch('/api/chat/uploads', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': file.type, 'X-File-Name': encodeURIComponent(file.name) }, body: file });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError(data.message || 'Fichier refusé : JPG, PNG, WebP ou PDF (8 Mo maximum).');
+  return data;
+}
 async function chatPage() {
   const threads = await api('/chat/threads');
-  if (!CH.id || !threads.some(t => t.id === CH.id)) CH.id = threads[0]?.id || null;
+  if (!CH.id || !threads.some(t => t.id === CH.id)) { CH.id = threads[0]?.id || null; CH.files = []; }
   const d = CH.id ? await api(`/chat/threads/${CH.id}`) : null;
   chatCount = d ? d.messages.length : 0;
   chatSig = threads.map(t => `${t.id}${t.updated_at}${t.status}`).join('|');
@@ -516,24 +527,48 @@ async function chatPage() {
   const closed = d?.thread.status === 'closed';
   const bubbles = (list) => list.map(m => m.sender === 'system'
     ? `<div class="bubble system">${esc(m.body)}<small>${fmtDate(m.created_at)}</small></div>`
-    : `<div class="bubble ${m.sender === 'partner' ? 'admin' : 'partner'}">${esc(m.body)}<small>${m.sender === 'partner' ? 'Vous' : 'TripVision'} · ${fmtDate(m.created_at)}</small></div>`).join('');
+    : `<div class="bubble ${m.sender === 'partner' ? 'admin' : 'partner'}">${m.body ? esc(m.body) : ''}${m.attachments?.length ? `<div class="atts">${attHtml(m.attachments)}</div>` : ''}<small>${m.sender === 'partner' ? 'Vous' : `TripVision${m.author ? ` · ${esc(String(m.author).split(' ')[0])}` : ''}`} · ${fmtDate(m.created_at)}</small></div>`).join('');
   const list = threads.map(t => `<button type="button" class="thread ${t.id === CH.id ? 'on' : ''} ${t.status === 'closed' ? 'is-closed' : ''}" data-action="chat-open" data-id="${esc(t.id)}">
       <span class="thread-top"><strong>${esc(t.subject)}</strong><time>${shortDate(t.updated_at)}</time></span>
       <span class="thread-sub">${esc(String(t.last_message || '').slice(0, 70))}</span>
-      <span class="thread-tags">${t.status === 'closed' ? '<span class="badge plain">Clôturée</span>' : '<span class="badge ok">Ouverte</span>'}${t.unread ? `<em class="dot">${t.unread}</em>` : ''}</span></button>`).join('');
+      <span class="thread-tags">${chatState(t)}${t.unread ? `<em class="dot">${t.unread}</em>` : ''}</span></button>`).join('');
+  const rate = d && closed ? (d.thread.rating
+    ? `<div class="chat-rated"><span class="stars on">${'★'.repeat(d.thread.rating)}${'☆'.repeat(5 - d.thread.rating)}</span><span>Merci pour votre avis !</span></div>`
+    : `<form class="chat-rate" id="rateForm" data-thread="${esc(d.thread.id)}"><strong>Votre avis sur cette conversation</strong><div class="stars" role="radiogroup" aria-label="Note de 1 à 5">${[1, 2, 3, 4, 5].map(n => `<label><input type="radio" name="rating" value="${n}" required><span aria-hidden="true">★</span><i class="sr">${n} sur 5</i></label>`).join('')}</div><input name="comment" maxlength="500" placeholder="Un commentaire ? (facultatif)"><button class="btn small primary" type="submit">Envoyer mon avis</button></form>`) : '';
   const pane = d ? `
-      <header class="chat-head"><button class="icon-btn chat-back" type="button" data-action="chat-back" aria-label="Retour aux conversations">${icon('back')}</button><div><strong>${esc(d.thread.subject)}</strong><span class="muted">${closed ? `Clôturée${d.thread.closed_at ? ` le ${fmtDay(d.thread.closed_at)}` : ''}` : `Ouverte le ${fmtDay(d.thread.created_at)}`}</span></div></header>
+      <header class="chat-head"><button class="icon-btn chat-back" type="button" data-action="chat-back" aria-label="Retour aux conversations">${icon('back')}</button><div><strong>${esc(d.thread.subject)}</strong><span class="muted">${closed ? `Clôturée${d.thread.auto_closed ? ' automatiquement (sans réponse)' : ''}${d.thread.closed_at ? ` le ${fmtDay(d.thread.closed_at)}` : ''}` : d.thread.status === 'pending' ? 'L’équipe a répondu : à vous de jouer' : `Ouverte le ${fmtDay(d.thread.created_at)} · nous vous répondons au plus vite`}</span></div></header>
       <div class="chat-body chat-scroll" id="chatBody">${bubbles(d.messages)}</div>
       ${closed
-        ? `<div class="chat-closed-note"><span>Cette conversation est clôturée. Pour une nouvelle question, démarrez une autre conversation.</span><button class="btn primary small" type="button" data-action="chat-new">Nouvelle conversation</button></div>`
-        : `<form id="chatForm" class="chat-form" data-thread="${esc(d.thread.id)}"><textarea name="message" rows="2" required maxlength="2000" placeholder="Votre message…" aria-label="Votre message"></textarea><button class="btn primary" type="submit">Envoyer</button></form>`}`
+        ? `${rate}<div class="chat-closed-note"><span>Cette conversation est clôturée. Pour une nouvelle question, démarrez une autre conversation.</span><button class="btn primary small" type="button" data-action="chat-new">Nouvelle conversation</button></div>`
+        : `<form id="chatForm" class="chat-form" data-thread="${esc(d.thread.id)}"><div class="chat-files" id="chatFiles">${chatChips()}</div><div class="chat-row"><textarea name="message" rows="2" maxlength="2000" placeholder="Votre message…" aria-label="Votre message"></textarea><label class="btn small file-btn" title="Joindre une photo ou un PDF">${icon('upload')}<input type="file" id="chatFile" accept="image/jpeg,image/png,image/webp,application/pdf" multiple hidden></label><button class="btn primary" type="submit">Envoyer</button></div></form>`}`
     : `<div class="empty">${icon('chat')}<strong>Aucune conversation</strong><span>Posez votre question à l’équipe TripVision : nous répondons dès que possible.</span><button class="btn primary" type="button" data-action="chat-new">Nouvelle conversation</button></div>`;
-  return pageHead('Assistance', '<em>Messagerie</em>', 'Une conversation par sujet : suivez-les toutes ici. Vous recevez un e-mail à chaque réponse.', `<button class="btn primary small" type="button" data-action="chat-new">${icon('plus')} Nouvelle conversation</button>`) + `
+  return pageHead('Assistance', '<em>Messagerie</em>', 'Une conversation par sujet : suivez-les toutes ici. Vous recevez un e-mail à chaque réponse, et vous pouvez joindre une photo ou un PDF.', `<button class="btn primary small" type="button" data-action="chat-new">${icon('plus')} Nouvelle conversation</button>`) + `
     <section class="card chat-card chat-layout" data-view="${CH.view}">
       <aside class="chat-list">${list || '<p class="muted pad">Aucune conversation pour le moment.</p>'}</aside>
       <div class="chat-pane">${pane}</div>
     </section>`;
 }
+document.addEventListener('change', async (e) => {
+  if (e.target.id !== 'chatFile') return;
+  const list = [...e.target.files];
+  e.target.value = '';
+  for (const f of list) {
+    if (CH.files.length >= 3) { toast('3 fichiers au maximum par message.'); break; }
+    try { toast(`Téléversement de ${f.name}…`); CH.files.push(await uploadChatFile(f)); const box = document.getElementById('chatFiles'); if (box) box.innerHTML = chatChips(); } catch (err) { toast(err.message); }
+  }
+});
+document.addEventListener('click', (e) => {
+  const u = e.target.closest('[data-chat-unfile]');
+  if (u) { CH.files.splice(Number(u.dataset.chatUnfile), 1); const box = document.getElementById('chatFiles'); if (box) box.innerHTML = chatChips(); }
+});
+document.addEventListener('submit', async (e) => {
+  if (e.target.id !== 'rateForm') return;
+  e.preventDefault();
+  const f = e.target, btn = f.querySelector('button[type=submit]');
+  const done = setLoading(btn, 'Envoi…');
+  try { await api(`/chat/threads/${f.dataset.thread}/rating`, { method: 'POST', body: JSON.stringify({ rating: Number(f.elements.rating.value), comment: f.elements.comment.value.trim() || undefined }) }); toast('Merci pour votre avis !'); await render(false); }
+  catch (err) { if (!(err instanceof ApiError)) console.error(err); toast(err.message); done(); }
+});
 
 const PARTNER_PAGES = {
   async overview() {
@@ -734,7 +769,7 @@ const CLIENT_PAGES = {
     const faq = [
       ['Comment annuler une réservation ?', 'Une demande de vol ou de pack encore « en attente » s’annule depuis « Mes réservations ». Pour une voiture déjà payée, écrivez-nous dans la messagerie en indiquant la référence.'],
       ['Quand ma réservation est-elle confirmée ?', 'Une location de voiture est confirmée dès le paiement en ligne : vous recevez un e-mail et une notification. Les vols et packs sont confirmés par TripVision après vérification de la disponibilité.'],
-      ['Que paie-t-on en ligne pour une voiture ?', 'Seulement la commission TripVision (10 % du prix de la location). Le solde, ainsi que le dépôt de garantie éventuel, se règle directement au loueur lors du retrait du véhicule.'],
+      ['Que paie-t-on en ligne pour une voiture ?', 'Un acompte de 10 % du total de votre location, options comprises. Le solde, ainsi que le dépôt de garantie éventuel, se règle directement au loueur lors du retrait du véhicule.'],
       ['Faut-il payer pour demander un vol ou un pack ?', 'Non : la demande est gratuite et sans engagement. Le prix et les conditions vous sont confirmés avant tout paiement.'],
     ];
     return pageHead('Assistance', 'Aide & <em>contact</em>', 'Une question sur une réservation ? Écrivez-nous, indiquez la référence concernée.') + `
@@ -807,10 +842,10 @@ function openVehicleModal(existing = null, availability = { blocks: [], rentals:
     eyebrow: 'Ma flotte', title: editing ? 'Modifier le véhicule' : 'Ajouter un véhicule', wide: true,
     confirmLabel: editing ? 'Enregistrer les modifications' : 'Soumettre le véhicule', loadingText: editing ? 'Enregistrement…' : 'Envoi du véhicule…',
     bodyHtml: `
-      <div class="form-grid tight">${TVVehicleForm.html(v, { gallery: galleryField('Photos du véhicule', v?.images), spinGallery: galleryField('Photos du tour du véhicule', v?.spin, { name: 'spin', max: 72, cover: false, hint: 'dans l’ordre du tour, glissez pour réordonner' }), availability })}</div>
+      <div class="form-grid tight">${TVVehicleForm.html(v, { availability })}</div>
 `,
     run: async (f) => {
-      const body = { ...TVVehicleForm.read(f), images: JSON.parse(f.elements.namedItem('images').value || '[]') };
+      const body = TVVehicleForm.read(f);
       await api(editing ? `/partner/vehicles/${v.id}` : '/partner/vehicles', { method: editing ? 'PATCH' : 'POST', body: JSON.stringify(body) });
       return editing ? { title: 'Véhicule modifié', text: 'Les changements sont enregistrés.' } : { title: 'Véhicule publié', text: 'Il est visible sur le site dès maintenant.' };
     },
@@ -831,7 +866,7 @@ function openOrderModal(o) {
 function openBookingModal(b) {
   const rows = [['Référence', b.reference], ['Client', b.customer_name], ['E-mail', b.customer_email], ['Téléphone', b.customer_phone], ['Véhicule', b.vehicle_name],
     ['Départ', `${fmtDay(b.start_date)} ${b.start_time || ''}`], ['Retour', `${fmtDay(b.end_date)} ${b.end_time || ''}`], ['Lieu de prise en charge', b.pickup_address], ['Lieu de retour', b.return_address],
-    ['Total', money(b.total_estimate)], ['Paiement', b.payment_status === 'paid' ? `Payé en ligne : commission ${money(b.paid_amount)}${b.pay_on_pickup != null ? ` · reste ${money(b.pay_on_pickup)} à régler à l’agence` : ''}` : b.payment_status === 'refunded' ? 'Remboursé' : ''], ['Options choisies', (b.extras || []).map(x => `${x.qty > 1 ? x.qty + ' × ' : ''}${x.name} (${money(x.total)})`).join(', ')], ['Total estimé', b.total_estimate == null ? '' : money(b.total_estimate)], ['Âge du conducteur', b.driver_age ? `${b.driver_age} ans${b.young_driver_notice ? ' (jeune conducteur)' : ''}` : ''], ['Message', b.message], ['Reçue le', fmtDate(b.created_at)]];
+    ['Total', money(b.total_estimate)], ['Paiement', b.payment_status === 'paid' ? `Payé en ligne : ${money(b.paid_amount)}${b.pay_on_pickup != null ? ` · reste ${money(b.pay_on_pickup)} à régler à l’agence` : ''}` : b.payment_status === 'refunded' ? 'Remboursé' : ''], ['Options choisies', (b.extras || []).map(x => `${x.qty > 1 ? x.qty + ' × ' : ''}${x.name} (${money(x.total)})`).join(', ')], ['Total estimé', b.total_estimate == null ? '' : money(b.total_estimate)], ['Âge du conducteur', b.driver_age ? `${b.driver_age} ans${b.young_driver_notice ? ' (jeune conducteur)' : ''}` : ''], ['Message', b.message], ['Reçue le', fmtDate(b.created_at)]];
   openModal({ eyebrow: 'Réservation', title: b.vehicle_name, noFooter: true, cancelLabel: 'Fermer', wide: true,
     bodyHtml: `<div class="status-line">${badge(...bookingState(b.status))}</div><dl class="kv">${rows.filter(([, v]) => v && String(v).trim() && String(v).trim() !== '—').map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
       ${b.status === 'pending' || b.status === 'confirmed' ? `<div class="modal-actions">${bookingActions(b)}</div>` : ''}` });
@@ -847,11 +882,15 @@ const ACT = {
     bodyHtml: `<div class="form-grid tight">
       <label class="full">Sujet<select name="topic" required>${TOPICS().map(t => `<option>${esc(t)}</option>`).join('')}</select></label>
       ${field('Précision (facultatif)', 'name="detail" maxlength="80" placeholder="Ex. la référence TV-1234"', true)}
-      <label class="full">Votre message<textarea name="message" rows="5" required maxlength="2000" placeholder="Expliquez-nous votre demande…"></textarea></label></div>`,
+      <label class="full">Votre message<textarea name="message" rows="5" required maxlength="2000" placeholder="Expliquez-nous votre demande…"></textarea></label>
+      <label class="full">Une photo ou un PDF ? (facultatif, 3 maximum)<input type="file" name="files" accept="image/jpeg,image/png,image/webp,application/pdf" multiple></label></div>`,
     run: async (form) => {
       const f = Object.fromEntries(new FormData(form));
-      const r = await api('/chat/threads', { method: 'POST', body: JSON.stringify({ subject: f.detail?.trim() ? `${f.topic} · ${f.detail.trim()}` : f.topic, message: f.message }) });
-      CH.id = r.id; CH.view = 'thread';
+      const picked = [...form.elements.namedItem('files').files].slice(0, 3);
+      const attachments = [];
+      for (const file of picked) attachments.push(await uploadChatFile(file));
+      const r = await api('/chat/threads', { method: 'POST', body: JSON.stringify({ subject: f.detail?.trim() ? `${f.topic} · ${f.detail.trim()}` : f.topic, message: f.message, attachments }) });
+      CH.id = r.id; CH.view = 'thread'; CH.files = [];
       return { title: 'Conversation créée', text: 'Nous vous répondons dès que possible.' };
     },
   }),
@@ -954,8 +993,10 @@ document.addEventListener('submit', async (e) => {
       form.reset();
       toast('Mot de passe modifié.');
     } else if (form.id === 'chatForm') {
-      await api(`/chat/threads/${form.dataset.thread}/messages`, { method: 'POST', body: JSON.stringify({ message: data.message }) });
+      if (!String(data.message || '').trim() && !CH.files.length) throw new ApiError('Écrivez un message ou joignez un fichier.');
+      await api(`/chat/threads/${form.dataset.thread}/messages`, { method: 'POST', body: JSON.stringify({ message: data.message || '', attachments: CH.files }) });
       form.reset();
+      CH.files = [];
       await render(false);
     }
   } catch (err) {
