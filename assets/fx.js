@@ -199,6 +199,8 @@
     },
     carSearchForm(f) {
       if (!val(f, 'pickup')) return ['Choisissez le lieu de prise en charge.', 'pickup'];
+      if (f.elements.sameReturn && !f.elements.sameReturn.checked && !val(f, 'dropoff')) return ['Choisissez le lieu de restitution.', 'dropoff'];
+      if (f.elements.adult2669 && !f.elements.adult2669.checked && !(Number(val(f, 'age')) >= 18)) return ['Indiquez l’âge du conducteur (18 ans minimum).', 'age'];
       if (!val(f, 'startDate')) return ['Choisissez votre date de départ.', 'startDate'];
       if (!val(f, 'endDate')) return ['Choisissez votre date de retour.', 'endDate'];
       if (`${val(f, 'endDate')}T${val(f, 'endTime') || '00:00'}` <= `${val(f, 'startDate')}T${val(f, 'startTime') || '00:00'}`) return ['Le retour doit être après le départ.', 'endDate'];

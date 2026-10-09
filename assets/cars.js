@@ -64,8 +64,8 @@
     const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const t = new Date(), n = new Date(t.getTime() + 864e5);
     const f = document.getElementById('carSearchForm')?.elements;
-    if (f) { f.pickup.value = ''; f.startDate.value = iso(t); f.endDate.value = iso(n); if (f.category) f.category.value = 'all'; }
-    search = { ...search, pickup: '', startDate: '', endDate: '', category: 'all' };
+    if (f) { f.pickup.value = ''; f.startDate.value = iso(t); f.endDate.value = iso(n); if (f.category) f.category.value = 'all'; if (f.sameReturn) { f.sameReturn.checked = true; f.adult2669.checked = true; syncCarForm(); } }
+    search = { ...search, pickup: '', startDate: '', endDate: '', category: 'all', sameReturn: true, adult2669: true, dropoff: '' };
     renderCars();
   }
   const checkIdle = () => {
@@ -121,12 +121,37 @@
   const F = { cats: new Set(), gear: '', seats: 0, maxPrice: 0, freeCancel: false, unlimited: false, deposit: '', lessors: new Set(), fuels: new Set(), ac: false, freeMod: false, fullIns: false, bags: 0, minAge: '', sort: 'price' };
   const FRESH = () => ({ priceTouched: false, cats: new Set(), gear: '', seats: 0, maxPrice: 0, freeCancel: false, unlimited: false, deposit: '', lessors: new Set(), fuels: new Set(), ac: false, freeMod: false, fullIns: false, bags: 0, minAge: '' });
 
+  /* ---------- Formulaire : restitution, âge du conducteur, durée de la location ---------- */
+  function updateDuration() {
+    const box = document.getElementById('carDuration');
+    if (!box) return;
+    const d = searchDays(), real = durationText();
+    box.innerHTML = `<span>Durée de la location :</span> <b>${dayLabel(d)}</b>${searchMinutes() % 1440 ? ` <small>(${E(real)})</small>` : ''}`;
+  }
+  function syncCarForm() {
+    const f = document.getElementById('carSearchForm')?.elements;
+    if (!f || !f.sameReturn) return;
+    document.getElementById('carDropoffBox').hidden = f.sameReturn.checked;
+    if (f.sameReturn.checked) f.dropoff.value = '';
+    document.getElementById('carAgeBox').hidden = f.adult2669.checked;
+    if (f.adult2669.checked) f.age.value = 30;
+    updateDuration();
+  }
+  document.getElementById('carSearchForm')?.addEventListener('change', (e) => {
+    if (['sameReturn', 'adult2669'].includes(e.target.name)) syncCarForm();
+    else if (['startDate', 'startTime', 'endDate', 'endTime'].includes(e.target.name)) updateDuration();
+  });
+  document.getElementById('carSearchForm')?.addEventListener('input', (e) => { if (['startDate', 'startTime', 'endDate', 'endTime'].includes(e.target.name)) updateDuration(); });
+  window.addEventListener('load', () => setTimeout(syncCarForm, 60));
+
   /* ---------- Durée et prix ---------- */
   // Dates de la recherche : celles validées, sinon celles du formulaire (valeurs par défaut comprises).
   function S() {
     const f = document.getElementById('carSearchForm')?.elements;
     const pick = (k) => f?.[k]?.value || search[k] || '';
-    return { startDate: pick('startDate'), startTime: pick('startTime') || '10:00', endDate: pick('endDate'), endTime: pick('endTime') || '10:00', pickup: pick('pickup'), age: Number(pick('age')) || 30 };
+    const adult = f?.adult2669 ? f.adult2669.checked : search.adult2669 !== false;
+    const same = f?.sameReturn ? f.sameReturn.checked : search.sameReturn !== false;
+    return { startDate: pick('startDate'), startTime: pick('startTime') || '10:00', endDate: pick('endDate'), endTime: pick('endTime') || '10:00', pickup: pick('pickup'), age: adult ? 30 : (Number(f?.age?.value) || 30), sameReturn: same, adult2669: adult, dropoff: same ? '' : (f?.dropoff?.value || search.dropoff || '') };
   }
   function searchMinutes() {
     const s = S();
@@ -220,14 +245,20 @@
   }
 
   /* ---------- Cartes de résultats ---------- */
+  // Frais déjà connus à la recherche : supplément jeune conducteur et restitution dans un autre lieu.
+  function searchFees(v, d) {
+    const sr = S();
+    const young = youngFeeOf(v, sr.age);
+    return (young ? (v.youngDriverPricing === 'once' ? young : young * d) : 0) + (!sr.sameReturn && v.returnPolicy === 'fee' ? Number(v.returnFee) || 0 : 0);
+  }
   function card(v) {
-    const d = searchDays(), total = rentalTotal(v, d), per = total / d;
+    const d = searchDays(), base = rentalTotal(v, d), fees = searchFees(v, d), total = base + fees, per = total / d;
     const old = v.oldPriceDay && Number(v.oldPriceDay) > Number(v.priceDay) ? Number(v.oldPriceDay) * d : null;
     const lessor = lessorOf(v);
     const place = [v.city && v.city !== v.pickupAddress ? v.city : '', v.country].filter(Boolean).join(', ') || v.pickupAddress;
     const inc = includedList(v).slice(0, 5);
     return `<article class="rent-card" data-vehicle-id="${v.id}">
-      <div class="rent-media">${TVGallery.html(v.images?.length ? v.images : [v.image], v.name || v.model, { spin: v.spin })}<span class="rent-cat">${E(v.category)}</span>${old ? `<span class="rent-flag deal">-${Math.round((1 - total / old) * 100)} %</span>` : ''}</div>
+      <div class="rent-media">${TVGallery.html(v.images?.length ? v.images : [v.image], v.name || v.model, { spin: v.spin })}<span class="rent-cat">${E(v.category)}</span>${old ? `<span class="rent-flag deal">-${Math.round((1 - base / old) * 100)} %</span>` : ''}</div>
       <div class="rent-body">
         <header><h3>${E(v.name || v.model)} <small>ou similaire</small></h3><p class="rent-lessor"><span class="lessor-av">${E(initialsOf(lessor))}</span><span>Proposé par <b>${E(lessor)}</b></span><span class="dot">·</span>${I.pin}${E(place)}</p></header>
         <ul class="rent-specs">${specs(v)}</ul>
@@ -235,14 +266,17 @@
         <ul class="rent-chips">${chips(v)}</ul>
         <div class="rent-links">${v.rentalConditions ? `<button class="rent-link" type="button" data-car-terms="${v.id}">Conditions de location</button>` : ''}</div>
       </div>
-      <aside class="rent-price"><small>Prix pour ${dayLabel(d)}</small>${old ? `<s>${euro(old)}</s>` : ''}<strong>${euro(total)}</strong><span>soit ${euro(per)} / jour</span><button class="btn" type="button" data-book="${v.id}">Réserver ${I.arrow}</button></aside>
+      <aside class="rent-price"><small>Prix pour ${dayLabel(d)}</small>${old ? `<s>${euro(old)}</s>` : ''}<strong>${euro(total)}</strong><span>soit ${euro(per)} / jour</span>${fees ? `<span class="rent-fees">dont ${euro(fees)} de frais</span>` : ''}<button class="btn" type="button" data-book="${v.id}">Réserver ${I.arrow}</button></aside>
     </article>`;
   }
 
   /* ---------- Filtres et tri ---------- */
   const fuelOf = (v) => String(v.fuelType || '').trim() || 'Non précisé';
   function filtered() {
+    const sr = S();
     const rows = state.vehicles.filter((v) => {
+      if (!sr.sameReturn && v.returnPolicy === 'none') return false;
+      if (v.minAge && Number(sr.age) < Number(v.minAge)) return false;
       if (F.cats.size && !F.cats.has(v.category)) return false;
       if (F.gear && v.transmission !== F.gear) return false;
       if (F.seats && Number(v.passengers || 0) < F.seats) return false;
@@ -602,14 +636,16 @@
       if (last && last.pickup && last.startDate && last.endDate) {
         search = { ...search, ...last };
         const f = document.getElementById('carSearchForm')?.elements;
-        if (f) for (const [k, v] of Object.entries(last)) if (f[k] && v) f[k].value = v;
+        if (f) for (const [k, v] of Object.entries(last)) if (f[k] && v && f[k].type !== 'checkbox') f[k].value = v;
+        if (f?.sameReturn) { f.sameReturn.checked = last.sameReturn !== false; f.adult2669.checked = last.adult2669 !== false; syncCarForm(); }
         searched = true;
       }
       return;
     }
     search = { ...search, ...s.search };
     const f = document.getElementById('carSearchForm')?.elements;
-    if (f) for (const [k, v] of Object.entries(s.search)) if (f[k] && v) f[k].value = v;
+    if (f) for (const [k, v] of Object.entries(s.search)) if (f[k] && v && f[k].type !== 'checkbox') f[k].value = v;
+    if (f?.sameReturn) { f.sameReturn.checked = s.search.sameReturn !== false; f.adult2669.checked = s.search.adult2669 !== false; syncCarForm(); }
     searched = true;
     const root = document.getElementById('reserveRoot');
     if (root) root.innerHTML = '<section class="rsv-card rsv-done"><span class="spinner-lg"></span><h2>Reprise de votre réservation…</h2></section>';
@@ -671,7 +707,15 @@
     if (!v) return;
     window.TVFX?.track('car_view', v.id, v.city, v.country, v.name || v.model);
     if (!payLoaded) loadPay();
-    R = { id, step: 1, protection: false, extras: new Map(), data: {}, done: null, returnKey: v.returnOptions?.[0]?.key || 'same' };
+    let returnKey = v.returnOptions?.[0]?.key || 'same';
+    const sr = S();
+    if (!sr.sameReturn) {
+      const others = (v.returnOptions || []).filter((o) => !o.same);
+      const want = nrm(cleanPlace(sr.dropoff));
+      const hit = others.find((o) => want && nrm(o.name).includes(want)) || others[0];
+      if (hit) returnKey = hit.key;
+    }
+    R = { id, step: 1, protection: false, extras: new Map(), data: {}, done: null, returnKey };
     renderReserve();
     page('reserve');
     location.hash = 'reserve';

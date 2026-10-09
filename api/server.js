@@ -278,10 +278,11 @@ const vehicleBase = z.object({
   extras: z.array(extraSchema).max(8).optional(),
 });
 const untilAfterFrom = [(v) => v.availableUntil >= v.availableFrom, { message: 'La fin de la période de location doit suivre son début.', path: ['availableUntil'] }];
+const maxPeriodRule = [(v) => new Date(`${v.availableUntil}T00:00:00Z`).getTime() - new Date(`${v.availableFrom}T00:00:00Z`).getTime() <= 30 * 864e5, { message: 'Un véhicule peut être mis en ligne pour 30 jours au maximum : raccourcissez la période (vous pourrez la prolonger ensuite).', path: ['availableUntil'] }];
 const returnRule = [(v) => v.returnPolicy === 'none' || (v.returnLocations || []).length > 0, { message: 'Indiquez au moins un lieu où le véhicule peut être déposé.', path: ['returnLocations'] }];
 const returnFeeRule = [(v) => v.returnPolicy !== 'fee' || Number(v.returnFee) > 0, { message: 'Indiquez le montant des frais de restitution dans un autre lieu.', path: ['returnFee'] }];
 const youngRule = [(v) => !(Number(v.youngDriverFee) > 0) || Boolean(v.youngDriverAge), { message: 'Indiquez en dessous de quel âge les frais jeune conducteur s’appliquent.', path: ['youngDriverAge'] }];
-const vehicleSchema = vehicleBase.refine(...untilAfterFrom).refine(...returnRule).refine(...returnFeeRule).refine(...youngRule);
+const vehicleSchema = vehicleBase.refine(...untilAfterFrom).refine(...maxPeriodRule).refine(...returnRule).refine(...returnFeeRule).refine(...youngRule);
 
 // Dès qu'une réservation est faite, l'annonce quitte le site jusqu'à la fin de la location ; ensuite elle passe en brouillon et le loueur la republie.
 async function reserveVehicle(vehicleId, bookingId, endDate, endTime) {
@@ -1365,7 +1366,7 @@ app.delete('/api/admin/offers/:id', auth(...BACKOFFICE_ROLES), can('offers.delet
   res.json({ ok: true });
 }));
 
-const adminVehicleSchema = vehicleBase.extend({ partnerId: z.string().uuid().nullable().optional(), publishAt: publishAtSchema, draft: z.boolean().optional() }).refine(...untilAfterFrom).refine(...returnRule).refine(...returnFeeRule).refine(...youngRule);
+const adminVehicleSchema = vehicleBase.extend({ partnerId: z.string().uuid().nullable().optional(), publishAt: publishAtSchema, draft: z.boolean().optional() }).refine(...untilAfterFrom).refine(...maxPeriodRule).refine(...returnRule).refine(...returnFeeRule).refine(...youngRule);
 
 app.post('/api/admin/vehicles', auth(...BACKOFFICE_ROLES), can('vehicles.create'), h(async (req, res) => {
   const v = adminVehicleSchema.parse(req.body);

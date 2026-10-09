@@ -8,14 +8,15 @@
   css.textContent = `
   .fg-ov{position:fixed;inset:0;z-index:100003;display:grid;place-items:center;padding:16px;background:rgba(5,18,14,.66);backdrop-filter:blur(5px);animation:fgIn .25s ease both}
   @keyframes fgIn{from{opacity:0}to{opacity:1}}
-  .fg-card{position:relative;width:min(460px,100%);padding:28px 26px 24px;border-radius:22px;background:#fffdf8;box-shadow:0 36px 80px -24px rgba(0,0,0,.6);animation:fgUp .35s cubic-bezier(.2,1.2,.4,1) both}
+  .fg-card{position:relative;width:min(400px,100%);padding:30px 28px 26px;border-radius:22px;background:#fffdf8;box-shadow:0 36px 80px -24px rgba(0,0,0,.6);animation:fgUp .35s cubic-bezier(.2,1.2,.4,1) both}
   @keyframes fgUp{from{transform:translateY(16px) scale(.97);opacity:0}to{transform:none;opacity:1}}
   .fg-x{position:absolute;right:14px;top:12px;width:34px;height:34px;border:0;border-radius:50%;background:#f1ede4;color:#44505a;font-size:22px;line-height:1;cursor:pointer}
   .fg-ic{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:#e3f4ed;color:#075f4b;margin-bottom:12px}
   .fg-ic svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .fg-card h3{margin:0 0 6px;font:600 1.5rem/1.15 'Cormorant Garamond',Georgia,serif;color:#08271f}
+  .fg-card h3{margin:0 0 4px;padding-right:36px;font:600 1.7rem/1.15 'Cormorant Garamond',Georgia,serif;color:#08271f}
   .fg-card p{margin:0 0 14px;color:#5f6a64;font-size:.93rem;line-height:1.5}
-  .fg-route{display:flex;align-items:center;gap:8px;margin:0 0 14px;padding:10px 12px;border-radius:12px;background:#f6f2e9;font-size:.88rem;color:#3a423e}
+  .fg-card .fg-route{margin:0 0 20px;color:#44505a;font-size:1rem}
+  .fg-route b{color:#08271f;font-weight:600}
   .fg-route b{color:#08271f}
   .fg-card label.fg-f{display:grid;gap:6px;font-size:.82rem;font-weight:600;color:#3a423e}
   .fg-card input[type=email]{width:100%;padding:13px 14px;border:1.5px solid #d9d2c3;border-radius:12px;font:inherit;font-size:1rem;background:#fff;color:#151816}
@@ -44,16 +45,13 @@
     ov.className = 'fg-ov';
     ov.innerHTML = `<form class="fg-card" novalidate role="dialog" aria-modal="true" aria-labelledby="fgTitle">
       <button type="button" class="fg-x" aria-label="Fermer" data-fg-close>×</button>
-      <span class="fg-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg></span>
-      <h3 id="fgTitle">Avant de rejoindre ${E(airline)}</h3>
-      <p>Les billets se réservent directement sur le site de la compagnie. Indiquez votre adresse e-mail pour l’ouvrir.</p>
-      <div class="fg-route"><svg class="tv-icon" aria-hidden="true" style="width:18px;height:18px"><use href="#i-plane"></use></svg><span><b>${E(o.from_city || '')} → ${E(o.to_city || '')}</b> · ${E(airline)}</span></div>
+      <h3 id="fgTitle">${E(airline)}</h3>
+      <p class="fg-route"><b>${E(o.from_city || '')} → ${E(o.to_city || '')}</b></p>
       <label class="fg-f">Votre adresse e-mail <input type="email" name="email" autocomplete="email" inputmode="email" placeholder="vous@exemple.fr" value="${E(known().email || '')}" required></label>
       <div class="fg-err" role="alert"></div>
-      <label class="fg-opt"><input type="checkbox" name="consent" ${known().marketing ? 'checked' : ''}><span>Je souhaite recevoir, de temps en temps, les meilleures offres de vols par e-mail (facultatif).</span></label>
-      <button class="btn fg-go" type="submit">Continuer vers ${E(airline)} ↗</button>
-      <div class="fg-fallback">Si rien ne s’ouvre, <a href="${E(url)}" target="_blank" rel="noopener noreferrer">cliquez ici pour ouvrir le site de la compagnie</a>.</div>
-      <p class="fg-note">Votre adresse n’est utilisée que pour vous recontacter au sujet de ce vol, jamais pour vous envoyer autre chose sans votre accord.</p>
+      <label class="fg-opt"><input type="checkbox" name="consent" ${known().marketing ? 'checked' : ''}><span>Recevoir les meilleures offres de vols (facultatif)</span></label>
+      <button class="btn fg-go" type="submit">Continuer ↗</button>
+      <div class="fg-fallback"><a href="${E(url)}" target="_blank" rel="noopener noreferrer">Ouvrir ${E(airline)} ↗</a></div>
     </form>`;
     document.body.appendChild(ov);
     const form = ov.querySelector('form'), input = form.elements.email, err = ov.querySelector('.fg-err');
@@ -80,10 +78,10 @@
       try { localStorage.setItem('tvContact', JSON.stringify({ ...known(), email, marketing: consent })); } catch { /* rien */ }
       window.TVFX?.track('flight_click', o.id, o.to_city, o.country, `${o.from_city || ''} → ${o.to_city || ''}${o.flight?.airline ? ` · ${o.flight.airline}` : ''}`);
       const btn = form.querySelector('.fg-go');
-      btn.disabled = true; btn.textContent = `Ouverture de ${airline}…`;
+      btn.disabled = true; btn.textContent = 'Ouverture…';
       try { await api('/public/flight-leads', { method: 'POST', body: JSON.stringify({ offerId: o.id, email, consent }) }); } catch { /* l'accès à la compagnie n'est pas bloqué par un incident réseau */ }
       if (tab && !tab.closed) { tab.location.href = url; close(); }
-      else { ov.querySelector('.fg-fallback').style.display = 'block'; btn.disabled = false; btn.textContent = `Continuer vers ${airline} ↗`; }
+      else { ov.querySelector('.fg-fallback').style.display = 'block'; btn.disabled = false; btn.textContent = 'Continuer ↗'; }
     });
   }
   document.addEventListener('click', (e) => {

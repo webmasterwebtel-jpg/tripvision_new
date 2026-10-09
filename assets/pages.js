@@ -52,7 +52,7 @@
         ${flights.length ? `<h3 class="dp-sub">Vols disponibles</h3>${limited(flights.map((o) => flightCard(o)), 3, 'vols', 'grid service-grid flight-list')}` : ''}
         ${packs.length ? `<h3 class="dp-sub">Séjours (vol + hôtel)</h3>${limited(packs.map((o) => packCard(o)), 3, 'séjours', 'pack-grid')}` : ''}
         <div id="dpCars"></div>
-        <div class="dp-none" id="dpNone" ${flights.length || packs.length ? 'hidden' : ''}><p>Aucune offre n’est publiée pour ${E(d.name)} en ce moment. De nouvelles offres arrivent régulièrement.</p><a class="btn" href="#flights" data-page-link="flights">Voir tous les vols</a> <a class="btn ghost" href="#packs" data-page-link="packs">Voir les week-ends</a></div>
+        <div class="dp-none" id="dpNone" ${flights.length || packs.length ? 'hidden' : ''}><p>Aucune offre n’est publiée pour ${E(d.name)} en ce moment. De nouvelles offres arrivent régulièrement.</p><a class="btn" href="#flights" data-page-link="flights">Voir tous les vols</a> <a class="btn ghost" href="#packs" data-page-link="packs">Voir les week-ends</a> <a class="btn ghost" href="#cars" data-page-link="cars" data-dest-cars="${E(d.name)}">Voir les voitures</a></div>
       </div></section>
       <section class="dp-section dp-others"><div class="wrap">
         <span class="eyebrow">Continuer l’exploration</span><h2>Autres <em>destinations</em></h2>
@@ -97,8 +97,18 @@
     list = Array.isArray(list) ? list : [];
     window.__destCars = new Map(list.map((v) => [String(v.id), v]));
     if (list.length) box.innerHTML = `<h3 class="dp-sub">Locations de voitures à ${E(d.name)}</h3>${limited(list.map(carMini), 3, 'voitures', 'dp-cars')}`;
+    else if (!onlyCars) box.innerHTML = `<div class="dp-nocars"><div><b>Louer une voiture</b><span>Aucune voiture n’est publiée pour ${E(d.name)} en ce moment.</span></div><a class="btn ghost" href="#cars" data-page-link="cars" data-dest-cars="${E(d.name)}">Voir les voitures</a></div>`;
+    if (typeof bindLinks === 'function') bindLinks(document.getElementById('destRoot') || document);
     if (none) none.hidden = !(onlyCars && !list.length);
   }
+  // « Voir les voitures » : la page des voitures s'ouvre avec la ville déjà saisie quand elle est en France.
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-dest-cars]');
+    if (!b) return;
+    const d = D().find((x) => x.name === b.dataset.destCars);
+    const input = document.querySelector('#carSearchForm [name=pickup]');
+    if (input && d && /^france$/i.test(d.country)) input.value = d.name;
+  }, true);
   document.addEventListener('click', (e) => {
     const b = e.target.closest('[data-dest-car]');
     if (!b) return;

@@ -147,13 +147,14 @@
       // Vols : seulement les aéroports de nos offres, filtrés en tapant (aucune autre destination n'est cherchée).
       if (type === 'place' && input.dataset.geoOnly === 'offers') {
         const side = /^from/i.test(input.name) ? 'from' : 'to';
-        const all = window.TV_OFFER_PLACES?.[`${side}Air`] || [];
+        const pack = input.dataset.geoKind === 'pack';
+        const all = window.TV_OFFER_PLACES?.[`${side}${pack ? 'Pack' : 'Air'}`] || [];
         const rows = all.filter((c) => !needle || norm(c.name).includes(needle));
         if (mine !== seq || active !== input) return;
         const code = (n) => (String(n).match(/\(([A-Z]{3})\)\s*$/) || [])[1] || '';
         show(rows.length
-          ? [{ kind: 'head', label: side === 'from' ? 'Aéroports de départ de nos offres' : 'Aéroports d’arrivée de nos offres' }, ...rows.map((c) => ({ kind: 'row', value: c.name, html: `<strong><span class="geo-code">${esc(code(c.name))}</span>${esc(String(c.name).replace(/\s*\([A-Z]{3}\)\s*$/, ''))}</strong><span>Aéroport</span>` }))]
-          : [{ kind: 'head', label: all.length ? 'Aucun aéroport ne correspond' : 'Aucun vol publié pour le moment' }]);
+          ? [{ kind: 'head', label: pack ? 'Villes' : 'Aéroports' }, ...rows.map((c) => ({ kind: 'row', value: c.name, html: pack ? `<strong>${esc(c.name)}</strong><span>${esc(c.country || '')}</span>` : `<strong><span class="geo-code">${esc(code(c.name))}</span>${esc(String(c.name).replace(/\s*\([A-Z]{3}\)\s*$/, ''))}</strong><span>Aéroport</span>` }))]
+          : [{ kind: 'head', label: all.length ? (pack ? 'Aucune ville ne correspond' : 'Aucun aéroport ne correspond') : (pack ? 'Aucun séjour publié pour le moment' : 'Aucun vol publié pour le moment') }]);
         return;
       }
       if (type === 'country') {

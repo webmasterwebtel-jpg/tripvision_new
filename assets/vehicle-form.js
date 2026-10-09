@@ -99,9 +99,9 @@
         ${(availability.rentals || []).length ? `<div class="rentals-list"><span class="dz-label">Réservations (remplies automatiquement)</span>${availability.rentals.map((r) => `<div class="rental"><b>${esc(r.reference)}</b> ${esc(r.customer)}<span>${esc(r.start)} → ${esc(r.end)}</span><em class="${r.status === 'confirmed' ? 'ok' : ''}">${r.status === 'confirmed' ? 'Confirmée' : 'Réservée, à confirmer'}</em></div>`).join('')}</div>` : ''}
       </div>` : ''}
       ${section('Période de location')}
-      ${hint('Indiquez les dates entre lesquelles votre véhicule peut être loué. Il n’apparaît sur le site que pour des locations comprises dans cette période.')}
+      ${hint('Indiquez les dates entre lesquelles votre véhicule peut être loué : 30 jours au maximum. Il n’apparaît sur le site que pour des locations comprises dans cette période, et vous pourrez la prolonger ensuite.')}
       ${input('Louable à partir du', `name="availableFrom" type="date" required value="${esc(x.availableFrom || '')}"`)}
-      ${input('Louable jusqu’au', `name="availableUntil" type="date" required value="${esc(x.availableUntil || '')}"`)}
+      ${input('Louable jusqu’au (30 jours maximum)', `name="availableUntil" type="date" required value="${esc(x.availableUntil || '')}"`)}
       ${section('Tarifs')}
       ${hint('Les prix par jour, par semaine et par mois sont obligatoires. Le site retient automatiquement la formule la moins chère pour la durée choisie. Chaque tranche de 24 h entamée est comptée : 24 h 01 = 2 jours.')}
       ${hint('Ces prix sont ceux que le client paie au total. À la réservation, il règle en ligne un acompte de 10 % du total de sa location (options comprises) ; le solde vous est payé à l’agence lors du retrait du véhicule.')}
@@ -173,6 +173,7 @@
     if (n('youngDriverAge') && !(n('youngDriverFee') > 0)) throw new Error('Indiquez le montant du supplément jeune conducteur.');
     if (!DAYS.some(([k]) => f.querySelector(`[data-hd=${k}]`).checked)) throw new Error('Indiquez les horaires d’ouverture de l’agence (au moins un jour).');
     if (val('availableUntil') < val('availableFrom')) throw new Error('La fin de la période de location doit suivre son début.');
+    if (new Date(`${val('availableUntil')}T00:00:00Z`) - new Date(`${val('availableFrom')}T00:00:00Z`) > 30 * 864e5) throw new Error('Un véhicule peut être mis en ligne pour 30 jours au maximum.');
     const extras = [...f.querySelectorAll('.extra-row')].map((row) => {
       const v = (k) => row.querySelector(`[data-ef=${k}]`).value.trim();
       return { key: row.dataset.extraKey, name: v('name'), description: v('desc') || undefined, pricePerDay: Number(v('price')), pricing: v('pricing') || 'day', maxQty: Number(v('max')) || 1 };
@@ -196,6 +197,15 @@
     };
   }
 
+  // Période de location : 30 jours au maximum, la date de fin est bornée dès qu'on choisit le début.
+  const capPeriod = (f) => {
+    const a = f?.elements?.namedItem('availableFrom'), b = f?.elements?.namedItem('availableUntil');
+    if (!a || !b || !a.value) return;
+    const add = (d, n) => new Date(new Date(`${d}T00:00:00Z`).getTime() + n * 864e5).toISOString().slice(0, 10);
+    b.min = a.value; b.max = add(a.value, 30);
+    if (b.value && b.value > b.max) b.value = b.max;
+  };
+  document.addEventListener('change', (e) => { if (e.target.matches?.('input[name=availableFrom], input[name=availableUntil]')) capPeriod(e.target.form); });
   // Champs qui n'ont de sens que selon un choix : frais de restitution, supplément jeune conducteur.
   const syncConditional = (f) => {
     if (!f?.elements) return;
@@ -208,7 +218,7 @@
     if (young && yfee) { const on = Boolean(young.value); yfee.disabled = !on; yfee.closest('label').hidden = !on; ypr.closest('label').hidden = !on; }
   };
   document.addEventListener('change', (e) => { if (e.target.matches?.('select[name=returnPolicy], select[name=youngDriverAge]')) syncConditional(e.target.form); });
-  new MutationObserver((muts) => { for (const m of muts) for (const n of m.addedNodes) if (n.nodeType === 1) { const f = n.matches?.('form') ? n : n.querySelector?.('form'); if (f) { syncConditional(f); f.querySelectorAll('[data-cat-preview]').forEach(paintCatPreview); } } }).observe(document.body, { childList: true, subtree: true });
+  new MutationObserver((muts) => { for (const m of muts) for (const n of m.addedNodes) if (n.nodeType === 1) { const f = n.matches?.('form') ? n : n.querySelector?.('form'); if (f) { syncConditional(f); capPeriod(f); f.querySelectorAll('[data-cat-preview]').forEach(paintCatPreview); } } }).observe(document.body, { childList: true, subtree: true });
 
   document.addEventListener('change', (e) => {
     if (!e.target.matches?.('input[name=unlimitedKm]')) return;
