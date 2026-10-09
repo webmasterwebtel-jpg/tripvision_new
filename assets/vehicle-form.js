@@ -116,7 +116,6 @@
       ${input('Prix par mois (€)', `name="priceMonth" type="number" min="1" step="0.01" required value="${esc(num(x.priceMonth))}"`)}
       ${input('Ancien prix par jour barré (€, facultatif)', `name="oldPriceDay" type="number" min="1" step="0.01" placeholder="Affiche une remise sur le site" value="${esc(num(x.oldPriceDay))}"`)}
       ${input('Dépôt de garantie (€, facultatif)', `name="deposit" type="number" min="0" step="1" placeholder="500" value="${esc(num(x.deposit))}"`)}
-      ${lessor ? input('Franchise (€, facultatif)', `name="excess" type="number" min="0" step="1" placeholder="1200" value="${esc(num(x.excess))}"`) : ''}
       ${section('Lieu de retrait')}
       ${input('Ville', `name="city" required data-geo="city" data-geo-country="country" placeholder="Rechercher une ville…" value="${esc(x.city && x.city !== x.pickupAddress ? x.city : '')}"`)}
       ${input('Pays', `name="country" required readonly data-code="FR" value="France" title="Les locations sont pour l’instant disponibles uniquement en France"`)}
@@ -156,7 +155,7 @@
       ${select('Conducteur jeune : supplément', 'youngDriverAge', YOUNG_AGES, x.youngDriverFee > 0 ? (x.youngDriverAge ?? '') : (x.id || x.model ? 'none' : ''), { required: true, choose: true })}
       ${input('Montant du supplément jeune conducteur (€)', `name="youngDriverFee" type="number" min="0.01" step="0.01" placeholder="Ex. 25" ${x.youngDriverFee > 0 ? 'required' : 'disabled'} value="${esc(x.youngDriverFee > 0 ? x.youngDriverFee : '')}"`)}
       ${select('Facturation du supplément', 'youngDriverPricing', [['day', 'Par jour de location'], ['once', 'Forfait unique']], x.youngDriverPricing || 'day', {})}
-      ${lessor ? `${section('Protection de la franchise')}${hint('Fixée par TripVision, au même prix pour toutes les voitures : le client peut l’ajouter à sa réservation. Rien à saisir ici.')}` : ''}
+      ${lessor ? `${section('Franchise et protection')}${hint('Fixées par TripVision, identiques pour toutes les voitures : le montant de la franchise se règle avec le bouton « Franchise » de la page Annonces, le prix de la protection dans Réglages. Rien à saisir ici.')}` : ''}
       ${section('Options payantes (facultatif)')}
       ${hint('Ajoutez les options proposées avec ce véhicule : nom, description, prix, quantité maximale. Le client les choisit pendant sa réservation.')}
       <div class="full extras-box" data-extras>
@@ -242,7 +241,22 @@
     f.querySelectorAll('[data-util]').forEach((l) => { l.hidden = !util; const i = l.querySelector('input'); i.disabled = !util; i.required = util; });
     const unl = f.elements.namedItem('unlimitedKm')?.checked;
     for (const name of ['kmPerDay', 'extraKmPrice']) { const i = f.elements.namedItem(name); if (i) { i.disabled = Boolean(unl); i.required = !unl; } }
+    if (f.querySelector('[data-util]')) syncStars(f);
   };
+  // L'astérisque rouge suit le caractère obligatoire du champ (ex. volume et charge dès qu'on choisit « Utilitaire / Van »).
+  const syncStars = (f) => f.querySelectorAll('label').forEach((label) => {
+    const control = label.querySelector(':scope > input:not([type=hidden]):not([type=checkbox]):not([type=radio]), :scope > select, :scope > textarea');
+    if (!control) return;
+    let star = label.querySelector(':scope > .lbl > .req, :scope > .req');
+    if (!star && control.required) {
+      star = document.createElement('span');
+      star.className = 'req'; star.setAttribute('aria-hidden', 'true'); star.textContent = '*';
+      const text = [...label.childNodes].find((n) => n.nodeType === 3 && n.textContent.trim());
+      if (text) { const name = document.createElement('span'); name.className = 'lbl'; text.replaceWith(name); name.append(text, star); } else label.prepend(star);
+      label.dataset.req = '1';
+    }
+    if (star) star.hidden = !control.required;
+  });
   document.addEventListener('change', (e) => { if (e.target.matches?.('select[name=returnPolicy], select[name=youngDriverAge], select[name=category], input[name=unlimitedKm]')) syncConditional(e.target.form); });
   new MutationObserver((muts) => { for (const m of muts) for (const n of m.addedNodes) if (n.nodeType === 1) { const f = n.matches?.('form') ? n : n.querySelector?.('form'); if (f) { syncConditional(f); capPeriod(f); f.querySelectorAll('[data-cat-preview]').forEach(paintCatPreview); } } }).observe(document.body, { childList: true, subtree: true });
 

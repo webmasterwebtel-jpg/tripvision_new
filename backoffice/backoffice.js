@@ -30,6 +30,7 @@ const ICONS = {
   profile: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
   clock2: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  shield: '<path d="M12 3 4 6v6c0 4.5 3.2 7.8 8 9 4.8-1.2 8-4.5 8-9V6z"/>',
 };
 const icon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 const EYE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -41,19 +42,19 @@ const SECTIONS = [
   { id: 'overview', label: 'Vue d’ensemble', group: 'ops', allow: () => true },
   { id: 'vehicles', label: 'Annonces véhicules', group: 'ops', allow: () => true },
   { id: 'offers', label: 'Vols & packs', group: 'ops', allow: () => true },
-  { id: 'bookings', label: 'Réservations', group: 'ops', allow: () => true },
+  { id: 'bookings', label: 'Réservations', group: 'ops', allow: () => can('bookings.view') || can('bookings.manage') },
   { id: 'categories', label: 'Catégories de voitures', group: 'ops', allow: () => can('categories.manage') },
   { id: 'notifications', label: 'Notifications', group: 'ops', allow: () => true },
   { id: 'messages', label: 'Messages de contact', group: 'ops', nav: false, allow: () => true },
-  { id: 'chats', label: 'Messagerie', group: 'ops', allow: () => true },
-  { id: 'trends', label: 'Tendances', group: 'ops', allow: () => true },
+  { id: 'chats', label: 'Messagerie', group: 'ops', allow: () => can('chats.reply') || can('chats.manage') },
+  { id: 'trends', label: 'Tendances', group: 'ops', allow: () => can('trends.view') },
   { id: 'partners', label: 'Partenaires', group: 'gov', allow: () => can('partners.manage') },
   { id: 'applications', label: 'Candidatures', group: 'gov', allow: () => can('partners.manage') },
-  { id: 'clients', label: 'Clients', group: 'gov', allow: () => ACCOUNT_PERMS.some(can) },
+  { id: 'clients', label: 'Clients', group: 'gov', allow: () => can('clients.view') || ACCOUNT_PERMS.some(can) },
   { id: 'mailing', label: 'Mailing', group: 'gov', allow: () => can('mailing.export') },
   { id: 'accounts', label: 'Comptes internes', group: 'gov', allow: () => ACCOUNT_PERMS.some(can) },
   { id: 'settings', label: 'Réglages', group: 'gov', allow: () => can('settings.manage') },
-  { id: 'audit', label: 'Journal d’audit', group: 'gov', allow: () => isGov() },
+  { id: 'audit', label: 'Journal d’audit', group: 'gov', allow: () => can('audit.view') },
   { id: 'connections', label: 'Connexions', group: 'tech', allow: () => user?.role === 'it' },
   { id: 'health', label: 'Santé système', group: 'tech', allow: () => user?.role === 'it' },
   { id: 'profile', label: 'Mon profil', group: 'me', allow: () => true },
@@ -61,18 +62,21 @@ const SECTIONS = [
 const ROLE_LABELS = { it: 'IT', admin: 'Agent', manager: 'Manager' };
 const MANAGEABLE = { it: ['it', 'manager', 'admin'], manager: ['manager', 'admin'], admin: [] };
 const PERM_GROUPS = [
-  ['Annonces véhicules', [['vehicles.create', 'Ajouter'], ['vehicles.edit', 'Valider, publier, masquer, programmer'], ['vehicles.delete', 'Supprimer']]],
+  ['Annonces véhicules', [['vehicles.create', 'Ajouter'], ['vehicles.edit', 'Valider, publier, masquer, programmer'], ['vehicles.delete', 'Supprimer'], ['franchise.manage', 'Fixer le montant de la franchise (toutes les voitures)']]],
   ['Offres vols & packs', [['offers.create', 'Créer'], ['offers.edit', 'Activer, désactiver, programmer'], ['offers.delete', 'Supprimer']]],
-  ['Réservations', [['bookings.manage', 'Confirmer les réservations (l’annulation reste au loueur)']]],
+  ['Réservations', [['bookings.view', 'Voir les réservations et leurs chiffres'], ['bookings.manage', 'Confirmer les réservations (l’annulation reste au loueur)']]],
+  ['Messagerie', [['chats.reply', 'Lire et répondre aux clients et partenaires'], ['chats.manage', 'Clôturer, rouvrir, attribuer, gérer les réponses types']]],
   ['Partenaires', [['partners.manage', 'Créer, valider, suspendre'], ['partners.delete', 'Supprimer']]],
+  ['Clients', [['clients.view', 'Voir la liste des clients']]],
   ['Mailing', [['mailing.export', 'Consulter et exporter les contacts']]],
   ['Catégories de voitures', [['categories.manage', 'Créer, modifier, ordonner les catégories']]],
-  ['Messagerie', [['chats.manage', 'Clôturer, rouvrir, attribuer les conversations, gérer les réponses types']]],
+  ['Tendances', [['trends.view', 'Voir ce que les visiteurs recherchent et réservent']]],
   ['Réglages', [['settings.manage', 'Modifier le prix de la protection de la franchise']]],
   ['Comptes internes', [['accounts.create', 'Créer'], ['accounts.edit', 'Modifier, bloquer, réinitialiser'], ['accounts.delete', 'Supprimer']]],
+  ['Journal d’audit', [['audit.view', 'Consulter le journal des actions']]],
 ];
 const ALL_PERMS = PERM_GROUPS.flatMap(([, items]) => items.map(([k]) => k));
-const DEFAULT_PERMS = { admin: ['vehicles.create', 'vehicles.edit', 'offers.create', 'offers.edit'], manager: ['vehicles.create', 'vehicles.edit', 'offers.create', 'offers.edit', 'bookings.manage', 'mailing.export', 'categories.manage', 'chats.manage'] };
+const DEFAULT_PERMS = { admin: ['vehicles.create', 'vehicles.edit', 'offers.create', 'offers.edit', 'bookings.view', 'chats.reply'], manager: ['vehicles.create', 'vehicles.edit', 'offers.create', 'offers.edit', 'bookings.view', 'bookings.manage', 'mailing.export', 'categories.manage', 'chats.reply', 'chats.manage', 'trends.view', 'clients.view', 'audit.view'] };
 const ERRORS = {
   FORBIDDEN: 'Action non autorisée pour votre rôle.',
   PERMISSION_DENIED: 'Vous n’avez pas la permission d’effectuer cette action.',
@@ -140,7 +144,7 @@ const hotelSummary = (o) => [esc(o.hotel_name), o.hotel_stars ? '★'.repeat(Num
 function markRequired(root = document) {
   root.querySelectorAll('label').forEach(label => {
     if (label.dataset.req) return;
-    const control = label.querySelector(':scope > input[required]:not([type=hidden]), :scope > select[required], :scope > textarea[required], :scope > .pw > input[required]');
+    const control = label.querySelector(':scope > input[required]:not([type=hidden]):not([type=radio]):not([type=checkbox]), :scope > select[required], :scope > textarea[required], :scope > .pw > input[required]');
     if (!control) return;
     label.dataset.req = '1';
     const star = document.createElement('span');
@@ -537,7 +541,9 @@ const confirmCall = ({ eyebrow, title, message, confirmLabel, tone = 'primary', 
 /* ---------- Panneau de détail ---------- */
 const CH = { mode: 'reply', files: [], staff: null };
 const chatBadge = (t) => t.status === 'closed' ? `<span class="badge off">${t.auto_closed ? 'Clôturée (auto)' : 'Clôturée'}</span>` : t.status === 'pending' ? '<span class="badge plain">En attente du client</span>' : t.unread > 0 ? `<span class="badge warn">${t.unread} non lu${t.unread > 1 ? 's' : ''}</span>` : '<span class="badge ok">À traiter</span>';
-const attHtml = (list) => (list || []).map(a => /^image\//.test(a.mime) ? `<a class="att img" href="${esc(a.url)}" target="_blank" rel="noopener"><img src="${esc(a.url)}" alt="${esc(a.name)}" loading="lazy"></a>` : `<a class="att file" href="${esc(a.url)}" target="_blank" rel="noopener">${icon('applications')}<span>${esc(a.name)}</span></a>`).join('');
+const attHtml = (list) => (list || []).map(a => /^image\//.test(a.mime)
+  ? `<a class="att img" href="${esc(a.url)}" target="_blank" rel="noopener" data-lightbox="${esc(a.url)}" data-name="${esc(a.name)}"><img src="${esc(a.url)}" alt="${esc(a.name)}"></a>`
+  : `<a class="att file" href="${esc(a.url)}" target="_blank" rel="noopener">${icon('applications')}<span><b>${esc(a.name)}</b><small>PDF${a.size ? ` · ${Math.max(1, Math.round(a.size / 1024))} Ko` : ''}</small></span></a>`).join('');
 const chatBubble = (m, t) => m.sender === 'system'
   ? `<div class="bubble system"><span>${esc(m.body)}</span><small>${fmtDate(m.created_at)}</small></div>`
   : m.sender === 'note'
@@ -564,26 +570,75 @@ async function openChat(id, keepDraft = false) {
         <button class="icon-btn light" type="button" data-action="close-drawer" aria-label="Fermer">${icon('close')}</button></header>
       <div class="drawer-body chat-body">${bubbles}</div>
       ${closed
-        ? `<footer class="drawer-foot chat-closed"><p class="muted">Conversation clôturée${t.closed_by ? ` par ${esc(t.closed_by)}` : ''}. ${d.canManage ? 'Rouvrez-la pour répondre.' : 'Seule une personne autorisée peut la rouvrir.'}</p>${toggle}</footer>`
+        ? `<footer class="drawer-foot chat-closed">${toggle || '<p class="muted">Conversation clôturée.</p>'}</footer>`
         : `<form id="chatReplyForm" class="drawer-foot chat-form" data-thread="${esc(id)}">
             <div class="chat-tabs" role="tablist"><button type="button" class="${CH.mode === 'reply' ? 'on' : ''}" data-chat-mode="reply">Répondre au ${t.kind === 'client' ? 'client' : 'partenaire'}</button><button type="button" class="${CH.mode === 'note' ? 'on' : ''}" data-chat-mode="note">Note interne</button></div>
             <textarea name="message" ${CH.mode === 'note' ? 'required' : ''} maxlength="4000" rows="3" placeholder="${CH.mode === 'note' ? 'Note visible uniquement par l’équipe…' : 'Votre réponse…'}"></textarea>
             <div class="chat-files" id="chatFiles">${chatFileChips()}</div>
-            <div class="chat-form-actions"><label class="btn small file-btn" ${CH.mode === 'note' ? 'hidden' : ''}>${icon('upload')} Joindre<input type="file" id="chatFile" accept="image/jpeg,image/png,image/webp,application/pdf" multiple hidden></label>${CH.mode === 'note' ? '' : cannedSel}${toggle}<button class="btn primary" type="submit">${CH.mode === 'note' ? 'Ajouter la note' : 'Envoyer'}</button></div>
+            <div class="chat-form-actions"><label class="btn small file-btn" ${CH.mode === 'note' ? 'hidden' : ''}>${icon('upload')} Joindre<input type="file" id="chatFile" accept="${CHAT_ACCEPT}" multiple hidden></label><span class="chat-formats">JPG, PNG ou PDF · 8 Mo</span>${CH.mode === 'note' ? '' : cannedSel}${toggle}<button class="btn primary" type="submit">${CH.mode === 'note' ? 'Ajouter la note' : 'Envoyer'}</button></div>
           </form>`}`;
     $('#drawer').hidden = false;
     $('#overlay').hidden = false;
     document.body.classList.add('drawer-open');
     const body = $('#drawer .chat-body');
     body.scrollTop = body.scrollHeight;
+    CH.open = { id, sig: chatSigOf(d) };
   } catch (err) { if (!(err instanceof ApiError)) console.error(err); toast(err.message); }
 }
+// Conversation ouverte : les nouveaux messages (et pièces jointes) s'affichent sans recharger, le brouillon est conservé.
+const chatSigOf = (d) => `${d.thread.status}|${d.thread.assigned_to || ''}|${d.messages.length}|${d.messages.at(-1)?.id || ''}`;
+setInterval(async () => {
+  const drawer = $('#drawer');
+  if (!CH.open || document.hidden || drawer.hidden || !drawer.querySelector('.chat-body')) return;
+  try {
+    const d = await api(`/admin/chats/${CH.open.id}`);
+    const sig = chatSigOf(d);
+    if (sig === CH.open.sig || !CH.open) return;
+    const form = document.getElementById('chatReplyForm');
+    const draft = form?.elements.message.value || '';
+    const focused = document.activeElement === form?.elements.message;
+    await openChat(CH.open.id, true);
+    const ta = document.querySelector('#chatReplyForm textarea');
+    if (ta) { ta.value = draft; if (focused) ta.focus(); }
+    if (currentSection() === 'chats') refreshChatList();
+  } catch { /* nouvel essai au prochain passage */ }
+}, 5000);
+async function refreshChatList() {
+  try {
+    const list = await api('/admin/chats');
+    DATA.chats = list;
+    list.forEach(t => {
+      const row = document.querySelector(`#tblChats tbody tr[data-id="${CSS.escape(t.id)}"]`);
+      const cell = row?.querySelector('[data-last]');
+      if (cell) cell.textContent = String(t.last_message || '').slice(0, 90);
+    });
+  } catch { /* sans gravité */ }
+}
+/* Aperçu des images jointes, sans quitter le back-office */
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('[data-lightbox]');
+  if (!a || e.ctrlKey || e.metaKey) return;
+  e.preventDefault();
+  const box = document.createElement('div');
+  box.className = 'lightbox';
+  box.innerHTML = `<figure><img src="${esc(a.dataset.lightbox)}" alt="${esc(a.dataset.name)}"><figcaption><span>${esc(a.dataset.name)}</span><a class="btn small" href="${esc(a.dataset.lightbox)}" target="_blank" rel="noopener" download="${esc(a.dataset.name)}">Ouvrir l’original</a></figcaption></figure><button type="button" class="lightbox-x" aria-label="Fermer">×</button>`;
+  const close = () => { box.remove(); document.removeEventListener('keydown', onKey, true); };
+  const onKey = (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); close(); } };
+  box.addEventListener('click', (ev) => { if (ev.target === box || ev.target.closest('.lightbox-x')) close(); });
+  document.addEventListener('keydown', onKey, true);
+  document.body.appendChild(box);
+});
+// Pièces jointes acceptées : JPG/JPEG, PNG et PDF (le type est déduit de l'extension si le navigateur ne le donne pas).
+const CHAT_ACCEPT = '.jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf';
+const chatMime = (file) => file.type && file.type !== 'image/pjpeg' ? file.type : ({ jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', pdf: 'application/pdf' }[String(file.name).split('.').pop().toLowerCase()] || '');
 const chatFileChips = () => CH.files.map((f, i) => `<span class="chip-file">${esc(f.name)}<button type="button" data-chat-unfile="${i}" aria-label="Retirer">×</button></span>`).join('');
 async function uploadChatFile(file) {
   if (file.size > 8 * 1024 * 1024) throw new ApiError('Fichier trop lourd (8 Mo maximum).');
-  const res = await fetch('/api/admin/chat-uploads', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': file.type, 'X-File-Name': encodeURIComponent(file.name) }, body: file });
+  const type = chatMime(file);
+  if (!['image/jpeg', 'image/png', 'application/pdf'].includes(type)) throw new ApiError(`« ${file.name} » : formats acceptés JPG, JPEG, PNG ou PDF.`);
+  const res = await fetch('/api/admin/chat-uploads', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': type, 'X-File-Name': encodeURIComponent(file.name) }, body: file });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError(data.message || 'Fichier refusé : JPG, PNG, WebP ou PDF.');
+  if (!res.ok) throw new ApiError(data.message || 'Fichier refusé : JPG, JPEG, PNG ou PDF (8 Mo maximum).');
   return data;
 }
 document.addEventListener('click', (e) => {
@@ -641,7 +696,7 @@ async function openClientDrawer(id) {
   } catch (err) { if (!(err instanceof ApiError)) console.error(err); toast(err.message); }
 }
 
-function closeDrawer() { document.body.classList.remove('drawer-open'); $('#drawer').hidden = true; $('#overlay').hidden = true; $('#drawer').innerHTML = ''; }
+function closeDrawer() { CH.open = null; document.body.classList.remove('drawer-open'); $('#drawer').hidden = true; $('#overlay').hidden = true; $('#drawer').innerHTML = ''; }
 
 const NOTIF_ICON = { booking: 'bookings', request: 'offers', contact: 'messages', chat: 'chats', application: 'applications', vehicle: 'vehicles', freshness: 'clock' };
 const ago = (iso) => {
@@ -709,7 +764,7 @@ function detailContent(kind, id) {
       body: kv([
         ['Catégorie', esc(v.category)], ['Partenaire', esc(v.partner_company)], ['Ville', [v.city !== v.pickupAddress && esc(v.city), esc(v.country)].filter(Boolean).join(', ')], ['Retrait', esc(v.pickupAddress)],
         ['Tarifs', [`${money(v.priceDay)}/jour`, v.priceWeek && `${money(v.priceWeek)}/sem.`, v.priceMonth && `${money(v.priceMonth)}/mois`].filter(Boolean).join(' · ')], ['Places / portes', `${esc(v.passengers)} / ${esc(v.doors)}`], ['Boîte', esc(v.transmission)],
-        ['Bagages / carburant', `${esc(v.bags ?? '—')} / ${esc(v.fuelType || '—')}`], ['Dépôt de garantie', v.deposit == null ? '—' : money(v.deposit)], ['Franchise', v.excess == null ? '—' : money(v.excess)], ['Assurance', esc(v.insuranceType || [v.theftProtection && 'Protection vol', v.fullInsurance && 'Tous risques'].filter(Boolean).join(', ') || '—')], ['Kilométrage', esc(v.includedKm)], ['Politique carburant', esc(v.fuelPolicy)], ['Annulation', v.freeCancelHours > 0 ? `Gratuite jusqu’à ${esc(v.freeCancelHours)} h avant` : 'Pas d’annulation gratuite'], ['Protection franchise', v.protectionPricePerDay ? `${money(v.protectionPricePerDay)}/j (prix fixe TripVision)` : '—'], ['Âge du conducteur', [v.minAge ? `${esc(v.minAge)} ans minimum` : '18 ans minimum', v.youngDriverFee > 0 && `moins de ${esc(v.youngDriverAge)} ans : + ${money(v.youngDriverFee)}${v.youngDriverPricing === 'once' ? ' (forfait)' : '/jour'}`].filter(Boolean).join(' · ')], ['Restitution ailleurs', v.returnPolicy === 'fee' ? `Possible, + ${money(v.returnFee)}` : v.returnPolicy === 'free' ? 'Possible, sans frais' : 'Non'], ['Options payantes', (v.extras || []).map(e => `${esc(e.name)} ${money(e.pricePerDay)}/j`).join(', ')],
+        ['Bagages / carburant', `${esc(v.bags ?? '—')} / ${esc(v.fuelType || '—')}`], ['Dépôt de garantie', v.deposit == null ? '—' : money(v.deposit)], ['Franchise', v.excess == null ? 'Non définie' : `${money(v.excess)} (montant fixé par TripVision)`], ['Assurance', esc(v.insuranceType || [v.theftProtection && 'Protection vol', v.fullInsurance && 'Tous risques'].filter(Boolean).join(', ') || '—')], ['Kilométrage', esc(v.includedKm)], ['Politique carburant', esc(v.fuelPolicy)], ['Annulation', v.freeCancelHours > 0 ? `Gratuite jusqu’à ${esc(v.freeCancelHours)} h avant` : 'Pas d’annulation gratuite'], ['Protection franchise', v.protectionPricePerDay ? `${money(v.protectionPricePerDay)}/j (prix fixe TripVision)` : '—'], ['Âge du conducteur', [v.minAge ? `${esc(v.minAge)} ans minimum` : '18 ans minimum', v.youngDriverFee > 0 && `moins de ${esc(v.youngDriverAge)} ans : + ${money(v.youngDriverFee)}${v.youngDriverPricing === 'once' ? ' (forfait)' : '/jour'}`].filter(Boolean).join(' · ')], ['Restitution ailleurs', v.returnPolicy === 'fee' ? `Possible, + ${money(v.returnFee)}` : v.returnPolicy === 'free' ? 'Possible, sans frais' : 'Non'], ['Options payantes', (v.extras || []).map(e => `${esc(e.name)} ${money(e.pricePerDay)}/j`).join(', ')],
         ['Options', [v.airConditioning && 'Climatisation', v.fullInsurance && 'Assurance tous risques', v.theftProtection && 'Protection vol', v.freeCancel && 'Annulation gratuite', v.freeModification && 'Modification gratuite'].filter(Boolean).join(', ')],
         ['Conditions', esc(v.rentalConditions)], ['Mise en ligne', isScheduled(v) ? `Programmée le ${fmtDate(v.publish_at)}` : isLive(v) ? 'En ligne' : 'Hors ligne'], ['Ajoutée le', fmtDate(v.created_at)],
       ]),
@@ -788,7 +843,7 @@ function offerActions(o, withExtras = false) {
   return [
     siteBtn('offer', o, 'Voir l’offre'),
     can('offers.edit') && actionBtn('offer-edit', o.id, 'Modifier'),
-    can('offers.edit') && (withExtras || false) && actionBtn('offer-schedule', o.id, `${icon('clock')} Programmer`),
+    !isArchived(o) && can('offers.edit') && actionBtn('offer-schedule', o.id, `${icon('clock')} Programmer`),
     !isArchived(o) && can('offers.edit') && (o.status === 'active' ? actionBtn('offer-deactivate', o.id, 'Désactiver', 'danger') : actionBtn('offer-activate', o.id, 'Activer', 'primary')),
     can('offers.delete') && actionBtn('offer-delete', o.id, 'Supprimer', 'danger'),
   ].filter(Boolean).join('');
@@ -797,7 +852,7 @@ function vehicleActions(v, withExtras = false) {
   return [
     siteBtn('vehicle', v, 'Voir l’annonce'),
     can('vehicles.edit') && actionBtn('vehicle-edit', v.id, 'Modifier'),
-    can('vehicles.edit') && withExtras && actionBtn('vehicle-schedule', v.id, `${icon('clock')} Programmer`),
+    can('vehicles.edit') && actionBtn('vehicle-schedule', v.id, `${icon('clock')} Programmer`),
     can('vehicles.edit') && (v.status === 'approved' ? actionBtn('vehicle-hide', v.id, 'Masquer', 'danger') : actionBtn('vehicle-approve', v.id, 'Publier', 'primary')),
     can('vehicles.delete') && actionBtn('vehicle-delete', v.id, 'Supprimer', 'danger'),
   ].filter(Boolean).join('');
@@ -890,7 +945,8 @@ const RENDERERS = {
   },
 
   async vehicles() {
-    const { vehicles, partners } = await api('/admin/dashboard');
+    const [{ vehicles, partners }, fr] = await Promise.all([api('/admin/dashboard'), api('/admin/franchise').catch(() => null)]);
+    if (fr) FR.amount = fr.amount;
     DATA.vehicles = vehicles;
     DATA.partners = partners;
     const rows = vehicles.map(v => `<tr class="clickable"${fa({ status: pubKey(v), category: v.category, owner: v.partner_company })} data-detail="vehicle" data-id="${esc(v.id)}">
@@ -898,7 +954,7 @@ const RENDERERS = {
       <td class="num">${money(v.priceDay)}</td><td>${pubBadge(v)}</td>
       <td class="actions"><span class="row-actions">${vehicleActions(v)}</span></td></tr>`).join('');
     return pageHead('Opérations', 'Annonces <em>véhicules</em>', 'Cliquez sur une annonce pour la consulter. Ajoutez-en une, publiez-la ou programmez sa mise en ligne.',
-      can('vehicles.create') ? '<button class="btn primary" type="button" data-action="vehicle-new">+ Nouvelle annonce</button>' : '')
+      `${can('franchise.manage') || can('settings.manage') ? `<button class="btn" type="button" data-action="franchise-edit">${icon('shield')} Franchise${FR.amount ? ` · ${money(FR.amount)}` : ''}</button>` : ''}${can('vehicles.create') ? '<button class="btn primary" type="button" data-action="vehicle-new">+ Nouvelle annonce</button>' : ''}`)
       + tableCard({ id: 'tblVehicles', title: 'Annonces', count: plural(vehicles.length, 'annonce', 'annonces'), head: ['Modèle', 'Catégorie', 'Partenaire', 'Prix / jour', 'Publication', ''], rows, empty: 'Aucune annonce', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['approved', 'En ligne'], ['rented', 'Loué'], ['draft', 'Brouillon'], ['scheduled', 'Programmée'], ['pending', 'En attente'], ['inactive', 'Masquée']] }, { key: 'category', label: 'Catégorie', options: TVVehicleForm.CATEGORIES.map(c => [c, c]) }, { key: 'owner', label: 'Propriétaire', options: uniq(vehicles.map(v => v.partner_company)) }] });
   },
 
@@ -1039,7 +1095,7 @@ const RENDERERS = {
     const open = list.filter(t => t.status !== 'closed').length;
     const rows = list.map(t => `<tr class="clickable"${fa({ state: t.status === 'closed' ? 'closed' : t.status === 'pending' ? 'pending' : t.unread > 0 ? 'unread' : 'open', owner: t.assigned_to === user.id ? 'mine' : t.assigned_to ? 'other' : 'none' })} data-detail="chat" data-id="${esc(t.id)}">
       <td><strong>${esc(t.subject || 'Conversation')}</strong><span class="muted">${esc(t.partner_name)} · ${t.kind === 'client' ? 'Client' : 'Partenaire'}</span></td>
-      <td>${t.last_sender === 'admin' ? '<span class="muted">Vous : </span>' : ''}${esc(String(t.last_message || '').slice(0, 90))}<span class="muted">${t.messages} message${t.messages > 1 ? 's' : ''}</span></td>
+      <td>${t.last_sender === 'admin' ? '<span class="muted">Vous : </span>' : ''}<span data-last>${esc(String(t.last_message || '').slice(0, 90))}</span><span class="muted">${t.messages} message${t.messages > 1 ? 's' : ''}</span></td>
       <td>${t.assigned_name ? `<span class="who-sm"><span class="avatar sm">${esc(initials(t.assigned_name))}</span>${esc(t.assigned_name)}</span>` : '<span class="muted">Non attribuée</span>'}</td>
       <td class="num">${fmtDate(t.updated_at)}</td>
       <td>${chatBadge(t)}${t.rating ? `<span class="rating" title="${t.rating}/5">${'★'.repeat(t.rating)}${'☆'.repeat(5 - t.rating)}</span>` : ''}</td></tr>`).join('');
@@ -1265,6 +1321,24 @@ const toggle = (name, label, checked = false) => `<label class="switch"><input t
 const HOTEL_BOARDS = ['Petit-déjeuner inclus', 'Demi-pension', 'Pension complète', 'Sans repas'];
 const fv = (x) => esc(x ?? '');
 const options = (list, current) => list.map(x => `<option ${x === current ? 'selected' : ''}>${esc(x)}</option>`).join('');
+
+/* ---------- Franchise : un seul montant, fixé par TripVision pour toutes les voitures ---------- */
+const FR = { amount: null };
+function openFranchiseModal() {
+  const has = FR.amount != null;
+  openModal({
+    eyebrow: 'Annonces véhicules', title: has ? 'Modifier la franchise' : 'Définir la franchise', confirmLabel: has ? 'Enregistrer le montant' : 'Appliquer à tous les véhicules', loadingText: 'Enregistrement…',
+    bodyHtml: `<p class="modal-text">Le montant restant à la charge du client en cas de dommage ou de vol. Il s’applique à <b>toutes les annonces</b>, celles des partenaires comprises, et s’affiche sur chaque offre.</p>
+      <div class="form-grid">${field('Montant de la franchise (€)', `name="amount" type="number" min="1" max="100000" step="1" required placeholder="Ex. 1200" value="${has ? esc(FR.amount) : ''}"`)}</div>
+      ${has ? `<div class="fr-current"><span>Montant actuel : <b>${money(FR.amount)}</b></span><button class="btn small danger" type="button" data-action="franchise-delete">Supprimer la franchise</button></div>` : ''}`,
+    run: async (f) => {
+      const amount = Number(f.elements.amount.value);
+      const r = await api('/admin/franchise', { method: 'PUT', body: JSON.stringify({ amount }) });
+      FR.amount = r.amount;
+      return { title: 'Franchise enregistrée', text: `${money(r.amount)} pour toutes les voitures, affiché tout de suite sur le site.` };
+    },
+  });
+}
 
 function openVehicleModal(existing = null, availability = { blocks: [], rentals: [] }) {
   const v = existing;
@@ -1492,6 +1566,8 @@ const ACT = {
   },
   'application-reject': (id) => confirmCall({ eyebrow: 'Candidature', title: `Refuser ${esc(DATA.applications.find(x => x.id === id).trade_name)} ?`, message: 'La candidature sera classée comme refusée. Aucun e-mail n’est envoyé au candidat.', confirmLabel: 'Refuser', tone: 'danger', loading: 'Enregistrement…', success: 'Candidature refusée', method: 'POST', url: `/admin/partner-applications/${id}/reject` }),
   'vehicle-new': () => openVehicleModal(),
+  'franchise-edit': () => openFranchiseModal(),
+  'franchise-delete': () => confirmCall({ eyebrow: 'Franchise', title: 'Supprimer la franchise ?', message: 'Plus aucun montant de franchise ne sera affiché sur les annonces. Vous pourrez en définir un nouveau à tout moment.', confirmLabel: 'Supprimer', tone: 'danger', loading: 'Suppression…', success: 'Franchise supprimée', successText: 'Les annonces n’affichent plus de franchise.', method: 'DELETE', url: '/admin/franchise' }),
   'vehicle-edit': async (id) => {
     try { openVehicleModal(find('vehicles', id), await api(`/admin/vehicles/${id}/availability`)); }
     catch (err) { if (!(err instanceof ApiError)) console.error(err); toast(err.message); }

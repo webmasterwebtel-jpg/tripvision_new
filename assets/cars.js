@@ -182,6 +182,8 @@
   const initialsOf = (t) => String(t).trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
   const dayFmt = (d) => (d ? new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '');
   const find = (id) => state.vehicles.find((x) => String(x.id) === String(id));
+  // Le modèle est enregistré avec « ou similaire » : on l'affiche une seule fois, en petit.
+  const carName = (v) => E(String(v.name || v.model || '').replace(/\s+ou similaire\s*$/i, ''));
 
   /* ---------- Éléments d'affichage ---------- */
   const specs = (v) => [
@@ -260,7 +262,7 @@
     return `<article class="rent-card" data-vehicle-id="${v.id}">
       <div class="rent-media">${TVGallery.html(v.images?.length ? v.images : [v.image], v.name || v.model, { spin: v.spin })}<span class="rent-cat">${E(v.category)}</span>${old ? `<span class="rent-flag deal">-${Math.round((1 - base / old) * 100)} %</span>` : ''}</div>
       <div class="rent-body">
-        <header><h3>${E(v.name || v.model)} <small>ou similaire</small></h3><p class="rent-lessor"><span class="lessor-av">${E(initialsOf(lessor))}</span><span>Proposé par <b>${E(lessor)}</b></span><span class="dot">·</span>${I.pin}${E(place)}</p></header>
+        <header><h3>${carName(v)} <small>ou similaire</small></h3><p class="rent-lessor"><span class="lessor-av">${E(initialsOf(lessor))}</span><span>Proposé par <b>${E(lessor)}</b></span><span class="dot">·</span>${I.pin}${E(place)}</p></header>
         <ul class="rent-specs">${specs(v)}</ul>
         ${inc.length ? `<ul class="rent-inc">${checkList(inc)}</ul>` : ''}
         <ul class="rent-chips">${chips(v)}</ul>
@@ -496,7 +498,7 @@
     const back = returnLabel(v);
     return `
       <div class="rsv-car">${TVGallery.html(v.images?.length ? v.images : [v.image], v.name || v.model, { spin: v.spin })}
-        <div class="rsv-car-body"><h3>${E(v.name || v.model)} <small>ou similaire</small></h3><ul class="rent-specs">${specs(v)}</ul>
+        <div class="rsv-car-body"><h3>${carName(v)} <small>ou similaire</small></h3><ul class="rent-specs">${specs(v)}</ul>
           <p class="rent-lessor"><span class="lessor-av">${E(initialsOf(lessorOf(v)))}</span><span>Proposé par <b>${E(lessorOf(v))}</b></span></p></div></div>
       <div class="rsv-block"><h4>Votre location</h4>
         <div class="rsv-tl"><span class="tl-dot"></span><div><b>${E(dayFmt(S().startDate))}</b><span>${E(S().startTime)} · ${E(pick)}</span></div></div>
@@ -516,11 +518,13 @@
     return `<ol class="rsv-steps" style="--n:${steps.length}">${steps.map((t, i) => `<li class="${i + 1 === R.step ? 'on' : ''} ${i + 1 < R.step || R.done ? 'done' : ''}"><span>${i + 1 < R.step || R.done ? '✓' : i + 1}</span><b>${t}</b></li>`).join('')}</ol>`;
   }
 
-  // Quelques lignes pour présenter l'offre avant de parler du prix.
+  // Présentation de l'offre avant le prix : catégorie, loueur, lieu de retrait, puis les caractéristiques.
   function offerIntro(v) {
     const place = [v.city && v.city !== v.pickupAddress ? v.city : '', v.country].filter(Boolean).join(', ') || v.pickupAddress;
-    const bits = [v.passengers && `${v.passengers} places`, v.bags != null && `${v.bags} valise${v.bags > 1 ? 's' : ''}`, v.transmission && v.transmission.toLowerCase(), v.fuelType && v.fuelType.toLowerCase(), v.airConditioning && 'climatisée'].filter(Boolean);
-    return `Une ${E(String(v.category || 'voiture').toLowerCase())} proposée par <b>${E(lessorOf(v))}</b>, à retirer à <b>${E(place)}</b> : ${E(bits.join(', '))}. Voici tout ce que comprend l’offre, avant de voir le prix.`;
+    return `<div class="rsv-offer-meta">${v.category ? `<span class="rsv-cat">${E(v.category)}</span>` : ''}
+        <span class="rsv-by"><span class="lessor-av">${E(initialsOf(lessorOf(v)))}</span>Proposé par <b>${E(lessorOf(v))}</b></span>
+        ${place ? `<span class="rsv-where">${I.pin}Retrait à <b>${E(place)}</b></span>` : ''}</div>
+      <ul class="rent-specs rsv-specs">${specs(v)}</ul>`;
   }
   function highlights(v) {
     const km = v.unlimitedKm ? ['Kilométrage', 'Illimité'] : v.includedKm ? ['Kilométrage', `${v.includedKm}${v.extraKmPrice ? ` · puis ${euro(v.extraKmPrice)} / km` : ''}`] : null;
@@ -539,7 +543,7 @@
     const inc = includedList(v);
     const addons = [...(v.protectionPricePerDay > 0 ? [`Protection de la franchise · ${euro(v.protectionPricePerDay)} / jour`] : []), ...(v.extras || []).map((x) => `${x.name} · ${euro(x.pricePerDay)}${x.pricing === 'once' ? ' (forfait)' : ' / jour'}`)];
     return `
-      <section class="rsv-card rsv-offer"><span class="eyebrow">Votre offre</span><h3>${E(v.name || v.model)} <small>ou similaire</small></h3><p class="rsv-lead">${offerIntro(v)}</p>
+      <section class="rsv-card rsv-offer"><span class="eyebrow">Votre offre</span><h3>${carName(v)} <small>ou similaire</small></h3>${offerIntro(v)}
         <ul class="rsv-hl">${highlights(v)}</ul></section>
       <section class="rsv-card"><h3>${I.cal}Retrait et restitution</h3>
         <div class="rsv-two">

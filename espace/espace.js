@@ -168,7 +168,7 @@ document.addEventListener('change', (e) => { const s = e.target.closest('[data-c
 function markRequired(root = document) {
   root.querySelectorAll('label').forEach(label => {
     if (label.dataset.req) return;
-    const control = label.querySelector(':scope > input[required]:not([type=hidden]), :scope > select[required], :scope > textarea[required], :scope > .tvpw > input[required]');
+    const control = label.querySelector(':scope > input[required]:not([type=hidden]):not([type=radio]):not([type=checkbox]), :scope > select[required], :scope > textarea[required], :scope > .tvpw > input[required]');
     if (!control) return;
     label.dataset.req = '1';
     const star = document.createElement('span');
@@ -385,7 +385,7 @@ const isScheduled = (v) => v.status === 'approved' && v.publish_at && new Date(v
 function vehicleState(v) {
   if (v.rentedUntil) return ['warn', `Loué jusqu’au ${fmtDate(v.rentedUntil)}`, 'rented'];
   if (v.afterRental && v.status === 'inactive') return ['plain', 'Brouillon — location terminée', 'draft'];
-  if (v.status === 'approved') return isScheduled(v) ? ['warn', 'Programmée', 'scheduled'] : ['ok', 'En ligne', 'online'];
+  if (v.status === 'approved') return isScheduled(v) ? ['warn', `Programmée · ${fmtDate(v.publish_at)}`, 'scheduled'] : ['ok', 'En ligne', 'online'];
   if (v.status === 'pending') return ['warn', 'En attente de validation', 'pending'];
   return v.hiddenByPartner ? ['plain', 'Masquée par vous', 'hidden'] : ['bad', 'Suspendue par TripVision', 'suspended'];
 }
@@ -508,13 +508,20 @@ const TOPICS = () => (user.role === 'partner'
   : ['Ma réservation', 'Paiement ou remboursement', 'Un vol ou un pack', 'Mon compte', 'Autre question']);
 const shortDate = (d) => { const x = new Date(d), t = new Date(); return x.toDateString() === t.toDateString() ? x.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : x.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); };
 const chatState = (t) => t.status === 'closed' ? '<span class="badge plain">Clôturée</span>' : t.status === 'pending' ? '<span class="badge ok">Réponse reçue</span>' : '<span class="badge warn">En cours de traitement</span>';
-const attHtml = (list) => (list || []).map(a => /^image\//.test(a.mime) ? `<a class="att img" href="${esc(a.url)}" target="_blank" rel="noopener"><img src="${esc(a.url)}" alt="${esc(a.name)}" loading="lazy"></a>` : `<a class="att file" href="${esc(a.url)}" target="_blank" rel="noopener">${icon('doc')}<span>${esc(a.name)}</span></a>`).join('');
+const attHtml = (list) => (list || []).map(a => /^image\//.test(a.mime)
+  ? `<a class="att img" href="${esc(a.url)}" target="_blank" rel="noopener" data-lightbox="${esc(a.url)}" data-name="${esc(a.name)}"><img src="${esc(a.url)}" alt="${esc(a.name)}"></a>`
+  : `<a class="att file" href="${esc(a.url)}" target="_blank" rel="noopener">${icon('doc')}<span><b>${esc(a.name)}</b><small>PDF${a.size ? ` · ${Math.max(1, Math.round(a.size / 1024))} Ko` : ''}</small></span></a>`).join('');
+// Pièces jointes acceptées : JPG/JPEG, PNG et PDF (le type est déduit de l'extension si le navigateur ne le donne pas).
+const CHAT_ACCEPT = '.jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf';
+const chatMime = (file) => file.type && file.type !== 'image/pjpeg' ? file.type : ({ jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', pdf: 'application/pdf' }[String(file.name).split('.').pop().toLowerCase()] || '');
 const chatChips = () => CH.files.map((f, i) => `<span class="chip-file">${esc(f.name)}<button type="button" data-chat-unfile="${i}" aria-label="Retirer">×</button></span>`).join('');
 async function uploadChatFile(file) {
   if (file.size > 8 * 1024 * 1024) throw new ApiError('Fichier trop lourd (8 Mo maximum).');
-  const res = await fetch('/api/chat/uploads', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': file.type, 'X-File-Name': encodeURIComponent(file.name) }, body: file });
+  const type = chatMime(file);
+  if (!['image/jpeg', 'image/png', 'application/pdf'].includes(type)) throw new ApiError(`« ${file.name} » : formats acceptés JPG, JPEG, PNG ou PDF.`);
+  const res = await fetch('/api/chat/uploads', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': type, 'X-File-Name': encodeURIComponent(file.name) }, body: file });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError(data.message || 'Fichier refusé : JPG, PNG, WebP ou PDF (8 Mo maximum).');
+  if (!res.ok) throw new ApiError(data.message || 'Fichier refusé : JPG, JPEG, PNG ou PDF (8 Mo maximum).');
   return data;
 }
 async function chatPage() {
@@ -540,9 +547,9 @@ async function chatPage() {
       <div class="chat-body chat-scroll" id="chatBody">${bubbles(d.messages)}</div>
       ${closed
         ? `${rate}<div class="chat-closed-note"><span>Cette conversation est clôturée. Pour une nouvelle question, démarrez une autre conversation.</span><button class="btn primary small" type="button" data-action="chat-new">Nouvelle conversation</button></div>`
-        : `<form id="chatForm" class="chat-form" data-thread="${esc(d.thread.id)}"><div class="chat-files" id="chatFiles">${chatChips()}</div><div class="chat-row"><textarea name="message" rows="2" maxlength="2000" placeholder="Votre message…" aria-label="Votre message"></textarea><label class="btn small file-btn" title="Joindre une photo ou un PDF">${icon('upload')}<input type="file" id="chatFile" accept="image/jpeg,image/png,image/webp,application/pdf" multiple hidden></label><button class="btn primary" type="submit">Envoyer</button></div></form>`}`
+        : `<form id="chatForm" class="chat-form" data-thread="${esc(d.thread.id)}"><div class="chat-files" id="chatFiles">${chatChips()}</div><div class="chat-row"><textarea name="message" rows="2" maxlength="2000" placeholder="Votre message…" aria-label="Votre message"></textarea><label class="btn small file-btn" title="Joindre une image (JPG, PNG) ou un PDF">${icon('upload')}<span>Joindre</span><input type="file" id="chatFile" accept="${CHAT_ACCEPT}" multiple hidden></label><button class="btn primary" type="submit">Envoyer</button></div></form>`}`
     : `<div class="empty">${icon('chat')}<strong>Aucune conversation</strong><span>Posez votre question à l’équipe TripVision : nous répondons dès que possible.</span><button class="btn primary" type="button" data-action="chat-new">Nouvelle conversation</button></div>`;
-  return pageHead('Assistance', '<em>Messagerie</em>', 'Une conversation par sujet : suivez-les toutes ici. Vous recevez un e-mail à chaque réponse, et vous pouvez joindre une photo ou un PDF.', `<button class="btn primary small" type="button" data-action="chat-new">${icon('plus')} Nouvelle conversation</button>`) + `
+  return pageHead('Assistance', '<em>Messagerie</em>', 'Une conversation par sujet : suivez-les toutes ici. Vous recevez un e-mail à chaque réponse, et vous pouvez joindre des images (JPG, PNG) ou des PDF.', `<button class="btn primary small" type="button" data-action="chat-new">${icon('plus')} Nouvelle conversation</button>`) + `
     <section class="card chat-card chat-layout" data-view="${CH.view}">
       <aside class="chat-list">${list || '<p class="muted pad">Aucune conversation pour le moment.</p>'}</aside>
       <div class="chat-pane">${pane}</div>
@@ -835,6 +842,49 @@ async function accountPage() {
     </section>`;
 }
 
+/* ---------- Mise en ligne : tout de suite ou à une date choisie ---------- */
+const pad2 = (n) => String(n).padStart(2, '0');
+const localInput = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+function scheduleBox(current) {
+  const later = !!(current && new Date(current) > new Date());
+  return `<fieldset class="schedule full">
+      <legend>Mise en ligne</legend>
+      <label class="choice"><input type="radio" name="when" value="now" ${later ? '' : 'checked'}><span>Tout de suite</span></label>
+      <label class="choice"><input type="radio" name="when" value="later" ${later ? 'checked' : ''}><span>Programmer à une date précise</span></label>
+      <input type="datetime-local" name="publishAt" min="${localInput(new Date(Date.now() + 5 * 60000))}" value="${later ? localInput(new Date(current)) : ''}" ${later ? '' : 'hidden'} aria-label="Date et heure de mise en ligne">
+    </fieldset>`;
+}
+function readPublishAt(form) {
+  if (form.elements.when?.value !== 'later') return null;
+  const value = form.elements.publishAt.value;
+  if (!value) throw new ApiError('Choisissez la date et l’heure de mise en ligne.');
+  const date = new Date(value);
+  if (date <= new Date()) throw new ApiError('La date de mise en ligne doit être dans le futur.');
+  return date.toISOString();
+}
+document.addEventListener('change', (e) => {
+  if (e.target.name !== 'when' || !e.target.closest('.schedule')) return;
+  const date = e.target.closest('.schedule').querySelector('input[name=publishAt]');
+  date.hidden = e.target.value !== 'later';
+  date.required = e.target.value === 'later';
+  if (!date.hidden) date.focus();
+});
+
+/* Aperçu des images jointes, sans quitter l'espace */
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('[data-lightbox]');
+  if (!a || e.ctrlKey || e.metaKey) return;
+  e.preventDefault();
+  const box = document.createElement('div');
+  box.className = 'lightbox';
+  box.innerHTML = `<figure><img src="${esc(a.dataset.lightbox)}" alt="${esc(a.dataset.name)}"><figcaption><span>${esc(a.dataset.name)}</span><a class="btn small" href="${esc(a.dataset.lightbox)}" target="_blank" rel="noopener" download="${esc(a.dataset.name)}">Ouvrir l’original</a></figcaption></figure><button type="button" class="lightbox-x" aria-label="Fermer">×</button>`;
+  const close = () => { box.remove(); document.removeEventListener('keydown', onKey, true); };
+  const onKey = (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); close(); } };
+  box.addEventListener('click', (ev) => { if (ev.target === box || ev.target.closest('.lightbox-x')) close(); });
+  document.addEventListener('keydown', onKey, true);
+  document.body.appendChild(box);
+});
+
 /* ---------- Formulaire véhicule ---------- */
 function openVehicleModal(existing = null, availability = { blocks: [], rentals: [] }) {
   const v = existing, editing = Boolean(v);
@@ -843,10 +893,12 @@ function openVehicleModal(existing = null, availability = { blocks: [], rentals:
     confirmLabel: editing ? 'Enregistrer les modifications' : 'Valider le véhicule', loadingText: editing ? 'Enregistrement…' : 'Envoi du véhicule…',
     bodyHtml: `
       <div class="form-grid tight">${TVVehicleForm.html(v, { availability })}</div>
+      ${scheduleBox(v?.publish_at)}
 `,
     run: async (f) => {
-      const body = TVVehicleForm.read(f);
+      const body = { ...TVVehicleForm.read(f), publishAt: readPublishAt(f) };
       await api(editing ? `/partner/vehicles/${v.id}` : '/partner/vehicles', { method: editing ? 'PATCH' : 'POST', body: JSON.stringify(body) });
+      if (body.publishAt) return { title: editing ? 'Véhicule modifié' : 'Véhicule programmé', text: `Il apparaîtra sur le site le ${fmtDate(body.publishAt)}.` };
       return editing ? { title: 'Véhicule modifié', text: 'Les changements sont enregistrés.' } : { title: 'Véhicule publié', text: 'Il est visible sur le site dès maintenant.' };
     },
   });
@@ -884,7 +936,7 @@ const ACT = {
       <label class="full">Sujet<select name="topic" required>${TOPICS().map(t => `<option>${esc(t)}</option>`).join('')}</select></label>
       ${field('Précision (facultatif)', 'name="detail" maxlength="80" placeholder="Ex. la référence TV-1234"', true)}
       <label class="full">Votre message<textarea name="message" rows="5" required maxlength="2000" placeholder="Expliquez-nous votre demande…"></textarea></label>
-      <label class="full">Une photo ou un PDF ? (facultatif, 3 maximum)<input type="file" name="files" accept="image/jpeg,image/png,image/webp,application/pdf" multiple></label></div>`,
+      <label class="full">Une photo ou un PDF ? (facultatif, 3 maximum)<input type="file" name="files" accept="${CHAT_ACCEPT}" multiple><small class="muted">JPG, JPEG, PNG ou PDF · 8 Mo maximum par fichier</small></label></div>`,
     run: async (form) => {
       const f = Object.fromEntries(new FormData(form));
       const picked = [...form.elements.namedItem('files').files].slice(0, 3);

@@ -11,19 +11,21 @@ export const GOVERNANCE_ROLES = ['it', 'manager'];
 export const IT_ROLES = ['it'];
 
 export const PERMISSIONS = [
-  'vehicles.create', 'vehicles.edit', 'vehicles.delete',
+  'vehicles.create', 'vehicles.edit', 'vehicles.delete', 'franchise.manage',
   'offers.create', 'offers.edit', 'offers.delete',
-  'bookings.manage',
+  'bookings.view', 'bookings.manage',
   'partners.manage', 'partners.delete',
-  'accounts.create', 'accounts.edit', 'accounts.delete',
-  'mailing.export', 'categories.manage', 'chats.manage', 'settings.manage',
+  'clients.view', 'accounts.create', 'accounts.edit', 'accounts.delete',
+  'mailing.export', 'categories.manage', 'chats.reply', 'chats.manage', 'settings.manage',
+  'trends.view', 'audit.view',
 ];
 
 export const DEFAULT_MANAGER_PERMISSIONS = {
-  'vehicles.create': true, 'vehicles.edit': true, 'offers.create': true, 'offers.edit': true, 'bookings.manage': true, 'mailing.export': true, 'categories.manage': true, 'chats.manage': true,
+  'vehicles.create': true, 'vehicles.edit': true, 'offers.create': true, 'offers.edit': true, 'bookings.view': true, 'bookings.manage': true, 'mailing.export': true, 'categories.manage': true,
+  'chats.reply': true, 'chats.manage': true, 'trends.view': true, 'clients.view': true, 'audit.view': true,
 };
 // Un agent publie surtout de nouvelles offres : ce sont ses droits de départ.
-export const DEFAULT_AGENT_PERMISSIONS = { 'vehicles.create': true, 'vehicles.edit': true, 'offers.create': true, 'offers.edit': true };
+export const DEFAULT_AGENT_PERMISSIONS = { 'vehicles.create': true, 'vehicles.edit': true, 'offers.create': true, 'offers.edit': true, 'bookings.view': true, 'chats.reply': true };
 
 export function canManageRole(actorRole, targetRole) {
   return (MANAGEABLE_ROLES[actorRole] || []).includes(targetRole);

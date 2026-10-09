@@ -42,7 +42,7 @@
       </section>
       <section class="dp-section dp-places-wrap"><div class="wrap">
         <span class="eyebrow">À voir, à faire</span><h2>Les lieux <em>à ne pas manquer</em></h2>
-        <div class="dp-places">${d.places.map(([t, x], i) => `<article><b>${String(i + 1).padStart(2, '0')}</b><h3>${E(t)}</h3><p>${E(x)}</p></article>`).join('')}</div>
+        <div class="dp-places">${d.places.map(([t, x], i) => `<article><figure class="dp-pic"><img src="/assets/dest/places/${E(d.slug)}-${i}.jpg" alt="${E(t)}" loading="lazy" decoding="async"></figure><div class="dp-ptxt"><b>${String(i + 1).padStart(2, '0')}</b><h3>${E(t)}</h3><p>${E(x)}</p></div></article>`).join('')}</div>
       </div></section>
       <section class="dp-section dp-media" id="dpMedia" hidden><div class="wrap"><span class="eyebrow">Aperçu</span><h2>${E(d.name)} <em>en images et en vidéos</em></h2><div class="dm-grid" id="dmGrid"></div></div></section>
       <section class="dp-section wrap dp-tips"><span class="eyebrow">Avant de partir</span><h2>Conseils <em>pratiques</em></h2>
@@ -83,7 +83,7 @@
   /* ---------- Voitures à louer dans la ville ---------- */
   const carMini = (v) => `<article class="car-mini">
       <div class="cm-img"><img src="${E(v.image || '')}" alt="" loading="lazy" decoding="async"><span>${E(v.category || '')}</span></div>
-      <div class="cm-body"><h4>${E(v.name || v.model)} <small>ou similaire</small></h4>
+      <div class="cm-body"><h4>${E(String(v.name || v.model || '').replace(/\s+ou similaire\s*$/i, ''))} <small>ou similaire</small></h4>
         <p class="cm-lessor">${I('pin')} ${E([v.partner_company || 'TripVision', v.city].filter(Boolean).join(' · '))}</p>
         <ul class="cm-specs">${[v.passengers && `${v.passengers} places`, v.transmission, v.bags != null && `${v.bags} bagage${v.bags > 1 ? 's' : ''}`, v.airConditioning && 'Clim.'].filter(Boolean).map((t) => `<li>${E(t)}</li>`).join('')}</ul></div>
       <div class="cm-price"><small>à partir de</small><b>${eur(v.priceDay)}</b><em>/ jour</em><button class="btn small" type="button" data-dest-car="${E(v.id)}">Voir l’offre →</button></div>
@@ -123,6 +123,8 @@
     const v = e.target;
     if (e.isIntersecting && e.intersectionRatio >= 0.5) { if (!v.dataset.manual) v.play().catch(() => {}); } else { v.pause(); }
   }), { threshold: [0, 0.5, 0.9] }) : null;
+  // Photo d'un lieu absente : la carte reste, sans image.
+  document.addEventListener('error', (e) => { if (e.target.matches?.('.dp-pic img')) e.target.closest('.dp-pic').classList.add('off'); }, true);
   async function mountMedia(d) {
     const sec = document.getElementById('dpMedia'), grid = document.getElementById('dmGrid');
     if (!sec || !grid) return;

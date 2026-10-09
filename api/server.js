@@ -80,6 +80,8 @@ function auth(...allowedRoles) {
   };
 }
 const can = (key) => (req, res, next) => hasPermission(req.user, key) ? next() : res.status(403).json({ error: 'PERMISSION_DENIED' });
+const canAny = (...keys) => (req, res, next) => (keys.some(k => hasPermission(req.user, k)) ? next() : res.status(403).json({ error: 'PERMISSION_DENIED' }));
+const canChat = canAny('chats.reply', 'chats.manage');
 
 // ---------- Liens d'activation / réinitialisation (à usage unique, envoyés par e-mail) ----------
 const APP_URL = (process.env.APP_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
@@ -438,12 +440,17 @@ function mapPartner(p) {
   };
 }
 // ---------- Réglages du site et images types des catégories (relus régulièrement, lus sans attente par les mappers) ----------
-const settings = { franchisePerDay: 7 };
+const settings = { franchisePerDay: 7, franchiseAmount: null };
 const categoryImageByName = new Map();
 async function loadSettings() {
   try {
     const { rows } = await query('SELECT key, value FROM site_settings');
-    for (const r of rows) if (r.key === 'franchise_protection_per_day') settings.franchisePerDay = Math.max(0, Number(r.value) || 0);
+    settings.franchiseAmount = null;
+    for (const r of rows) {
+      if (r.key === 'franchise_protection_per_day') settings.franchisePerDay = Math.max(0, Number(r.value) || 0);
+      // Montant de la franchise : fixé par TripVision, le même pour tous les véhicules (absent = aucune franchise affichée).
+      if (r.key === 'franchise_amount' && r.value != null && Number(r.value) > 0) settings.franchiseAmount = Number(r.value);
+    }
   } catch (err) { console.error('Réglages :', err.message); }
 }
 async function loadCategoryImages() {
@@ -478,7 +485,7 @@ function mapVehicle(v, partnerTradeName) {
     id: v.id, partner_id: v.partner_id, status: v.status,
     model: v.model, category: v.category, pickupAddress: v.pickup_address,
     priceDay: Number(v.price_day), priceWeek: v.price_week == null ? null : Number(v.price_week), priceMonth: v.price_month == null ? null : Number(v.price_month), priceYear: details.priceYear ?? null,
-    ...details, commissionPct: COMMISSION_PCT, protectionPricePerDay: settings.franchisePerDay,
+    ...details, excess: settings.franchiseAmount, commissionPct: COMMISSION_PCT, protectionPricePerDay: settings.franchisePerDay,
     returnOptions, returnPolicy: details.returnPolicy || (!others.length ? 'none' : others.some(o => o.fee > 0) ? 'fee' : 'free'), returnFee: details.returnPolicy ? Number(details.returnFee) || 0 : Math.max(0, ...others.map(o => o.fee)),
     name: v.model, city: details.city || v.pickup_address, country: details.country || '', price: Number(v.price_day), seats: details.passengers,
     transmission: details.transmission, free_cancel: !!details.freeCancel, insurance: !!details.fullInsurance,
@@ -1147,7 +1154,7 @@ const rentalDays = (b) => {
 const COMMISSION_PCT = 10;
 const commissionOf = (total) => Math.round(Number(total) * COMMISSION_PCT) / 100;
 const conditionsSnapshot = (d, lessor) => ({
-  lessor, deposit: d.deposit ?? null, excess: d.excess ?? null, minAge: d.minAge ?? null, mileage: d.includedKm ?? null, extraKmPrice: d.extraKmPrice ?? null, fuelPolicy: d.fuelPolicy ?? null,
+  lessor, deposit: d.deposit ?? null, excess: settings.franchiseAmount ?? null, minAge: d.minAge ?? null, mileage: d.includedKm ?? null, extraKmPrice: d.extraKmPrice ?? null, fuelPolicy: d.fuelPolicy ?? null,
   freeCancelHours: d.freeCancelHours ?? 0, cancelFee: d.cancelFee ?? null, freeModification: !!d.freeModification, insuranceType: d.insuranceType ?? null, youngDriver: d.youngDriverFee > 0 ? { age: d.youngDriverAge, fee: d.youngDriverFee, pricing: d.youngDriverPricing || 'day' } : null, officeHours: d.officeHours ?? null, conditions: d.rentalConditions ?? null,
 });
 
@@ -1261,17 +1268,24 @@ const notInPast = (v) => {
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
   if (v.availableFrom < today) throw new z.ZodError([{ code: 'custom', path: ['availableFrom'], message: 'La période de location ne peut pas commencer dans le passé.' }]);
 };
+// Le partenaire peut programmer la mise en ligne de son annonce (date future), ou la publier tout de suite.
+const futurePublishAt = (body) => {
+  const { publishAt } = scheduleSchema.parse({ publishAt: body?.publishAt ?? null });
+  if (publishAt && new Date(publishAt) <= new Date()) throw new z.ZodError([{ code: 'custom', path: ['publishAt'], message: 'La date de mise en ligne doit être dans le futur.' }]);
+  return publishAt || null;
+};
 app.post('/api/partner/vehicles', auth('partner'), h(async (req, res) => {
   const v = vehicleSchema.parse(req.body);
   notInPast(v);
+  const publishAt = futurePublishAt(req.body);
   const { rows } = await query('SELECT id, trade_name FROM partners WHERE user_id = $1 AND deleted_at IS NULL', [req.user.id]);
   const partner = rows[0];
   if (!partner) return res.status(400).json({ error: 'PARTNER_PROFILE_REQUIRED' });
   const details = buildVehicleDetails(v, {});
   const { rows: inserted } = await query(
-    `INSERT INTO vehicles(partner_id, status, model, category, pickup_address, price_day, price_week, price_month, details)
-     VALUES ($1,'approved',$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-    [partner.id, /similaire/i.test(v.model) ? v.model : `${v.model} ou similaire`, v.category, v.pickupAddress, v.priceDay, v.priceWeek ?? null, v.priceMonth ?? null, details]
+    `INSERT INTO vehicles(partner_id, status, model, category, pickup_address, price_day, price_week, price_month, details, publish_at)
+     VALUES ($1,'approved',$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+    [partner.id, /similaire/i.test(v.model) ? v.model : `${v.model} ou similaire`, v.category, v.pickupAddress, v.priceDay, v.priceWeek ?? null, v.priceMonth ?? null, details, publishAt]
   );
   await saveBlocks(inserted[0].id, v.blocks);
   res.status(201).json(mapVehicle(inserted[0], partner.trade_name));
@@ -1288,7 +1302,7 @@ app.get('/api/admin/badges', auth(...BACKOFFICE_ROLES), h(async (req, res) => {
   res.json({ bookings: Number(r.bookings), messages: Number(r.messages), chats: Number(r.chats), applications: Number(r.applications), notifications: await unreadNotifications(req.user) });
 }));
 
-app.get('/api/admin/dashboard', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
+app.get('/api/admin/dashboard', auth(...BACKOFFICE_ROLES), h(async (req, res) => {
   const [{ rows: partners }, { rows: vehicles }, { rows: offers }] = await Promise.all([
     query('SELECT * FROM partners WHERE deleted_at IS NULL ORDER BY created_at DESC'),
     query(`SELECT v.*, p.trade_name FROM vehicles v LEFT JOIN partners p ON p.id = v.partner_id WHERE v.deleted_at IS NULL ORDER BY v.created_at DESC`),
@@ -1298,6 +1312,8 @@ app.get('/api/admin/dashboard', auth(...BACKOFFICE_ROLES), h(async (_req, res) =
     `SELECT b.*, v.model AS vehicle_model, (v.partner_id IS NOT NULL) AS partner_owned, COALESCE(p.trade_name, 'TripVision') AS company FROM bookings b LEFT JOIN vehicles v ON v.id = b.vehicle_id LEFT JOIN partners p ON p.id = v.partner_id WHERE b.payment_status NOT IN ('awaiting', 'failed') ORDER BY b.created_at DESC`
   );
   const { rows: offerRequests } = await query("SELECT * FROM offer_requests WHERE payment_status NOT IN ('awaiting', 'failed') ORDER BY created_at DESC LIMIT 300");
+  // Les réservations ne sont transmises qu'aux comptes qui ont le droit de les voir.
+  if (!hasPermission(req.user, 'bookings.view') && !hasPermission(req.user, 'bookings.manage')) { bookings.length = 0; offerRequests.length = 0; }
   const unseenBookings = bookings.filter(b => !b.staff_seen_at).length + offerRequests.filter(r => !r.staff_seen_at).length;
   const { rows: unread } = await query('SELECT count(*)::int AS n FROM contact_messages WHERE handled_at IS NULL');
   const { rows: extra } = await query("SELECT (SELECT count(*)::int FROM partner_applications WHERE status = 'pending') AS applications, (SELECT COALESCE(sum(unread_admin), 0)::int FROM chat_threads) AS chats");
@@ -1316,7 +1332,7 @@ app.get('/api/admin/dashboard', auth(...BACKOFFICE_ROLES), h(async (_req, res) =
 
 // ---------- Suivi des réservations, réglages, e-mails des vols, rythme de publication ----------
 // Combien de réservations ont été faites ces 7 derniers jours, ce mois-ci et cette année (voitures, packs, vols). Trace seulement : TripVision n'annule rien.
-app.get('/api/admin/booking-stats', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
+app.get('/api/admin/booking-stats', auth(...BACKOFFICE_ROLES), canAny('bookings.view', 'bookings.manage'), h(async (_req, res) => {
   const { rows } = await query(`
     WITH ev AS (
       SELECT 'car' AS kind, created_at FROM bookings WHERE payment_status NOT IN ('awaiting', 'failed')
@@ -1347,6 +1363,26 @@ app.put('/api/admin/settings', auth(...BACKOFFICE_ROLES), can('settings.manage')
   settings.franchisePerDay = b.franchisePerDay;
   await audit(req.user.id, 'update_settings', 'settings', null, clientIp(req));
   res.json({ franchisePerDay: settings.franchisePerDay });
+}));
+
+// Montant de la franchise, le même pour toutes les annonces : on le fixe, on le change ou on le supprime.
+app.get('/api/admin/franchise', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
+  await loadSettings();
+  res.json({ amount: settings.franchiseAmount, protectionPerDay: settings.franchisePerDay });
+}));
+app.put('/api/admin/franchise', auth(...BACKOFFICE_ROLES), canAny('franchise.manage', 'settings.manage'), h(async (req, res) => {
+  const { amount } = z.object({ amount: z.coerce.number({ invalid_type_error: 'Indiquez un montant.' }).min(1, 'Indiquez un montant d’au moins 1 €.').max(100000) }).parse(req.body);
+  await query(`INSERT INTO site_settings(key, value, updated_at, updated_by) VALUES ('franchise_amount', $1::jsonb, now(), $2)
+               ON CONFLICT (key) DO UPDATE SET value = $1::jsonb, updated_at = now(), updated_by = $2`, [JSON.stringify(amount), req.user.name || req.user.email]);
+  settings.franchiseAmount = amount;
+  await audit(req.user.id, 'set_franchise_amount', 'settings', null, clientIp(req));
+  res.json({ amount });
+}));
+app.delete('/api/admin/franchise', auth(...BACKOFFICE_ROLES), canAny('franchise.manage', 'settings.manage'), h(async (req, res) => {
+  await query("DELETE FROM site_settings WHERE key = 'franchise_amount'");
+  settings.franchiseAmount = null;
+  await audit(req.user.id, 'remove_franchise_amount', 'settings', null, clientIp(req));
+  res.json({ amount: null });
 }));
 
 // Avant d'ouvrir le site de la compagnie, le visiteur laisse son e-mail (obligatoire). Il reste facultatif d'accepter les offres par e-mail.
@@ -1592,22 +1628,24 @@ const chatThreadInfo = (t) => ({
 // Le client et le partenaire ne voient jamais les notes internes de l'équipe.
 const chatMessages = async (threadId, forStaff = false) => (await query(
   `SELECT id, sender, body, created_at, author, attachments FROM chat_messages WHERE thread_id = $1 ${forStaff ? '' : "AND sender <> 'note'"} ORDER BY created_at ASC`, [threadId])).rows;
+// Pièces jointes de la messagerie : JPG/JPEG, PNG ou PDF.
 const CHAT_FILE_TYPES = {
-  ...IMAGE_SIGNATURES,
+  'image/jpeg': IMAGE_SIGNATURES['image/jpeg'],
+  'image/png': IMAGE_SIGNATURES['image/png'],
   'application/pdf': (b) => b.length > 5 && b.subarray(0, 5).toString('ascii') === '%PDF-',
 };
 const rawChatFile = express.raw({ type: Object.keys(CHAT_FILE_TYPES), limit: '8mb' });
 async function storeChatFile(req, res) {
   const mime = String(req.headers['content-type'] || '').split(';')[0].trim();
   const body = req.body;
-  if (!CHAT_FILE_TYPES[mime] || !Buffer.isBuffer(body) || body.length === 0 || !CHAT_FILE_TYPES[mime](body)) return res.status(400).json({ error: 'INVALID_FILE', message: 'Formats acceptés : JPG, PNG, WebP ou PDF (8 Mo maximum).' });
+  if (!CHAT_FILE_TYPES[mime] || !Buffer.isBuffer(body) || body.length === 0 || !CHAT_FILE_TYPES[mime](body)) return res.status(400).json({ error: 'INVALID_FILE', message: 'Formats acceptés : JPG, JPEG, PNG ou PDF (8 Mo maximum).' });
   const { rows } = await query('INSERT INTO files(mime, size, data, created_by) VALUES ($1,$2,$3,$4) RETURNING id', [mime, body.length, body, req.user.id]);
   let name = 'fichier';
   try { name = decodeURIComponent(String(req.headers['x-file-name'] || 'fichier')).replace(/[^\p{L}\p{N}._ -]/gu, '').slice(0, 120) || 'fichier'; } catch { /* nom par défaut */ }
   res.status(201).json({ url: `/uploads/${rows[0].id}`, name, mime, size: body.length });
 }
 app.post('/api/chat/uploads', auth('partner', 'client'), rawChatFile, h(storeChatFile));
-app.post('/api/admin/chat-uploads', auth(...BACKOFFICE_ROLES), rawChatFile, h(storeChatFile));
+app.post('/api/admin/chat-uploads', auth(...BACKOFFICE_ROLES), canChat, rawChatFile, h(storeChatFile));
 
 async function ownVehicle(userId, id) {
   const { rows } = await query(
@@ -1630,9 +1668,11 @@ app.patch('/api/partner/vehicles/:id', auth('partner'), h(async (req, res) => {
   if (!current) return res.status(404).json({ error: 'NOT_FOUND' });
   const old = current.details || {};
   const details = buildVehicleDetails(v, old);
+  const reschedule = Object.prototype.hasOwnProperty.call(req.body || {}, 'publishAt');
+  const publishAt = reschedule ? futurePublishAt(req.body) : current.publish_at;
   const { rows } = await query(
-    `UPDATE vehicles SET model = $1, category = $2, pickup_address = $3, price_day = $4, price_week = $5, price_month = $6, details = $7, updated_at = now() WHERE id = $8 RETURNING *`,
-    [v.model, v.category, v.pickupAddress, v.priceDay, v.priceWeek ?? null, v.priceMonth ?? null, details, req.params.id]);
+    `UPDATE vehicles SET model = $1, category = $2, pickup_address = $3, price_day = $4, price_week = $5, price_month = $6, details = $7, publish_at = $9, updated_at = now() WHERE id = $8 RETURNING *`,
+    [v.model, v.category, v.pickupAddress, v.priceDay, v.priceWeek ?? null, v.priceMonth ?? null, details, req.params.id, publishAt]);
   await saveBlocks(req.params.id, v.blocks);
   await audit(req.user.id, 'partner_update_vehicle', 'vehicle', req.params.id, clientIp(req));
   res.json(mapVehicle(rows[0], current.trade_name));
@@ -1696,7 +1736,7 @@ function alertStaffOfMessage(thread, user, fresh) {
 app.get('/api/chat/threads', auth(...CHAT_ROLES), h(async (req, res) => {
   const { rows } = await query(
     `SELECT t.id, t.subject, t.status, t.created_at, t.updated_at, t.closed_at, t.auto_closed, t.rating, t.unread_partner AS unread,
-            (SELECT body FROM chat_messages m WHERE m.thread_id = t.id AND m.sender NOT IN ('system', 'note') ORDER BY m.created_at DESC LIMIT 1) AS last_message
+            (SELECT COALESCE(NULLIF(m.body, ''), CASE WHEN jsonb_array_length(COALESCE(m.attachments, '[]'::jsonb)) > 0 THEN '📎 ' || (m.attachments->0->>'name') ELSE '' END) FROM chat_messages m WHERE m.thread_id = t.id AND m.sender NOT IN ('system', 'note') ORDER BY m.created_at DESC LIMIT 1) AS last_message
      FROM chat_threads t WHERE t.partner_user_id = $1 ORDER BY (t.status <> 'closed') DESC, t.updated_at DESC LIMIT 100`, [req.user.id]);
   res.json(rows);
 }));
@@ -1812,7 +1852,7 @@ async function trendsData(from, to) {
   }
   return { totals, countries: top(countries), cities: top(cities), flights: top(flights), packs: top(packs), cars: top(cars), carCities: top(carCities), daily: daily.map((x) => ({ d: x.d, n: x.n })) };
 }
-app.get('/api/admin/trends', auth(...BACKOFFICE_ROLES), h(async (req, res) => {
+app.get('/api/admin/trends', auth(...BACKOFFICE_ROLES), can('trends.view'), h(async (req, res) => {
   const period = ['month', '30d', '90d', '12m'].includes(req.query.period) ? req.query.period : '30d';
   const [from, to] = periodRange(period);
   res.json({ period, from, to, ...(await trendsData(from, to)) });
@@ -1905,12 +1945,12 @@ app.post('/api/admin/offer-requests/:id/seen', auth(...BACKOFFICE_ROLES), h(asyn
 }));
 
 const CHAT_AUTO_CLOSE_DAYS = 7;
-app.get('/api/admin/chats', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
+app.get('/api/admin/chats', auth(...BACKOFFICE_ROLES), canChat, h(async (_req, res) => {
   const { rows } = await query(
     `SELECT t.id, t.subject, t.status, t.partner_name, t.partner_email, t.kind, t.created_at, t.updated_at, t.closed_at, t.closed_by, t.auto_closed, t.unread_admin AS unread,
             t.assigned_to, t.assigned_name, t.first_response_at, t.rating,
             (SELECT count(*)::int FROM chat_messages m WHERE m.thread_id = t.id AND m.sender NOT IN ('system', 'note')) AS messages,
-            (SELECT body FROM chat_messages m WHERE m.thread_id = t.id AND m.sender NOT IN ('system', 'note') ORDER BY m.created_at DESC LIMIT 1) AS last_message,
+            (SELECT COALESCE(NULLIF(m.body, ''), CASE WHEN jsonb_array_length(COALESCE(m.attachments, '[]'::jsonb)) > 0 THEN '📎 ' || (m.attachments->0->>'name') ELSE '' END) FROM chat_messages m WHERE m.thread_id = t.id AND m.sender NOT IN ('system', 'note') ORDER BY m.created_at DESC LIMIT 1) AS last_message,
             (SELECT sender FROM chat_messages m WHERE m.thread_id = t.id AND m.sender NOT IN ('system', 'note') ORDER BY m.created_at DESC LIMIT 1) AS last_sender
      FROM chat_threads t ORDER BY (t.status <> 'closed') DESC, (t.status = 'open') DESC, t.updated_at DESC LIMIT 400`
   );
@@ -1918,7 +1958,7 @@ app.get('/api/admin/chats', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
 }));
 
 // Chiffres de la messagerie : délai de première réponse, satisfaction, volumes.
-app.get('/api/admin/chats-stats', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
+app.get('/api/admin/chats-stats', auth(...BACKOFFICE_ROLES), canChat, h(async (_req, res) => {
   const { rows } = await query(`SELECT
       count(*) FILTER (WHERE status = 'open')::int AS open, count(*) FILTER (WHERE status = 'pending')::int AS pending, count(*) FILTER (WHERE status = 'closed')::int AS closed,
       count(*) FILTER (WHERE status <> 'closed' AND assigned_to IS NULL)::int AS unassigned,
@@ -1929,14 +1969,14 @@ app.get('/api/admin/chats-stats', auth(...BACKOFFICE_ROLES), h(async (_req, res)
   res.json({ ...r, rating: r.rating == null ? null : Number(r.rating), autoCloseDays: CHAT_AUTO_CLOSE_DAYS });
 }));
 
-app.get('/api/admin/chats/:id', auth(...BACKOFFICE_ROLES), h(async (req, res) => {
+app.get('/api/admin/chats/:id', auth(...BACKOFFICE_ROLES), canChat, h(async (req, res) => {
   const { rows } = await query('SELECT * FROM chat_threads WHERE id = $1', [req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
   await query('UPDATE chat_threads SET unread_admin = 0 WHERE id = $1', [rows[0].id]);
   res.json({ thread: chatThreadInfo(rows[0]), messages: await chatMessages(rows[0].id, true), canManage: hasPermission(req.user, 'chats.manage'), me: req.user.id });
 }));
 
-app.post('/api/admin/chats/:id/messages', auth(...BACKOFFICE_ROLES), h(async (req, res) => {
+app.post('/api/admin/chats/:id/messages', auth(...BACKOFFICE_ROLES), canChat, h(async (req, res) => {
   const { message: text, attachments } = chatMessageSchema.parse(req.body);
   const { rows } = await query('SELECT * FROM chat_threads WHERE id = $1', [req.params.id]);
   const thread = rows[0];
@@ -1954,7 +1994,7 @@ app.post('/api/admin/chats/:id/messages', auth(...BACKOFFICE_ROLES), h(async (re
 }));
 
 // Notes internes : visibles uniquement par l'équipe.
-app.post('/api/admin/chats/:id/notes', auth(...BACKOFFICE_ROLES), h(async (req, res) => {
+app.post('/api/admin/chats/:id/notes', auth(...BACKOFFICE_ROLES), canChat, h(async (req, res) => {
   const { message: text } = z.object({ message: z.string().trim().min(1).max(2000) }).parse(req.body);
   const { rows } = await query('SELECT id FROM chat_threads WHERE id = $1', [req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
@@ -1963,11 +2003,11 @@ app.post('/api/admin/chats/:id/notes', auth(...BACKOFFICE_ROLES), h(async (req, 
 }));
 
 // Attribution : chacun peut prendre une conversation en charge ; confier ou retirer à quelqu'un d'autre demande le droit « Messagerie ».
-app.get('/api/admin/chat-staff', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
+app.get('/api/admin/chat-staff', auth(...BACKOFFICE_ROLES), canChat, h(async (_req, res) => {
   const { rows } = await query("SELECT id, name, role FROM users WHERE role IN ('it','admin','manager') AND active AND deleted_at IS NULL ORDER BY name");
   res.json(rows);
 }));
-app.post('/api/admin/chats/:id/assign', auth(...BACKOFFICE_ROLES), h(async (req, res) => {
+app.post('/api/admin/chats/:id/assign', auth(...BACKOFFICE_ROLES), canChat, h(async (req, res) => {
   const { to } = z.object({ to: z.string().uuid().nullable() }).parse(req.body);
   const { rows } = await query('SELECT * FROM chat_threads WHERE id = $1', [req.params.id]);
   const t = rows[0];
@@ -1985,7 +2025,7 @@ app.post('/api/admin/chats/:id/assign', auth(...BACKOFFICE_ROLES), h(async (req,
 }));
 
 // Réponses types, partagées par l'équipe.
-app.get('/api/admin/chat-canned', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
+app.get('/api/admin/chat-canned', auth(...BACKOFFICE_ROLES), canChat, h(async (_req, res) => {
   res.json((await query('SELECT id, title, body FROM chat_canned ORDER BY created_at')).rows);
 }));
 app.post('/api/admin/chat-canned', auth(...BACKOFFICE_ROLES), can('chats.manage'), h(async (req, res) => {
@@ -1999,7 +2039,6 @@ app.delete('/api/admin/chat-canned/:id', auth(...BACKOFFICE_ROLES), can('chats.m
 }));
 
 // Clôturer / rouvrir une conversation : réservé à l'IT et aux managers ou agents qui en ont reçu le droit.
-const ROLE_LABEL = { it: 'l’équipe IT', admin: 'un agent', manager: 'un manager' };
 async function setThreadStatus(req, res, status) {
   const { rows } = await query('SELECT * FROM chat_threads WHERE id = $1', [req.params.id]);
   const t = rows[0];
@@ -2007,7 +2046,7 @@ async function setThreadStatus(req, res, status) {
   if (t.status === status) return res.json({ ok: true, status });
   const closing = status === 'closed';
   await query(`UPDATE chat_threads SET status = $2, closed_at = ${closing ? 'now()' : 'NULL'}, closed_by = ${closing ? '$3' : 'NULL'}, auto_closed = false, updated_at = now(), unread_partner = unread_partner + 1 WHERE id = $1`, closing ? [t.id, status, req.user.name || req.user.email] : [t.id, status]);
-  await query("INSERT INTO chat_messages(thread_id, sender, body) VALUES ($1,'system',$2)", [t.id, closing ? `Conversation clôturée par ${ROLE_LABEL[req.user.role] || 'l’équipe'}.` : `Conversation rouverte par ${ROLE_LABEL[req.user.role] || 'l’équipe'}.`]);
+  await query("INSERT INTO chat_messages(thread_id, sender, body) VALUES ($1,'system',$2)", [t.id, closing ? 'Conversation clôturée par TripVision.' : 'Conversation rouverte par TripVision.']);
   pushNotification(t.partner_user_id, { kind: 'chat', title: closing ? 'Conversation clôturée' : 'Conversation rouverte', body: closing ? `${t.subject} · donnez-nous votre avis` : t.subject, link: 'chat' });
   await audit(req.user.id, closing ? 'chat_closed' : 'chat_reopened', 'chat_thread', t.id, clientIp(req));
   res.json({ ok: true, status });
@@ -2191,7 +2230,7 @@ app.get('/unsubscribe', h(async (req, res) => {
 }));
 
 // ---------- Comptes clients (inscrits sur le site) ----------
-const canClients = (...keys) => (req, res, next) => (keys.some(k => hasPermission(req.user, k)) ? next() : res.status(403).json({ error: 'PERMISSION_DENIED' }));
+const canClients = (...keys) => canAny('clients.view', ...keys);
 const loadClient = async (req, res) => {
   const { rows } = await query(`SELECT id, email, name, phone, active, created_at, last_login_at, reset_requested_at FROM users WHERE id = $1 AND role = 'client' AND deleted_at IS NULL`, [req.params.id]);
   if (!rows[0]) { res.status(404).json({ error: 'NOT_FOUND' }); return null; }
@@ -2320,7 +2359,7 @@ app.delete('/api/admin/accounts/:id', auth(...BACKOFFICE_ROLES), can('accounts.d
   res.json({ ok: true });
 }));
 
-app.get('/api/admin/audit-logs', auth(...GOVERNANCE_ROLES), h(async (_req, res) => {
+app.get('/api/admin/audit-logs', auth(...BACKOFFICE_ROLES), can('audit.view'), h(async (_req, res) => {
   const { rows } = await query(
     `SELECT a.*, u.email AS actor_email, u.role AS actor_role FROM audit_logs a LEFT JOIN users u ON u.id = a.actor_id ORDER BY a.created_at DESC LIMIT 200`
   );
