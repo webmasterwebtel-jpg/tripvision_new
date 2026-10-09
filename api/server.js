@@ -253,7 +253,7 @@ const extraSchema = z.object({
 const vehicleBase = z.object({
   model: z.string().min(2), category: z.string().min(2), passengers: z.coerce.number().int().positive(), transmission: z.string().min(2),
   doors: z.coerce.number().int().positive(), bags: z.coerce.number().int().min(0).max(30).default(0), airConditioning: z.boolean().default(true),
-  fuelType: z.string().trim().max(30).optional(), volumeM3: z.coerce.number().positive().max(60).optional(), payloadKg: z.coerce.number().positive().max(20000).optional(),
+  fuelType: z.string().trim().min(2, 'Indiquez le carburant.').max(30), volumeM3: z.coerce.number().positive().max(60).optional(), payloadKg: z.coerce.number().positive().max(20000).optional(),
   priceDay: z.coerce.number().positive(), priceWeek: z.coerce.number().positive({ message: 'Le prix par semaine est obligatoire.' }), priceMonth: z.coerce.number().positive({ message: 'Le prix par mois est obligatoire.' }),
   oldPriceDay: z.coerce.number().positive().optional(),
   pickupAddress: z.string().min(2), city: z.string().trim().max(120).optional(),
@@ -263,26 +263,30 @@ const vehicleBase = z.object({
   availableFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Indiquez la date à partir de laquelle le véhicule est louable.'), availableUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Indiquez la date jusqu’à laquelle le véhicule est louable.'),
   includedCustom: z.array(z.string().trim().min(1).max(120)).max(12).optional(),
   // Restitution dans un autre lieu que le retrait : impossible, possible sans frais, ou avec un montant fixé par le loueur.
-  returnPolicy: z.enum(['none', 'free', 'fee']).default('none'), returnFee: z.coerce.number().min(0).max(5000).optional(),
+  returnPolicy: z.enum(['none', 'free', 'fee'], { errorMap: () => ({ message: 'Indiquez si le véhicule peut être rendu dans un autre lieu.' }) }), returnFee: z.coerce.number().min(0).max(5000).optional(),
   returnLocations: z.array(z.object({ key: z.string().trim().min(1).max(40), name: z.string().trim().min(1).max(120), address: z.string().trim().max(200).optional() })).max(15).optional(),
   youngDriverAge: z.coerce.number().int().min(19).max(30).optional(), youngDriverFee: z.coerce.number().min(0).max(1000).optional(), youngDriverPricing: z.enum(['day', 'once']).default('day'),
   blocks: z.array(z.object({ start: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/), end: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/), reason: z.string().trim().max(120).optional() })).max(60).optional(),
   lessorName: z.string().trim().max(120).optional(), returnLocation: z.string().trim().max(200).optional(),
-  deposit: z.coerce.number().min(0).max(100000).optional(), excess: z.coerce.number().min(0).max(100000).optional(), minAge: z.coerce.number().int().min(18).max(99).optional(),
+  deposit: z.coerce.number().min(0).max(100000).optional(), excess: z.coerce.number().min(0).max(100000).optional(), minAge: z.coerce.number().int({ message: 'Indiquez l’âge minimum du conducteur.' }).min(18).max(99),
   unlimitedKm: z.boolean().default(false), kmPerDay: z.coerce.number().int().positive().max(5000).optional(), extraKmPrice: z.coerce.number().min(0).max(100).optional(),
-  fuelPolicy: z.string().trim().max(80).optional(),
-  freeCancelHours: z.coerce.number().int().min(0).max(720).default(0), freeModification: z.boolean().default(false),
+  fuelPolicy: z.string().trim().min(2, 'Indiquez la politique carburant.').max(80),
+  // Annulation : période gratuite éventuelle, puis frais d'annulation fixés par le loueur.
+  freeCancelHours: z.coerce.number().int().min(0).max(720), cancelFee: z.coerce.number().positive({ message: 'Indiquez les frais d’annulation.' }).max(5000), freeModification: z.boolean().default(false),
   theftProtection: z.boolean().default(false), fullInsurance: z.boolean().default(false), insuranceType: z.string().trim().max(120).optional(),
   taxesIncluded: z.boolean().default(true),
-  rentalConditions: z.string().trim().max(3000).optional(), tips: z.string().trim().max(600).optional(),
+  rentalConditions: z.string().trim().min(10, 'Les conditions de location du loueur sont obligatoires.').max(3000), tips: z.string().trim().max(600).optional(),
   extras: z.array(extraSchema).max(8).optional(),
 });
 const untilAfterFrom = [(v) => v.availableUntil >= v.availableFrom, { message: 'La fin de la période de location doit suivre son début.', path: ['availableUntil'] }];
 const maxPeriodRule = [(v) => new Date(`${v.availableUntil}T00:00:00Z`).getTime() - new Date(`${v.availableFrom}T00:00:00Z`).getTime() <= 30 * 864e5, { message: 'Un véhicule peut être mis en ligne pour 30 jours au maximum : raccourcissez la période (vous pourrez la prolonger ensuite).', path: ['availableUntil'] }];
+const kmRule = [(v) => v.unlimitedKm || (Number(v.kmPerDay) > 0 && v.extraKmPrice !== undefined && v.extraKmPrice !== null), { message: 'Indiquez le kilométrage inclus par jour et le supplément par km en plus (ou cochez « illimité »).', path: ['kmPerDay'] }];
+const utilityRule = [(v) => !/utilit/i.test(v.category) || (Number(v.volumeM3) > 0 && Number(v.payloadKg) > 0), { message: 'Indiquez le volume utile et la charge utile du véhicule utilitaire.', path: ['volumeM3'] }];
+const inclusionRule = [(v) => v.freeModification || v.theftProtection || v.fullInsurance || v.taxesIncluded || (v.includedCustom || []).length > 0, { message: 'Indiquez au moins un élément inclus dans le prix.', path: ['includedCustom'] }];
 const returnRule = [(v) => v.returnPolicy === 'none' || (v.returnLocations || []).length > 0, { message: 'Indiquez au moins un lieu où le véhicule peut être déposé.', path: ['returnLocations'] }];
 const returnFeeRule = [(v) => v.returnPolicy !== 'fee' || Number(v.returnFee) > 0, { message: 'Indiquez le montant des frais de restitution dans un autre lieu.', path: ['returnFee'] }];
 const youngRule = [(v) => !(Number(v.youngDriverFee) > 0) || Boolean(v.youngDriverAge), { message: 'Indiquez en dessous de quel âge les frais jeune conducteur s’appliquent.', path: ['youngDriverAge'] }];
-const vehicleSchema = vehicleBase.refine(...untilAfterFrom).refine(...maxPeriodRule).refine(...returnRule).refine(...returnFeeRule).refine(...youngRule);
+const vehicleSchema = vehicleBase.refine(...untilAfterFrom).refine(...maxPeriodRule).refine(...returnRule).refine(...returnFeeRule).refine(...youngRule).refine(...kmRule).refine(...utilityRule).refine(...inclusionRule);
 
 // Dès qu'une réservation est faite, l'annonce quitte le site jusqu'à la fin de la location ; ensuite elle passe en brouillon et le loueur la republie.
 async function reserveVehicle(vehicleId, bookingId, endDate, endTime) {
@@ -319,6 +323,7 @@ const unavailableSql = (a, b) => ` AND (v.details->>'availableFrom' IS NULL OR (
     AND (bk.start_date + COALESCE(NULLIF(bk.start_time, ''), '00:00')::time) < $${b}::timestamp AND (bk.end_date + COALESCE(NULLIF(bk.end_time, ''), '23:59')::time) > $${a}::timestamp)`;
 async function saveBlocks(vehicleId, blocks) {
   if (blocks === undefined) return;
+  blocks = blocks.filter((b) => new Date(b.end) > new Date());
   for (const b of blocks) {
     if (new Date(b.end) <= new Date(b.start)) throw new z.ZodError([{ code: 'custom', path: ['blocks'], message: 'La fin d’une période d’indisponibilité doit suivre son début.' }]);
   }
@@ -358,7 +363,7 @@ function buildVehicleDetails(v, old = {}) {
     youngDriverAge: Number(v.youngDriverFee) > 0 ? v.youngDriverAge : null, youngDriverFee: Number(v.youngDriverFee) > 0 ? Number(v.youngDriverFee) : null, youngDriverPricing: v.youngDriverPricing || 'day',
     unlimitedKm: v.unlimitedKm, kmPerDay: v.unlimitedKm ? null : (v.kmPerDay ?? null), extraKmPrice: v.extraKmPrice ?? null,
     includedKm: v.unlimitedKm ? 'Kilométrage illimité' : (v.kmPerDay ? `${v.kmPerDay} km/jour` : null), fuelPolicy: v.fuelPolicy || null,
-    freeCancelHours: v.freeCancelHours, freeCancel: v.freeCancelHours > 0, freeModification: v.freeModification,
+    freeCancelHours: v.freeCancelHours, freeCancel: v.freeCancelHours > 0, cancelFee: v.cancelFee, freeModification: v.freeModification,
     theftProtection: v.theftProtection, fullInsurance: v.fullInsurance, insuranceType: v.insuranceType || null,
     availableFrom: v.availableFrom, availableUntil: v.availableUntil, taxesIncluded: v.taxesIncluded,
     differentReturnAllowed: v.returnPolicy !== 'none', differentReturnFee: v.returnPolicy === 'fee' ? `${Number(v.returnFee)} €` : null,
@@ -494,7 +499,7 @@ function mapBooking(b, vehicleName) {
     extras: b.extras || [], total_estimate: b.total_estimate == null ? null : Number(b.total_estimate), conditions_snapshot: b.conditions_snapshot || null, conditions_accepted_at: b.conditions_accepted_at || null,
     unseen_staff: !b.staff_seen_at, unseen_partner: !b.partner_seen_at,
     unseen_client: Boolean(b.status_changed_at && (!b.client_seen_at || new Date(b.client_seen_at) < new Date(b.status_changed_at))),
-    company: b.company || null, vehicle_name: vehicleName || 'Location de véhicule', young_driver_notice: b.driver_age != null && Number(b.driver_age) < 26,
+    cancel_fee: b.cancel_fee == null ? null : Number(b.cancel_fee), refunded_amount: b.refunded_amount == null ? null : Number(b.refunded_amount), company: b.company || null, vehicle_name: vehicleName || 'Location de véhicule', young_driver_notice: b.driver_age != null && Number(b.driver_age) < 26,
   };
 }
 
@@ -713,19 +718,87 @@ app.get('/api/geo/cities', (req, res) => {
   res.json(searchCities(String(req.query.q || '').slice(0, 60), String(req.query.country || '').slice(0, 2), req.query.q ? 10 : 40, String(req.query.region || '').slice(0, 10)));
 });
 
-app.post('/api/client/bookings/:id/cancel', auth('client'), h(async (req, res) => {
-  const { rows } = await query(`UPDATE bookings SET status = 'inactive', status_changed_at = now(), client_seen_at = now(), staff_seen_at = NULL, partner_seen_at = NULL WHERE id = $1 AND lower(customer_email) = lower($2) AND status = 'pending' RETURNING *`, [req.params.id, req.user.email]);
-  if (!rows[0]) return res.status(409).json({ error: 'NOT_CANCELLABLE' });
-  await releaseVehicle(rows[0].id);
-  await refundBooking(rows[0]);
-  const ctx = await vehicleContext(rows[0].vehicle_id);
-  const details = bookingDetails(rows[0], ctx.name);
-  notify(ctx.partnerMail, notificationEmail({ subject: `Réservation annulée par le client — ${ctx.name}`, title: 'Réservation annulée', intro: 'Le client a annulé sa demande de réservation.', details, buttonLabel: 'Voir dans mon espace', url: espaceLink('bookings') }));
-  notify(STAFF_EMAIL, notificationEmail({ subject: `[TripVision] Réservation annulée ${bookingRef(rows[0].id)}`, title: 'Réservation annulée par le client', intro: 'Le client a annulé sa demande de réservation.', details, buttonLabel: 'Ouvrir le back-office', url: staffLink('bookings') }));
-  pushNotification(ctx.partnerUserId, { kind: 'booking', title: 'Réservation annulée par le client', body: `${bookingRef(rows[0].id)} · ${ctx.name}`, link: 'bookings', refId: rows[0].id });
-  pushNotification('staff', { kind: 'booking', title: 'Réservation annulée par le client', body: bookingRef(rows[0].id), link: 'bookings', refId: rows[0].id });
-  res.json({ ok: true });
+// ---------- Annulation d'une location par le client ----------
+// Gratuite jusqu'à la limite fixée par le loueur ; ensuite, frais d'annulation du loueur, déduits de l'acompte déjà réglé en ligne.
+const r2 = (n) => Math.round(Number(n) * 100) / 100;
+async function cancelQuote(booking) {
+  const { rows } = await query('SELECT details FROM vehicles WHERE id = $1', [booking.vehicle_id]);
+  const d = rows[0]?.details || {}, snap = booking.conditions_snapshot || {};
+  const hours = Number(snap.freeCancelHours ?? d.freeCancelHours ?? 0);
+  const fee = Number(snap.cancelFee ?? d.cancelFee ?? 0);
+  const start = booking.start_date ? new Date(`${String(booking.start_date).slice(0, 10)}T${booking.start_time || '10:00'}:00`) : null;
+  const hoursLeft = start ? (start.getTime() - Date.now()) / 3600000 : 0;
+  const free = hours > 0 && hoursLeft >= hours;
+  const paid = booking.payment_status === 'paid' ? Number(booking.paid_amount || 0) : 0;
+  const due = free ? 0 : fee;
+  return { free, freeHours: hours, fee: due, paid, toPay: Math.max(0, r2(due - paid)), refund: Math.max(0, r2(paid - due)), started: start ? hoursLeft <= 0 : false };
+}
+async function doCancelBooking(booking, { fee, refund }, byClient = true) {
+  const { rows } = await query(`UPDATE bookings SET status = 'inactive', status_changed_at = now(), client_seen_at = now(), staff_seen_at = NULL, partner_seen_at = NULL, cancel_fee = $2, cancelled_at = now() WHERE id = $1 AND status IN ('pending', 'confirmed') RETURNING *`, [booking.id, fee]);
+  const b = rows[0];
+  if (!b) return null;
+  await releaseVehicle(b.id);
+  if (paymentsEnabled && b.payment_status === 'paid' && b.stripe_payment_intent && refund > 0) {
+    try {
+      const full = refund >= Number(b.paid_amount || 0) - 0.005;
+      await refundPayment(b.stripe_payment_intent, full ? undefined : refund);
+      await query('UPDATE bookings SET payment_status = $2, refunded_amount = $3 WHERE id = $1', [b.id, full ? 'refunded' : 'paid', refund]);
+    } catch (err) {
+      console.error('Remboursement Stripe impossible :', err.message);
+      await pushNotification('staff', { kind: 'booking', title: 'Remboursement à faire à la main', body: `${bookingRef(b.id)} : le remboursement automatique a échoué.`, link: 'bookings', refId: b.id });
+    }
+  }
+  const ctx = await vehicleContext(b.vehicle_id);
+  const details = [...bookingDetails(b, ctx.name), ...(fee > 0 ? [['Frais d’annulation', `${fee} €`]] : [])];
+  const intro = fee > 0 ? `Le client a annulé hors période gratuite : des frais d’annulation de ${fee} € s’appliquent.` : 'Le client a annulé sa réservation dans la période gratuite.';
+  notify(ctx.partnerMail, notificationEmail({ subject: `Réservation annulée par le client — ${ctx.name}`, title: 'Réservation annulée', intro, details, buttonLabel: 'Voir dans mon espace', url: espaceLink('bookings') }));
+  notify(STAFF_EMAIL, notificationEmail({ subject: `[TripVision] Réservation annulée ${bookingRef(b.id)}`, title: 'Réservation annulée par le client', intro, details, buttonLabel: 'Ouvrir le back-office', url: staffLink('bookings') }));
+  pushNotification(ctx.partnerUserId, { kind: 'booking', title: 'Réservation annulée par le client', body: `${bookingRef(b.id)} · ${ctx.name}`, link: 'bookings', refId: b.id });
+  pushNotification('staff', { kind: 'booking', title: 'Réservation annulée par le client', body: bookingRef(b.id), link: 'bookings', refId: b.id });
+  return b;
+}
+const ownCancellable = async (req) => (await query(`SELECT * FROM bookings WHERE id = $1 AND lower(customer_email) = lower($2) AND status IN ('pending', 'confirmed') AND payment_status NOT IN ('awaiting', 'failed')`, [req.params.id, req.user.email])).rows[0];
+app.get('/api/client/bookings/:id/cancel-quote', auth('client'), h(async (req, res) => {
+  const b = await ownCancellable(req);
+  if (!b) return res.status(409).json({ error: 'NOT_CANCELLABLE' });
+  res.json(await cancelQuote(b));
 }));
+app.post('/api/client/bookings/:id/cancel', auth('client'), h(async (req, res) => {
+  const b = await ownCancellable(req);
+  if (!b) return res.status(409).json({ error: 'NOT_CANCELLABLE' });
+  const q = await cancelQuote(b);
+  if (q.started) return res.status(409).json({ error: 'STARTED', message: 'La location a déjà commencé : elle ne peut plus être annulée en ligne.' });
+  if (q.toPay > 0 && paymentsEnabled) {
+    // Les frais dépassent l'acompte : le client règle la différence, puis la réservation est annulée.
+    const ctx = await vehicleContext(b.vehicle_id);
+    const session = await createCheckout({
+      bookingId: b.id, reference: bookingRef(b.id), email: b.customer_email, kind: 'cancel', appUrl: APP_URL,
+      lines: [{ label: `Frais d’annulation · ${ctx.name}`, amount: q.toPay }], description: `Annulation ${bookingRef(b.id)}`,
+      successUrl: `${APP_URL}/espace/?cancel=success&session_id={CHECKOUT_SESSION_ID}#orders`, cancelUrl: `${APP_URL}/espace/#orders`,
+    });
+    await query('UPDATE bookings SET cancel_session_id = $2, cancel_fee = $3 WHERE id = $1', [b.id, session.id, q.fee]);
+    return res.json({ checkoutUrl: session.url, ...q });
+  }
+  await doCancelBooking(b, q);
+  res.json({ ok: true, ...q });
+}));
+// Retour de Stripe après le paiement des frais d'annulation.
+app.get('/api/payments/cancel-session/:id', auth('client'), h(async (req, res) => {
+  const { rows } = await query(`SELECT * FROM bookings WHERE cancel_session_id = $1 AND lower(customer_email) = lower($2)`, [req.params.id, req.user.email]);
+  const b = rows[0];
+  if (!b) return res.status(404).json({ error: 'NOT_FOUND' });
+  if (b.status === 'inactive') return res.json({ cancelled: true, fee: Number(b.cancel_fee || 0) });
+  const session = await retrieveSession(req.params.id);
+  if (session.payment_status !== 'paid') return res.json({ cancelled: false });
+  await finalizeCancelPaid(b.id);
+  res.json({ cancelled: true, fee: Number(b.cancel_fee || 0) });
+}));
+async function finalizeCancelPaid(bookingId) {
+  const { rows } = await query('SELECT * FROM bookings WHERE id = $1', [bookingId]);
+  const b = rows[0];
+  if (!b || b.status === 'inactive') return;
+  await doCancelBooking(b, { fee: Number(b.cancel_fee || 0), refund: 0 });
+}
 app.post('/api/client/requests/:id/cancel', auth('client'), h(async (req, res) => {
   const { rows } = await query(`UPDATE offer_requests SET status = 'cancelled', status_changed_at = now(), client_seen_at = now(), staff_seen_at = NULL WHERE id = $1 AND lower(customer_email) = lower($2) AND status = 'pending' RETURNING *`, [req.params.id, req.user.email]);
   if (!rows[0]) return res.status(409).json({ error: 'NOT_CANCELLABLE' });
@@ -1046,8 +1119,9 @@ app.post('/api/stripe/webhook', h(async (req, res) => {
   let event;
   try { event = constructEvent(req.rawBody, req.headers['stripe-signature']); } catch { return res.status(400).json({ error: 'INVALID_SIGNATURE' }); }
   const session = event.data.object;
-  const bookingId = session.metadata?.booking_id, requestId = session.metadata?.request_id;
-  if (bookingId && event.type === 'checkout.session.completed' && session.payment_status === 'paid') await finalizePaid(bookingId, session);
+  const bookingId = session.metadata?.booking_id, requestId = session.metadata?.request_id, cancelId = session.metadata?.cancel_booking_id;
+  if (cancelId && event.type === 'checkout.session.completed' && session.payment_status === 'paid') await finalizeCancelPaid(cancelId);
+  else if (bookingId && event.type === 'checkout.session.completed' && session.payment_status === 'paid') await finalizePaid(bookingId, session);
   else if (bookingId && event.type === 'checkout.session.expired') await failBooking(bookingId);
   else if (requestId && event.type === 'checkout.session.completed' && session.payment_status === 'paid') await finalizePackPaid(requestId, session);
   else if (requestId && event.type === 'checkout.session.expired') await failPack(requestId);
@@ -1074,7 +1148,7 @@ const COMMISSION_PCT = 10;
 const commissionOf = (total) => Math.round(Number(total) * COMMISSION_PCT) / 100;
 const conditionsSnapshot = (d, lessor) => ({
   lessor, deposit: d.deposit ?? null, excess: d.excess ?? null, minAge: d.minAge ?? null, mileage: d.includedKm ?? null, extraKmPrice: d.extraKmPrice ?? null, fuelPolicy: d.fuelPolicy ?? null,
-  freeCancelHours: d.freeCancelHours ?? 0, freeModification: !!d.freeModification, insuranceType: d.insuranceType ?? null, youngDriver: d.youngDriverFee > 0 ? { age: d.youngDriverAge, fee: d.youngDriverFee, pricing: d.youngDriverPricing || 'day' } : null, officeHours: d.officeHours ?? null, conditions: d.rentalConditions ?? null,
+  freeCancelHours: d.freeCancelHours ?? 0, cancelFee: d.cancelFee ?? null, freeModification: !!d.freeModification, insuranceType: d.insuranceType ?? null, youngDriver: d.youngDriverFee > 0 ? { age: d.youngDriverAge, fee: d.youngDriverFee, pricing: d.youngDriverPricing || 'day' } : null, officeHours: d.officeHours ?? null, conditions: d.rentalConditions ?? null,
 });
 
 app.post('/api/bookings', auth('client'), h(async (req, res) => {
@@ -1182,8 +1256,14 @@ app.post('/api/partner/profile', auth('partner'), h(async (req, res) => {
   res.status(201).json(mapPartner(partner));
 }));
 
+// Une nouvelle annonce ne peut pas commencer dans le passé.
+const notInPast = (v) => {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
+  if (v.availableFrom < today) throw new z.ZodError([{ code: 'custom', path: ['availableFrom'], message: 'La période de location ne peut pas commencer dans le passé.' }]);
+};
 app.post('/api/partner/vehicles', auth('partner'), h(async (req, res) => {
   const v = vehicleSchema.parse(req.body);
+  notInPast(v);
   const { rows } = await query('SELECT id, trade_name FROM partners WHERE user_id = $1 AND deleted_at IS NULL', [req.user.id]);
   const partner = rows[0];
   if (!partner) return res.status(400).json({ error: 'PARTNER_PROFILE_REQUIRED' });
@@ -1366,10 +1446,11 @@ app.delete('/api/admin/offers/:id', auth(...BACKOFFICE_ROLES), can('offers.delet
   res.json({ ok: true });
 }));
 
-const adminVehicleSchema = vehicleBase.extend({ partnerId: z.string().uuid().nullable().optional(), publishAt: publishAtSchema, draft: z.boolean().optional() }).refine(...untilAfterFrom).refine(...maxPeriodRule).refine(...returnRule).refine(...returnFeeRule).refine(...youngRule);
+const adminVehicleSchema = vehicleBase.extend({ partnerId: z.string().uuid().nullable().optional(), publishAt: publishAtSchema, draft: z.boolean().optional() }).refine(...untilAfterFrom).refine(...maxPeriodRule).refine(...returnRule).refine(...returnFeeRule).refine(...youngRule).refine(...kmRule).refine(...utilityRule).refine(...inclusionRule);
 
 app.post('/api/admin/vehicles', auth(...BACKOFFICE_ROLES), can('vehicles.create'), h(async (req, res) => {
   const v = adminVehicleSchema.parse(req.body);
+  notInPast(v);
   let partner = null;
   if (v.partnerId) {
     const { rows: partnerRows } = await query('SELECT id, trade_name FROM partners WHERE id = $1 AND deleted_at IS NULL', [v.partnerId]);

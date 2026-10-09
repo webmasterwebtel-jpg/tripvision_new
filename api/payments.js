@@ -21,9 +21,9 @@ export async function createCheckout({ bookingId, reference, cancelToken, email,
     locale: 'fr',
     customer_email: email,
     client_reference_id: String(bookingId),
-    metadata: kind === 'pack' ? { request_id: String(bookingId), reference } : { booking_id: String(bookingId), reference },
+    metadata: kind === 'pack' ? { request_id: String(bookingId), reference } : kind === 'cancel' ? { cancel_booking_id: String(bookingId), reference } : { booking_id: String(bookingId), reference },
     line_items: items,
-    payment_intent_data: { description: description || `Réservation TripVision ${reference}`, metadata: kind === 'pack' ? { request_id: String(bookingId) } : { booking_id: String(bookingId) } },
+    payment_intent_data: { description: description || `Réservation TripVision ${reference}`, metadata: kind === 'pack' ? { request_id: String(bookingId) } : kind === 'cancel' ? { cancel_booking_id: String(bookingId) } : { booking_id: String(bookingId) } },
     expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
     success_url: successUrl || `${appUrl}/?payment=success&session_id={CHECKOUT_SESSION_ID}#reserve`,
     cancel_url: cancelUrl || `${appUrl}/?payment=cancelled&b=${bookingId}&t=${cancelToken}#reserve`,
@@ -32,5 +32,6 @@ export async function createCheckout({ bookingId, reference, cancelToken, email,
 
 export const retrieveSession = (id) => stripe.checkout.sessions.retrieve(id);
 export const expireSession = (id) => stripe.checkout.sessions.expire(id).catch(() => null);
-export const refundPayment = (paymentIntent) => stripe.refunds.create({ payment_intent: paymentIntent });
+// Sans montant : remboursement total ; avec un montant (en euros) : remboursement partiel.
+export const refundPayment = (paymentIntent, amount) => stripe.refunds.create({ payment_intent: paymentIntent, ...(amount ? { amount: cents(amount) } : {}) });
 export const constructEvent = (rawBody, signature) => stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);

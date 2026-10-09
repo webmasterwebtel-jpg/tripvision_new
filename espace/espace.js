@@ -767,7 +767,7 @@ const CLIENT_PAGES = {
 
   async help() {
     const faq = [
-      ['Comment annuler une réservation ?', 'Une demande de vol ou de pack encore « en attente » s’annule depuis « Mes réservations ». Pour une voiture déjà payée, écrivez-nous dans la messagerie en indiquant la référence.'],
+      ['Comment annuler une réservation ?', 'Une demande de vol ou de pack encore « en attente » s’annule depuis « Mes réservations ». Une location de voiture s’annule depuis « Mes réservations » : gratuitement dans la période fixée par le loueur, sinon avec les frais d’annulation indiqués avant de confirmer.'],
       ['Quand ma réservation est-elle confirmée ?', 'Une location de voiture est confirmée dès le paiement en ligne : vous recevez un e-mail et une notification. Les vols et packs sont confirmés par TripVision après vérification de la disponibilité.'],
       ['Que paie-t-on en ligne pour une voiture ?', 'Un acompte de 10 % du total de votre location, options comprises. Le solde, ainsi que le dépôt de garantie éventuel, se règle directement au loueur lors du retrait du véhicule.'],
       ['Faut-il payer pour demander un vol ou un pack ?', 'Non : la demande est gratuite et sans engagement. Le prix et les conditions vous sont confirmés avant tout paiement.'],
@@ -840,7 +840,7 @@ function openVehicleModal(existing = null, availability = { blocks: [], rentals:
   const v = existing, editing = Boolean(v);
   openModal({
     eyebrow: 'Ma flotte', title: editing ? 'Modifier le véhicule' : 'Ajouter un véhicule', wide: true,
-    confirmLabel: editing ? 'Enregistrer les modifications' : 'Soumettre le véhicule', loadingText: editing ? 'Enregistrement…' : 'Envoi du véhicule…',
+    confirmLabel: editing ? 'Enregistrer les modifications' : 'Valider le véhicule', loadingText: editing ? 'Enregistrement…' : 'Envoi du véhicule…',
     bodyHtml: `
       <div class="form-grid tight">${TVVehicleForm.html(v, { availability })}</div>
 `,
@@ -860,13 +860,14 @@ function openOrderModal(o) {
   openModal({ eyebrow: (KIND[o.kind] || KIND.car)[1], title: o.title, noFooter: true, cancelLabel: 'Fermer', wide: true,
     bodyHtml: `<div class="status-line">${badge(...clientState(o.status))}</div><dl class="kv">${rows.filter(([, v]) => v && String(v).trim() && String(v).trim() !== '—').map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
       <div class="modal-actions"><button class="btn small primary" type="button" data-action="order-pdf" data-id="${esc(o.id)}" data-kind="${o.cancel}">${icon('download')} Télécharger en PDF</button></div>
-      ${o.status === 'pending' ? `<div class="modal-actions"><button class="btn small danger" type="button" data-action="order-cancel" data-id="${esc(o.id)}" data-kind="${o.cancel}">Annuler la demande</button></div>` : ''}` });
+      ${o.kind === 'car' && ['pending', 'confirmed'].includes(o.status) && String(x.start_date || '').slice(0, 10) >= new Date().toISOString().slice(0, 10) ? `<div class="modal-actions"><button class="btn small danger" type="button" data-action="car-cancel" data-id="${esc(o.id)}">Annuler ma réservation</button></div>`
+        : o.kind !== 'car' && o.status === 'pending' ? `<div class="modal-actions"><button class="btn small danger" type="button" data-action="order-cancel" data-id="${esc(o.id)}" data-kind="${o.cancel}">Annuler la demande</button></div>` : ''}` });
 }
 
 function openBookingModal(b) {
   const rows = [['Référence', b.reference], ['Client', b.customer_name], ['E-mail', b.customer_email], ['Téléphone', b.customer_phone], ['Véhicule', b.vehicle_name],
     ['Départ', `${fmtDay(b.start_date)} ${b.start_time || ''}`], ['Retour', `${fmtDay(b.end_date)} ${b.end_time || ''}`], ['Lieu de prise en charge', b.pickup_address], ['Lieu de retour', b.return_address],
-    ['Total', money(b.total_estimate)], ['Paiement', b.payment_status === 'paid' ? `Payé en ligne : ${money(b.paid_amount)}${b.pay_on_pickup != null ? ` · reste ${money(b.pay_on_pickup)} à régler à l’agence` : ''}` : b.payment_status === 'refunded' ? 'Remboursé' : ''], ['Options choisies', (b.extras || []).map(x => `${x.qty > 1 ? x.qty + ' × ' : ''}${x.name} (${money(x.total)})`).join(', ')], ['Total estimé', b.total_estimate == null ? '' : money(b.total_estimate)], ['Âge du conducteur', b.driver_age ? `${b.driver_age} ans${b.young_driver_notice ? ' (jeune conducteur)' : ''}` : ''], ['Message', b.message], ['Reçue le', fmtDate(b.created_at)]];
+    ['Total', money(b.total_estimate)], ['Paiement', b.payment_status === 'paid' ? `Payé en ligne : ${money(b.paid_amount)}${b.pay_on_pickup != null ? ` · reste ${money(b.pay_on_pickup)} à régler à l’agence` : ''}` : b.payment_status === 'refunded' ? 'Remboursé' : ''], ['Options choisies', (b.extras || []).map(x => `${x.qty > 1 ? x.qty + ' × ' : ''}${x.name} (${money(x.total)})`).join(', ')], ['Total estimé', b.total_estimate == null ? '' : money(b.total_estimate)], ['Âge du conducteur', b.driver_age ? `${b.driver_age} ans${b.young_driver_notice ? ' (jeune conducteur)' : ''}` : ''], ['Frais d’annulation', b.cancel_fee ? money(b.cancel_fee) : ''], ['Message', b.message], ['Reçue le', fmtDate(b.created_at)]];
   openModal({ eyebrow: 'Réservation', title: b.vehicle_name, noFooter: true, cancelLabel: 'Fermer', wide: true,
     bodyHtml: `<div class="status-line">${badge(...bookingState(b.status))}</div><dl class="kv">${rows.filter(([, v]) => v && String(v).trim() && String(v).trim() !== '—').map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
       ${b.status === 'pending' || b.status === 'confirmed' ? `<div class="modal-actions">${bookingActions(b)}</div>` : ''}` });
@@ -946,6 +947,22 @@ const ACT = {
   },
   'booking-confirm': (id) => confirmCall({ eyebrow: 'Réservation', title: `Confirmer ${esc(find('bookings', id).reference)} ?`, message: 'Le client verra sa réservation comme confirmée.', confirmLabel: 'Confirmer', loading: 'Confirmation…', success: 'Réservation confirmée', method: 'PATCH', url: `/partner/bookings/${id}/status`, body: { status: 'confirmed' } }),
   'booking-refuse': (id) => { const b = find('bookings', id); confirmCall({ eyebrow: 'Réservation', title: `${b.status === 'confirmed' ? 'Annuler' : 'Refuser'} ${esc(b.reference)} ?`, message: 'Le client verra sa réservation comme annulée.', confirmLabel: b.status === 'confirmed' ? 'Annuler la réservation' : 'Refuser', tone: 'danger', loading: 'Mise à jour…', success: 'Réservation annulée', method: 'PATCH', url: `/partner/bookings/${id}/status`, body: { status: 'inactive' } }); },
+  'car-cancel': async (id) => {
+    let q;
+    try { q = await api(`/client/bookings/${id}/cancel-quote`); } catch (err) { toast(err.message || 'Cette réservation ne peut plus être annulée.'); return; }
+    if (q.started) { toast('La location a déjà commencé : elle ne peut plus être annulée en ligne.'); return; }
+    const eur = (n) => money(n);
+    const lines = q.free ? ['Annulation gratuite : votre réservation est annulée sans frais.', q.paid > 0 ? `Votre règlement de ${eur(q.paid)} vous est remboursé.` : '']
+      : [`La période d’annulation gratuite est passée : le loueur applique des frais d’annulation de ${eur(q.fee)}.`, q.paid > 0 ? `Vous avez déjà réglé ${eur(q.paid)} en ligne.` : '',
+        q.toPay > 0 ? `Il vous reste ${eur(q.toPay)} à payer maintenant pour annuler.` : q.refund > 0 ? `Le reste, soit ${eur(q.refund)}, vous est remboursé.` : 'Aucun autre paiement n’est demandé.'];
+    openModal({ eyebrow: 'Réservation', title: 'Annuler ma réservation ?', confirmLabel: q.toPay > 0 ? `Payer ${eur(q.toPay)} et annuler` : 'Confirmer l’annulation', tone: 'danger', loadingText: 'Annulation…',
+      bodyHtml: `<div class="modal-text">${lines.filter(Boolean).map(l => `<p>${esc(l)}</p>`).join('')}</div>`,
+      run: async () => {
+        const r = await api(`/client/bookings/${id}/cancel`, { method: 'POST' });
+        if (r.checkoutUrl) { location.href = r.checkoutUrl; return new Promise(() => {}); }
+        return { title: 'Réservation annulée', text: q.refund > 0 ? `${eur(q.refund)} vous sont remboursés.` : undefined };
+      } });
+  },
   'order-cancel': (id, el) => confirmCall({ eyebrow: 'Réservation', title: 'Annuler cette demande ?', message: 'Votre demande sera annulée. Vous pourrez en faire une nouvelle à tout moment.', confirmLabel: 'Annuler la demande', tone: 'danger', loading: 'Annulation…', success: 'Demande annulée', method: 'POST', url: `/client/${el.dataset.kind}/${id}/cancel` }),
 };
 
@@ -1069,6 +1086,11 @@ $('#logoutBtn').addEventListener('click', () => {
   $('#app').hidden = false;
   $('#boot').remove();
   refreshBadges();
+  const back = new URLSearchParams(location.search);
+  if (back.get('cancel') === 'success' && back.get('session_id')) {
+    history.replaceState(null, '', `${location.pathname}#orders`);
+    try { const r = await api(`/payments/cancel-session/${encodeURIComponent(back.get('session_id'))}`); toast(r.cancelled ? 'Frais réglés : votre réservation est annulée.' : 'Paiement en cours de vérification : actualisez dans un instant.'); } catch { toast('Impossible de vérifier le paiement pour le moment.'); }
+  }
   render();
 })();
 

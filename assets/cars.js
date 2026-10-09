@@ -524,7 +524,7 @@
   }
   function highlights(v) {
     const km = v.unlimitedKm ? ['Kilométrage', 'Illimité'] : v.includedKm ? ['Kilométrage', `${v.includedKm}${v.extraKmPrice ? ` · puis ${euro(v.extraKmPrice)} / km` : ''}`] : null;
-    const cancel = v.freeCancelHours > 0 ? ['Annulation', `Gratuite jusqu’à ${cancelText(v.freeCancelHours)} avant le départ`] : ['Annulation', 'Selon les conditions du loueur'];
+    const cancel = v.freeCancelHours > 0 ? ['Annulation', `Gratuite jusqu’à ${cancelText(v.freeCancelHours)} avant le départ`, ...(v.cancelFee ? [`Ensuite : ${euro(v.cancelFee)} de frais`] : [])] : ['Annulation', v.cancelFee ? `Frais d’annulation : ${euro(v.cancelFee)}` : 'Selon les conditions du loueur'];
     const cover = v.fullInsurance ? ['Assurance', 'Tous risques incluse'] : v.theftProtection ? ['Assurance', 'Protection contre le vol incluse'] : v.insuranceType ? ['Assurance', v.insuranceType] : null;
     const age = ['Conducteur', v.minAge ? `${v.minAge} ans minimum` : '18 ans minimum', ...(Number(v.youngDriverFee) > 0 && v.youngDriverAge ? [`Moins de ${v.youngDriverAge} ans : + ${euro(v.youngDriverFee)}${v.youngDriverPricing === 'once' ? ' (forfait)' : ' / jour'}`] : [])];
     const ret = v.returnPolicy === 'free' ? ['Restitution', 'Possible dans un autre lieu, sans frais'] : v.returnPolicy === 'fee' ? ['Restitution', `Possible dans un autre lieu : + ${euro(v.returnFee)}`] : ['Restitution', 'À l’agence de retrait'];
