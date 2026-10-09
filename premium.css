@@ -3795,15 +3795,15 @@ html.fx .page.active{animation:fxPage .5s ease backwards}
 /* Les cartes de recherche laissent voir l'image ou la vidéo ; elles redeviennent pleines au survol */
 .flight-search-panel,.car-configurator,.weekend-planner{transition:background-color .4s ease,border-color .4s ease,box-shadow .4s ease,backdrop-filter .4s ease}
 @media (hover:hover) and (min-width:1121px){
-  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within){
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)){
     background:rgba(7,32,26,.30)!important;border-color:rgba(255,255,255,.34)!important;box-shadow:0 24px 60px -34px rgba(0,0,0,.55)!important;
     -webkit-backdrop-filter:blur(5px) saturate(1.15);backdrop-filter:blur(5px) saturate(1.15);color-scheme:dark;
   }
-  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within) :is(span,strong,b,small,input,select,.car-config-badge,.weekend-step,.flight-form-foot){color:#fff!important}
-  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within) :is(.flight-input-line,.flight-meta-row>label,.car-route-box,.car-config-grid>label,.weekend-fields>label,.flight-swap,.flight-trip-toggle){background:rgba(255,255,255,.12)!important;border-color:rgba(255,255,255,.34)!important}
-  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within) .flight-trip-toggle input:checked+span{background:rgba(255,255,255,.92)!important;color:#0b7358!important}
-  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within) ::placeholder{color:rgba(255,255,255,.72)!important;opacity:1}
-  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within) .flight-form-foot svg{color:#fff!important}
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)) :is(span,strong,b,small,input,select,.car-config-badge,.weekend-step,.flight-form-foot){color:#fff!important}
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)) :is(.flight-input-line,.flight-meta-row>label,.car-route-box,.car-config-grid>label,.weekend-fields>label,.flight-swap,.flight-trip-toggle){background:rgba(255,255,255,.12)!important;border-color:rgba(255,255,255,.34)!important}
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)) .flight-trip-toggle input:checked+span{background:rgba(255,255,255,.92)!important;color:#0b7358!important}
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)) ::placeholder{color:rgba(255,255,255,.72)!important;opacity:1}
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)) .flight-form-foot svg{color:#fff!important}
 }
 
 /* Champ à compléter */
@@ -3848,3 +3848,95 @@ html.fx .page.active{animation:fxPage .5s ease backwards}
 .hh-cat-nav:hover{background:#0f3b2e;color:#fff;transform:scale(1.08)}
 .hh-cat-nav:active{transform:scale(.96)}
 @media(max-width:700px){.hh-cat-nav{width:40px;height:40px;margin-top:-20px}}
+
+/* ============ Série 14 : classe de vol, alignements, filtres ============ */
+.flight-meta-row{grid-template-columns:1.1fr 1.1fr .95fr 1.3fr}
+.flight-meta-row .flight-cabin-field{position:relative;overflow:visible}
+.cabin-pick{position:relative;min-width:0}
+.cabin-btn{display:flex;align-items:center;gap:8px;width:100%;min-width:0;padding:0;border:0;background:none;color:#203a31;font:700 13px Inter,sans-serif;text-align:left;cursor:pointer}
+.cabin-btn b{flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cabin-btn .tv-icon{flex:none;width:17px;height:17px}
+.cabin-btn .cabin-chev{width:14px;height:14px;transition:transform .2s}
+.cabin-pick.open .cabin-chev{transform:rotate(180deg)}
+.cabin-list{position:absolute;z-index:80;top:calc(100% + 22px);right:-14px;min-width:260px;margin:0;padding:8px;list-style:none;background:#fff;border:1px solid #e2ddd1;border-radius:22px;box-shadow:0 26px 60px -18px rgba(8,30,24,.45);animation:fxPage .18s ease}
+.cabin-list[hidden]{display:none}
+.cabin-list li{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 18px;border-radius:14px;color:#1f2a24;font:500 15.5px Inter,sans-serif;cursor:pointer}
+.cabin-list li span{color:#1f2a24}
+.cabin-list li .tv-icon{width:20px;height:20px;stroke-width:2.4;color:#0f3b2e;opacity:0}
+.cabin-list li[aria-selected="true"] .tv-icon{opacity:1}
+.cabin-list li[aria-selected="true"]{font-weight:700}
+.cabin-list li:hover{background:#eef3f0}
+:is(.flight-search-panel):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)) .cabin-btn{color:#fff}
+@media(max-width:1120px){.flight-meta-row{grid-template-columns:repeat(2,minmax(0,1fr))}.cabin-list{right:0;left:0;min-width:0}}
+@media(max-width:560px){.flight-meta-row{grid-template-columns:1fr!important}}
+
+/* Bandeaux de réassurance : titres et textes alignés d'une colonne à l'autre */
+.hh-trust-grid,.trust-grid{align-items:stretch;column-gap:24px;row-gap:0}
+.hh-trust-grid>div,.trust-grid>div{grid-row:span 2;grid-template-rows:subgrid;column-gap:14px;row-gap:4px;align-items:start}
+.hh-trust-grid>div>.tv-icon,.trust-grid>div>.tv-icon{grid-column:1;grid-row:1/3;align-self:start}
+.hh-trust-grid>div>strong,.trust-grid>div>strong{grid-column:2;grid-row:1;align-self:start;line-height:1.3}
+.hh-trust-grid>div>p,.trust-grid>div>p{grid-column:2;grid-row:2;align-self:start;margin:0}
+
+/* Lieux à ne pas manquer : titres sur deux lignes max, descriptions alignées */
+.dp-places{grid-auto-rows:auto}
+.dp-places article{display:grid;grid-row:span 2;grid-template-rows:subgrid;row-gap:8px;align-content:start}
+.dp-places article h3{margin:0;padding-right:54px;line-height:1.15;align-self:start}
+.dp-places article p{align-self:start}
+@media(max-width:1000px){.dp-places article h3{padding-right:46px}}
+
+/* Filtres des voitures : toutes les catégories, avec le nombre d'offres */
+.rf-check{display:flex;align-items:center;gap:9px}
+.rf-check span{flex:1;min-width:0}
+.rf-check em{font-style:normal;padding:1px 8px;border-radius:999px;background:#e3f1ea;color:#0f6b4f;font-size:11.5px;font-weight:700}
+.rf-check.off{opacity:.45}
+.rf-check.off em{background:#eee;color:#888}
+
+/* Réservation d'un pack : paiement */
+.pr-single{grid-template-columns:minmax(0,760px);justify-content:center}
+.pr-done-ic.warn{background:#d9a13b}.pr-done-ic.fail{background:#c0463a;font-size:36px;font-weight:800}
+.pr-done-ic.warn,.pr-done-ic.fail{font-size:38px;font-weight:800}
+.pr-recap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%;max-width:520px;text-align:left}
+.pr-recap>div{padding:12px 14px;border-radius:12px;background:#f3efe6}
+.pr-recap small{display:block;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:#6b7a72}
+.pr-recap b{display:block;margin-top:2px;color:#0f3b2e;overflow-wrap:anywhere}
+.fx-scene.fx-card{width:64px;height:30px}
+.fx-card{position:absolute;left:50%;top:50%;width:32px;height:21px;margin:-11px 0 0 -16px;border:2px solid currentColor;border-radius:5px;animation:fxCardSwipe 1.1s ease-in-out infinite}
+.fx-card::before{content:"";position:absolute;left:0;right:0;top:4px;height:3px;background:currentColor;opacity:.8}
+.fx-card i{position:absolute;left:3px;bottom:3px;width:9px;height:3px;border-radius:2px;background:currentColor}
+@keyframes fxCardSwipe{0%{transform:translateX(-16px) rotate(-7deg);opacity:.15}30%{opacity:1}60%{transform:translateX(5px) rotate(3deg)}100%{transform:translateX(16px) rotate(0);opacity:.15}}
+.rf-check.off{background:transparent!important}
+
+
+/* Écrans de connexion : scène animée */
+.auth-brand-panel{position:relative;overflow:hidden}
+.auth-brand-panel .auth-brand-copy h1,.auth-brand-panel .auth-brand-copy p,.auth-brand-panel .eyebrow{text-shadow:0 2px 18px rgba(0,0,0,.45)}
+.partner-access.has-scene{position:relative;overflow:hidden;min-height:640px;display:grid;align-items:center;background:#06211a}
+.partner-access.has-scene .partner-access-grid h1{color:#fff;text-shadow:0 2px 20px rgba(0,0,0,.5)}
+.partner-access.has-scene .partner-access-grid h1 em{color:#7fe3c0}
+.partner-access.has-scene .eyebrow{color:#7fe3c0}
+.partner-access.has-scene .lead,.partner-access.has-scene .muted{color:#e6f2ec;text-shadow:0 1px 12px rgba(0,0,0,.5)}
+.partner-access.has-scene .partner-access-card{position:relative;z-index:2}
+.partner-access.has-scene .panel{box-shadow:0 30px 70px -20px rgba(0,0,0,.55)}
+.partner-access.has-scene .panel .muted,.partner-access.has-scene .panel p{color:#5c6660;text-shadow:none}
+.partner-access.has-scene .panel h2{color:#0f3b2e;text-shadow:none}
+
+/* Tendances du mois (accueil) */
+.hh-trending .hh-head p{max-width:640px;margin:8px auto 0;color:#5c6660}
+.trend-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:210px;gap:14px}
+.trend-tile{position:relative;display:block;overflow:hidden;border-radius:22px;background:#0f3b2e;color:#fff;text-decoration:none;box-shadow:0 18px 34px -26px rgba(10,42,33,.7)}
+.trend-tile.r1{grid-column:span 2;grid-row:span 2}
+.trend-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 1s}
+.trend-tile:hover img{transform:scale(1.08)}
+.trend-tile::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,24,19,.05) 30%,rgba(6,24,19,.85) 100%)}
+.tt-rank{position:absolute;left:16px;top:10px;z-index:2;font-family:"Cormorant Garamond",Georgia,serif;font-size:64px;font-weight:600;line-height:1;color:rgba(255,255,255,.92);text-shadow:0 2px 18px rgba(0,0,0,.5)}
+.trend-tile.r1 .tt-rank{font-size:110px}
+.tt-name{position:absolute;left:18px;right:18px;bottom:16px;z-index:2;display:grid;gap:2px}
+.tt-name b{font-family:"Cormorant Garamond",Georgia,serif;font-size:30px;line-height:1;font-weight:600}
+.trend-tile.r1 .tt-name b{font-size:50px}
+.tt-name small{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#e9c97a}
+.tt-flag{position:absolute;right:14px;top:14px;z-index:2;display:inline-flex;gap:6px;align-items:center;padding:6px 12px;border-radius:999px;background:rgba(233,201,122,.95);color:#2d2208;font-size:12px;font-weight:800;letter-spacing:.04em}
+.tt-flag .tv-icon{width:14px;height:14px;stroke-width:2.4}
+.trend-deals{margin-top:18px}
+.dest-hot{position:absolute;left:12px;top:12px;z-index:2;display:inline-flex;gap:5px;align-items:center;padding:5px 10px;border-radius:999px;background:rgba(233,201,122,.95);color:#2d2208;font-size:11.5px;font-weight:800;font-style:normal}
+.dest-hot .tv-icon{width:13px;height:13px;stroke-width:2.4}
+@media(max-width:800px){.trend-tiles{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:170px}.trend-tile.r1{grid-column:span 2;grid-row:span 1}.trend-tile.r1 .tt-rank{font-size:80px}.trend-tile.r1 .tt-name b{font-size:38px}.tt-rank{font-size:48px}}

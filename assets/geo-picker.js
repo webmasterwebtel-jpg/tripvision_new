@@ -107,6 +107,11 @@
     });
   }
 
+  // Aéroports proposés sans saisie (France, Afrique, grandes escapades) quand la recherche est limitée aux aéroports.
+  const POPULAR_AIRPORTS = [['CDG', 'Paris-Charles de Gaulle', 'Paris', 'France'], ['ORY', 'Paris-Orly', 'Paris', 'France'], ['LYS', 'Lyon-Saint-Exupéry', 'Lyon', 'France'], ['MRS', 'Marseille-Provence', 'Marseille', 'France'], ['NCE', 'Nice-Côte d’Azur', 'Nice', 'France'], ['TLS', 'Toulouse-Blagnac', 'Toulouse', 'France'], ['BOD', 'Bordeaux-Mérignac', 'Bordeaux', 'France'], ['NTE', 'Nantes-Atlantique', 'Nantes', 'France'], ['LIL', 'Lille-Lesquin', 'Lille', 'France'],
+    ['DSS', 'Blaise Diagne', 'Dakar', 'Sénégal'], ['ABJ', 'Félix Houphouët-Boigny', 'Abidjan', 'Côte d’Ivoire'], ['DLA', 'Douala', 'Douala', 'Cameroun'], ['CMN', 'Mohammed V', 'Casablanca', 'Maroc'], ['RAK', 'Marrakech-Ménara', 'Marrakech', 'Maroc'], ['TUN', 'Tunis-Carthage', 'Tunis', 'Tunisie'], ['ALG', 'Houari Boumediene', 'Alger', 'Algérie'], ['LBV', 'Léon-Mba', 'Libreville', 'Gabon'], ['BZV', 'Maya-Maya', 'Brazzaville', 'Congo'], ['COO', 'Cadjehoun', 'Cotonou', 'Bénin'],
+    ['BCN', 'Barcelone-El Prat', 'Barcelone', 'Espagne'], ['MAD', 'Madrid-Barajas', 'Madrid', 'Espagne'], ['LIS', 'Lisbonne', 'Lisbonne', 'Portugal'], ['FCO', 'Rome-Fiumicino', 'Rome', 'Italie'], ['AMS', 'Amsterdam-Schiphol', 'Amsterdam', 'Pays-Bas'], ['IST', 'Istanbul', 'Istanbul', 'Turquie'], ['LHR', 'Londres-Heathrow', 'Londres', 'Royaume-Uni'], ['ATH', 'Athènes', 'Athènes', 'Grèce']]
+    .map(([iata, name, city, countryName]) => ({ iata, name, city, countryName, country: '' }));
   const cityRow = (c) => ({ kind: 'row', value: c.name, country: c.country, countryName: c.countryName, html: `<strong>${esc(c.name)}</strong><span>${esc(c.countryName)}</span>` });
   const airportRow = (a, mode) => ({
     kind: 'row', value: mode === 'place' ? `${a.city} (${a.iata})` : `${a.iata} – ${a.name}`, city: a.city, country: a.country, countryName: a.countryName,
@@ -142,10 +147,19 @@
       } else if (type === 'place') {
         const d = await getJson(`/geo/places?q=${encodeURIComponent(text)}${input.dataset.geoFixed ? `&country=${input.dataset.geoFixed}` : ''}`);
         if (mine !== seq || active !== input) return;
-        const cities = d.cities || [], airports = d.airports || [];
+        const cities = d.cities || [];
+        let airports = d.airports || [];
+        if (input.dataset.geoOnly === 'airports' && !needle && !airports.length) airports = POPULAR_AIRPORTS;
+        const side = /^from/i.test(input.name) ? 'from' : /^to/i.test(input.name) ? 'to' : '';
+        // Sans saisie : nos destinations (France, Afrique, grandes escapades) plutôt que les villes les plus peuplées du monde.
+        const taken = new Set((window.TV_OFFER_PLACES?.[side] || []).map((c) => norm(c.name)));
+        const curated = !needle && !input.dataset.geoOnly && !input.dataset.geoFixed && Array.isArray(window.TV_DEST) ? window.TV_DEST.filter((d) => !taken.has(norm(d.name))).map((d) => ({ kind: 'row', value: d.name, country: '', html: `<strong>${esc(d.name)}</strong><span>${esc(d.country)}</span>` })) : [];
+        const airportsOnly = input.dataset.geoOnly === 'airports';
+        const ours = !needle && side && window.TV_OFFER_PLACES?.[airportsOnly ? `${side}Air` : side]?.length ? window.TV_OFFER_PLACES[airportsOnly ? `${side}Air` : side] : [];
         show([
-          ...(airports.length ? [{ kind: 'head', label: input.dataset.geoFixed && !needle ? `${airports.length} aéroports en France` : 'Aéroports' }, ...airports.map((a) => airportRow(a, 'place'))] : []),
-          { kind: 'head', label: needle ? 'Villes' : (input.dataset.geoFixed ? 'Villes de France les plus peuplées · tapez pour rechercher' : 'Destinations populaires · tapez pour rechercher') }, ...cities.map(cityRow),
+          ...(ours.length ? [{ kind: 'head', label: side === 'from' ? 'Départs proposés par nos offres' : 'Destinations de nos offres' }, ...ours.map((c) => ({ kind: 'row', value: c.name, html: `<strong>${esc(c.name)}</strong><span>${esc(c.country || 'Offres disponibles')}</span>` }))] : []),
+          ...(airports.length ? [{ kind: 'head', label: input.dataset.geoFixed && !needle ? `${airports.length} aéroports en France` : (needle ? 'Aéroports' : 'Principaux aéroports · tapez une ville ou un code') }, ...airports.map((a) => airportRow(a, 'place'))] : []),
+          ...(input.dataset.geoOnly === 'airports' ? [] : [{ kind: 'head', label: needle ? 'Villes' : (input.dataset.geoFixed ? 'Villes de France les plus peuplées · tapez pour rechercher' : 'Destinations populaires · tapez pour rechercher') }, ...(curated.length ? curated : cities.map(cityRow))]),
         ]);
       }
     } catch { hide(); }

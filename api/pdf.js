@@ -117,7 +117,7 @@ export function requestPdf(r) {
   rows(doc, [['Nom', r.customer], ['E-mail', r.email], ['Téléphone', r.phone]]);
   section(doc, 'Prix');
   priceBox(doc, { total: r.total, online: null, onsite: null, deposit: null });
-  doc.font('Helvetica').fontSize(8.5).fillColor(MUTED).text(confirmed ? 'Cette réservation est confirmée par TripVision.' : 'Cette demande sera confirmée par TripVision après vérification de la disponibilité ; aucun paiement n’a été demandé à ce stade.', 48, doc.y, { width: 499 });
+  doc.font('Helvetica').fontSize(8.5).fillColor(MUTED).text(confirmed ? (r.paid != null ? ('Cette réservation est confirmée et réglée en ligne (' + eur(r.paid) + ').') : 'Cette réservation est confirmée par TripVision.') : 'Cette demande sera confirmée par TripVision après vérification de la disponibilité ; aucun paiement n’a été demandé à ce stade.', 48, doc.y, { width: 499 });
   footer(doc);
   doc.end();
   return doc;

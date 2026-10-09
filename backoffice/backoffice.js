@@ -19,6 +19,7 @@ const ICONS = {
   notifications: '<path d="M6 9a6 6 0 0 1 12 0c0 6 2 7.5 2 7.5H4S6 15 6 9zM10 20a2 2 0 0 0 4 0"/>',
   messages: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
   chats: '<path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5A8 8 0 1 1 21 12z"/>',
+  trends: '<path d="M3 17l6-6 4 4 8-9"/><path d="M15 6h6v6"/>',
   applications: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   external: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
@@ -43,6 +44,7 @@ const SECTIONS = [
   { id: 'notifications', label: 'Notifications', group: 'ops', allow: () => true },
   { id: 'messages', label: 'Messages de contact', group: 'ops', nav: false, allow: () => true },
   { id: 'chats', label: 'Messagerie', group: 'ops', allow: () => true },
+  { id: 'trends', label: 'Tendances', group: 'ops', allow: () => true },
   { id: 'partners', label: 'Partenaires', group: 'gov', allow: () => isGov() || can('partners.manage') },
   { id: 'applications', label: 'Candidatures', group: 'gov', allow: () => isGov() || can('partners.manage') },
   { id: 'clients', label: 'Clients', group: 'gov', allow: () => isGov() || ACCOUNT_PERMS.some(can) },
@@ -62,6 +64,7 @@ const PERM_GROUPS = [
   ['Partenaires', [['partners.manage', 'Créer, valider, suspendre'], ['partners.delete', 'Supprimer']]],
   ['Mailing', [['mailing.export', 'Consulter et exporter les contacts']]],
   ['Catégories de voitures', [['categories.manage', 'Créer, modifier, ordonner les catégories']]],
+  ['Messagerie', [['chats.manage', 'Clôturer et rouvrir les conversations']]],
   ['Comptes internes', [['accounts.create', 'Créer'], ['accounts.edit', 'Modifier, bloquer, réinitialiser'], ['accounts.delete', 'Supprimer']]],
 ];
 const ALL_PERMS = PERM_GROUPS.flatMap(([, items]) => items.map(([k]) => k));
@@ -527,12 +530,19 @@ async function openChat(id) {
   try {
     const d = await api(`/admin/chats/${id}`);
     refreshBadges();
-    const bubbles = d.messages.map(m => `<div class="bubble ${m.sender}"><span>${esc(m.body)}</span><small>${m.sender === 'admin' ? 'Vous' : esc(d.thread.partner_name)} · ${fmtDate(m.created_at)}</small></div>`).join('') || '<p class="muted">Aucun message pour le moment.</p>';
+    const t = d.thread, closed = t.status === 'closed';
+    const bubbles = d.messages.map(m => m.sender === 'system'
+      ? `<div class="bubble system"><span>${esc(m.body)}</span><small>${fmtDate(m.created_at)}</small></div>`
+      : `<div class="bubble ${m.sender}"><span>${esc(m.body)}</span><small>${m.sender === 'admin' ? 'Vous' : esc(t.partner_name)} · ${fmtDate(m.created_at)}</small></div>`).join('') || '<p class="muted">Aucun message pour le moment.</p>';
+    const toggle = d.canManage ? (closed ? actionBtn('chat-reopen', id, 'Rouvrir la conversation', 'primary') : actionBtn('chat-close', id, 'Clôturer la conversation', 'danger')) : '';
     $('#drawer').innerHTML = `
-      <header class="drawer-head"><div><span class="eyebrow">Messagerie ${d.thread.kind === 'client' ? 'client' : 'partenaire'}</span><h3>${esc(d.thread.partner_name)}</h3><div class="drawer-status"><span class="muted">${esc(d.thread.partner_email)}</span></div></div>
+      <header class="drawer-head"><div><span class="eyebrow">Messagerie ${t.kind === 'client' ? 'client' : 'partenaire'}</span><h3>${esc(t.subject || 'Conversation')}</h3>
+        <div class="drawer-status"><span class="badge ${closed ? 'off' : 'ok'}">${closed ? 'Clôturée' : 'Ouverte'}</span><span class="muted">${esc(t.partner_name)} · ${esc(t.partner_email)}</span></div></div>
         <button class="icon-btn light" type="button" data-action="close-drawer" aria-label="Fermer">${icon('close')}</button></header>
       <div class="drawer-body chat-body">${bubbles}</div>
-      <form id="chatReplyForm" class="drawer-foot chat-form" data-thread="${esc(id)}"><textarea name="message" required maxlength="4000" rows="2" placeholder="Votre réponse…"></textarea><button class="btn primary" type="submit">Envoyer</button></form>`;
+      ${closed
+        ? `<footer class="drawer-foot chat-closed"><p class="muted">Conversation clôturée${t.closed_by ? ` par ${esc(t.closed_by)}` : ''}. ${d.canManage ? 'Rouvrez-la pour répondre.' : 'Seule une personne autorisée peut la rouvrir.'}</p>${toggle}</footer>`
+        : `<form id="chatReplyForm" class="drawer-foot chat-form" data-thread="${esc(id)}"><textarea name="message" required maxlength="4000" rows="2" placeholder="Votre réponse…"></textarea><div class="chat-form-actions">${toggle}<button class="btn primary" type="submit">Envoyer</button></div></form>`}`;
     $('#drawer').hidden = false;
     $('#overlay').hidden = false;
     document.body.classList.add('drawer-open');
@@ -646,7 +656,7 @@ function detailContent(kind, id) {
     return {
       eyebrow: 'Réservation', title: b.reference, status: badge(b.status),
       body: kv([
-        ['Client', esc(b.customer_name)], ['E-mail', esc(b.customer_email)], ['Téléphone', esc(b.customer_phone)], ['Véhicule', esc(b.vehicle_name)],
+        ['Client', esc(b.customer_name)], ['E-mail', esc(b.customer_email)], ['Téléphone', esc(b.customer_phone)], ['Véhicule', esc(b.vehicle_name)], ['Entreprise', esc(b.company)],
         ['Départ', `${fmtDay(b.start_date)} ${esc(b.start_time || '')}`], ['Retour', `${fmtDay(b.end_date)} ${esc(b.end_time || '')}`],
         ['Lieu de retrait', esc(b.pickup_address)], ['Lieu de retour', esc(b.return_address)], ['Âge du conducteur', b.driver_age ? `${esc(b.driver_age)} ans${b.young_driver_notice ? ' (jeune conducteur)' : ''}` : ''],
         ['Total', money(b.total_estimate)], ['Paiement', b.payment_status === 'paid' ? `Payé en ligne : commission ${money(b.paid_amount)} · reste ${money(b.pay_on_pickup)} à régler au loueur` : b.payment_status === 'refunded' ? 'Remboursé' : ''], ['Options choisies', (b.extras || []).map(x => `${x.qty > 1 ? x.qty + ' × ' : ''}${esc(x.name)} (${money(x.total)})`).join(', ')], ['Total estimé', b.total_estimate == null ? '' : money(b.total_estimate)],
@@ -838,16 +848,16 @@ const RENDERERS = {
     const rows = bookings.map(b => `<tr class="clickable"${fa({ status: b.status })} data-detail="booking" data-id="${esc(b.id)}">
       <td><strong>${esc(b.reference)}</strong>${b.payment_status === 'paid' ? ' <span class="badge ok">Payé</span>' : b.payment_status === 'refunded' ? ' <span class="badge plain">Remboursé</span>' : ''}${b.unseen_staff ? ' <span class="badge warn new-tag">Nouveau</span>' : ''}${b.young_driver_notice ? '<span class="muted">Jeune conducteur</span>' : ''}</td>
       <td>${esc(b.customer_name)}<span class="muted">${esc(b.customer_email)}</span></td>
-      <td>${esc(b.vehicle_name)}</td>
+      <td>${esc(b.vehicle_name)}${b.company ? `<span class="muted">Entreprise : <b>${esc(b.company)}</b></span>` : ''}</td>
       <td class="num">${fmtDay(b.start_date)} → ${fmtDay(b.end_date)}</td>
       <td>${badge(b.status)}</td>
       <td class="actions"><span class="row-actions">${bookingActions(b)}</span></td></tr>`).join('');
     const reqRows = DATA.requests.map(r => `<tr class="clickable"${fa({ status: r.status, type: r.offer_type })} data-action="request-seen" data-id="${esc(r.id)}">
       <td><strong>${esc(refOfRequest(r))}</strong>${r.staff_seen_at ? '' : ' <span class="badge warn new-tag">Nouveau</span>'}<span class="muted">${r.offer_type === 'flight' ? 'Vol' : 'Pack'}</span></td>
       <td>${esc(r.customer_name)}<span class="muted">${esc(r.customer_email)}${r.customer_phone ? ' · ' + esc(r.customer_phone) : ''}</span></td>
-      <td>${esc(r.offer_title)}${r.trip_type ? ` <span class="badge plain">${r.trip_type === 'oneway' ? 'Aller simple' : 'Aller-retour'}</span>` : ''}<span class="muted">${esc(r.summary)}</span></td>
+      <td>${esc(r.offer_title)}${r.trip_type ? ` <span class="badge plain">${r.trip_type === 'oneway' ? 'Aller simple' : 'Aller-retour'}</span>` : ''}<span class="muted">${esc(r.summary)}</span><span class="muted">Entreprise : <b>${esc(r.partner_name || 'TripVision')}</b></span></td>
       <td class="num">${r.travelers} · ${money(r.total)}</td>
-      <td>${badge(r.status === 'cancelled' ? 'inactive' : r.status)}</td>
+      <td>${badge(r.status === 'cancelled' ? 'inactive' : r.status)}${r.payment_status === 'paid' ? ` <span class="badge ok">Payé ${esc(money(r.paid_amount))}</span>` : r.payment_status === 'refunded' ? ' <span class="badge off">Remboursé</span>' : ''}</td>
       <td class="actions"><span class="row-actions">${requestActions(r)}</span></td></tr>`).join('');
     return pageHead('Opérations', 'Suivi <em>des réservations</em>', 'Cliquez sur une réservation pour voir tous les détails.')
       + tableCard({ id: 'tblRequests', title: 'Demandes vols & packs', count: plural(DATA.requests.length, 'demande', 'demandes'), head: ['Référence', 'Client', 'Offre', 'Voyageurs · Total', 'Statut', ''], rows: reqRows, empty: 'Aucune demande de vol ou de pack', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['pending', 'En attente'], ['confirmed', 'Confirmée'], ['cancelled', 'Annulée']] }, { key: 'type', label: 'Type', options: [['flight', 'Vols'], ['pack', 'Packs']] }] })
@@ -897,16 +907,50 @@ const RENDERERS = {
       + tableCard({ id: 'tblApplications', title: 'Candidatures', count: `${pending} à traiter sur ${plural(list.length, 'demande', 'demandes')}`, head: ['Reçue le', 'Entreprise', 'Responsable', 'E-mail de connexion', 'Statut', ''], rows, empty: 'Aucune candidature', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['pending', 'À traiter'], ['approved', 'Acceptée'], ['rejected', 'Refusée']] }] });
   },
 
+  async trends() {
+    const period = DATA.trendPeriod || '30d';
+    const [t, pub] = await Promise.all([api(`/admin/trends?period=${period}`), api('/public/trending').catch(() => null)]);
+    const n = (v) => Number(v || 0).toLocaleString('fr-FR');
+    const PERIODS = [['month', 'Ce mois-ci'], ['30d', '30 jours'], ['90d', '90 jours'], ['12m', '12 mois']];
+    const kpi = (ic, v, label) => `<div class="kpi"><div class="kpi-icon">${icon(ic)}</div><div><strong>${n(v)}</strong><span>${label}</span></div></div>`;
+    const bars = (title, sub, list, label, extra) => {
+      const max = Math.max(1, ...list.map(x => x.score));
+      return `<section class="card trend-card"><div class="card-head"><div><h3>${title}</h3><p>${sub}</p></div></div>
+        ${list.length ? `<ol class="trend-list">${list.map((x, i) => `<li><span class="trend-rank">${i + 1}</span><div class="trend-main"><div class="trend-line"><strong>${esc(label(x))}</strong><em>${extra(x)}</em></div><div class="trend-bar"><i style="width:${Math.max(6, Math.round(x.score / max * 100))}%"></i></div></div></li>`).join('')}</ol>` : '<p class="muted trend-empty">Pas encore de données sur cette période.</p>'}</section>`;
+    };
+    const detail = (x) => [x.views && `${n(x.views)} vue${x.views > 1 ? 's' : ''}`, x.clicks && `${n(x.clicks)} clic${x.clicks > 1 ? 's' : ''}`, x.searches && `${n(x.searches)} recherche${x.searches > 1 ? 's' : ''}`, x.bookings && `<b>${n(x.bookings)} réservation${x.bookings > 1 ? 's' : ''}</b>`].filter(Boolean).join(' · ') || '—';
+    const days = t.daily, maxD = Math.max(1, ...days.map(d => d.n));
+    const W = 640, H = 120, pts = days.map((d, i) => [days.length > 1 ? i / (days.length - 1) * W : W / 2, H - 8 - (d.n / maxD) * (H - 24)]);
+    const line = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+    const spark = days.length ? `<svg viewBox="0 0 ${W} ${H}" class="trend-spark" preserveAspectRatio="none" aria-label="Activité par jour"><path d="${line} L${W} ${H} L0 ${H} Z" class="area"/><path d="${line}" class="ln"/></svg>` : '<p class="muted trend-empty">L’activité apparaîtra ici dès les premières visites.</p>';
+    const feat = pub ? `<section class="card trend-card trend-feature"><div class="card-head"><div><h3>Mise en avant sur le site</h3><p>Affichée automatiquement sur l’accueil : « Tendances de ${esc(pub.monthName)} ». Recalculée sur les 30 derniers jours, sans rien faire.</p></div><span class="badge ${pub.estimated ? 'warn' : 'ok'}">${pub.estimated ? 'Démarrage : offres les plus fournies' : 'Basée sur les visites'}</span></div>
+        <div class="trend-chips">${pub.cities.map(c => `<span class="trend-chip"><b>#${c.rank}</b> ${esc(c.city)}${c.country ? ` <small>${esc(c.country)}</small>` : ''}</span>`).join('')}</div></section>` : '';
+    return pageHead('Analyse', 'Tendances <em>du site</em>', 'Ce que les visiteurs consultent, cliquent, recherchent et réservent. Les destinations les plus populaires remontent d’elles-mêmes sur le site public.',
+      `<div class="pillbar" role="group" aria-label="Période">${PERIODS.map(([k, l]) => `<button type="button" class="pill ${k === period ? 'active' : ''}" data-action="trend-period" data-id="${k}">${l}</button>`).join('')}</div>`)
+      + `<div class="kpis">${kpi('overview', t.totals.views, 'Pages consultées')}${kpi('external', t.totals.clicks, 'Clics vers les compagnies')}${kpi('search', t.totals.searches, 'Recherches lancées')}${kpi('bookings', t.totals.bookings, 'Réservations & demandes')}</div>`
+      + `<section class="card trend-card"><div class="card-head"><div><h3>Activité du site</h3><p>Visites, clics et recherches par jour.</p></div></div>${spark}</section>`
+      + feat
+      + `<div class="trend-grid">`
+      + bars('Pays les plus populaires', 'Consultés, cherchés et réservés', t.countries, x => x.country, detail)
+      + bars('Villes et destinations', 'Les plus recherchées et réservées', t.cities, x => x.city + (x.country ? ` · ${x.country}` : ''), detail)
+      + bars('Vols les plus cliqués', 'Clics vers l’offre de la compagnie', t.flights, x => x.label || 'Vol', detail)
+      + bars('Packs les plus vus', 'Fiches consultées et réservations', t.packs, x => x.label || 'Pack', detail)
+      + bars('Voitures les plus consultées', 'Fiches ouvertes et réservations', t.cars, x => (x.label || 'Véhicule') + (x.city ? ` · ${x.city}` : ''), detail)
+      + bars('Villes de location', 'Où l’on cherche une voiture', t.carCities, x => x.city, detail)
+      + `</div>`;
+  },
+
   async chats() {
     const list = await api('/admin/chats');
     DATA.chats = list;
-    const rows = list.map(t => `<tr class="clickable"${fa({ unread: t.unread > 0 ? 'unread' : 'ok' })} data-detail="chat" data-id="${esc(t.id)}">
-      <td><strong>${esc(t.partner_name)}</strong> <span class="badge plain">${t.kind === 'client' ? 'Client' : 'Partenaire'}</span><span class="muted">${esc(t.partner_email)}</span></td>
-      <td>${t.last_sender === 'admin' ? '<span class="muted">Vous : </span>' : ''}${esc(String(t.last_message || '').slice(0, 100))}</td>
+    const open = list.filter(t => t.status !== 'closed').length;
+    const rows = list.map(t => `<tr class="clickable"${fa({ state: t.status === 'closed' ? 'closed' : t.unread > 0 ? 'unread' : 'open' })} data-detail="chat" data-id="${esc(t.id)}">
+      <td><strong>${esc(t.subject || 'Conversation')}</strong><span class="muted">${esc(t.partner_name)} · ${t.kind === 'client' ? 'Client' : 'Partenaire'}</span></td>
+      <td>${t.last_sender === 'admin' ? '<span class="muted">Vous : </span>' : ''}${esc(String(t.last_message || '').slice(0, 90))}<span class="muted">${t.messages} message${t.messages > 1 ? 's' : ''}</span></td>
       <td class="num">${fmtDate(t.updated_at)}</td>
-      <td>${t.unread > 0 ? `<span class="badge warn">${t.unread} non lu${t.unread > 1 ? 's' : ''}</span>` : badge('active', 'À jour')}</td></tr>`).join('');
-    return pageHead('Opérations', 'Messagerie <em>clients & partenaires</em>', 'Conversations avec les clients et les partenaires. Cliquez sur une conversation pour la lire et répondre.')
-      + tableCard({ id: 'tblChats', title: 'Conversations', count: plural(list.length, 'conversation', 'conversations'), head: ['Interlocuteur', 'Dernier message', 'Mise à jour', 'État'], rows, empty: 'Aucune conversation', cols: 4, filters: [{ key: 'unread', label: 'État', options: [['unread', 'Non lus'], ['ok', 'À jour']] }] });
+      <td>${t.status === 'closed' ? '<span class="badge off">Clôturée</span>' : t.unread > 0 ? `<span class="badge warn">${t.unread} non lu${t.unread > 1 ? 's' : ''}</span>` : badge('active', 'Ouverte')}</td></tr>`).join('');
+    return pageHead('Opérations', 'Messagerie <em>clients & partenaires</em>', 'Chaque conversation a son sujet et peut être clôturée puis rouverte par les personnes autorisées. Cliquez sur une conversation pour la lire et répondre.')
+      + tableCard({ id: 'tblChats', title: 'Conversations', count: `${open} ouverte${open > 1 ? 's' : ''} · ${list.length} au total`, head: ['Sujet', 'Dernier message', 'Mise à jour', 'État'], rows, empty: 'Aucune conversation', cols: 4, filters: [{ key: 'state', label: 'État', options: [['unread', 'Non lues'], ['open', 'Ouvertes'], ['closed', 'Clôturées']] }] });
   },
 
   async partners() {
@@ -1325,6 +1369,9 @@ const ACT = {
   },
   reload: async () => { await render(); toast('Données actualisées.'); },
   'close-drawer': () => closeDrawer(),
+  'trend-period': async (id) => { DATA.trendPeriod = id; await render(); },
+  'chat-close': async (id) => { try { await api(`/admin/chats/${id}/close`, { method: 'POST' }); toast('Conversation clôturée.'); await openChat(id); if (currentSection() === 'chats') render(); } catch (err) { toast(err.message); } },
+  'chat-reopen': async (id) => { try { await api(`/admin/chats/${id}/reopen`, { method: 'POST' }); toast('Conversation rouverte.'); await openChat(id); if (currentSection() === 'chats') render(); } catch (err) { toast(err.message); } },
 
   'message-toggle': async (id) => {
     const m = DATA.messages.find(x => x.id === id);
@@ -1886,6 +1933,8 @@ document.addEventListener('click', async (e) => {
 });
 
 try { setCollapsed(localStorage.getItem('tv_bo_collapsed') === '1'); } catch { /* stockage indisponible */ }
+// Scène animée (avions, voitures, hôtel) dans la partie décorative des écrans de connexion.
+document.querySelectorAll('.auth-art').forEach((el) => window.TVScene?.mount(el, { variant: 'night' }));
 enhancePasswords();
 const linkToken = new URLSearchParams(location.search).get('token');
 if (linkToken) {

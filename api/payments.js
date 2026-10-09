@@ -11,7 +11,7 @@ export const testMode = key.startsWith('sk_test_');
 const cents = (euros) => Math.round(Number(euros) * 100);
 
 /** Crée la page de paiement Stripe d'une réservation. `lines` : [{ label, amount }] en euros. */
-export async function createCheckout({ bookingId, reference, cancelToken, email, lines, appUrl }) {
+export async function createCheckout({ bookingId, reference, cancelToken, email, lines, appUrl, kind = 'booking', successUrl, cancelUrl, description }) {
   const items = lines.filter((l) => Number(l.amount) > 0).map((l) => ({
     quantity: 1,
     price_data: { currency: 'eur', unit_amount: cents(l.amount), product_data: { name: String(l.label).slice(0, 120) } },
@@ -21,12 +21,12 @@ export async function createCheckout({ bookingId, reference, cancelToken, email,
     locale: 'fr',
     customer_email: email,
     client_reference_id: String(bookingId),
-    metadata: { booking_id: String(bookingId), reference },
+    metadata: kind === 'pack' ? { request_id: String(bookingId), reference } : { booking_id: String(bookingId), reference },
     line_items: items,
-    payment_intent_data: { description: `Réservation TripVision ${reference}`, metadata: { booking_id: String(bookingId) } },
+    payment_intent_data: { description: description || `Réservation TripVision ${reference}`, metadata: kind === 'pack' ? { request_id: String(bookingId) } : { booking_id: String(bookingId) } },
     expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
-    success_url: `${appUrl}/?payment=success&session_id={CHECKOUT_SESSION_ID}#reserve`,
-    cancel_url: `${appUrl}/?payment=cancelled&b=${bookingId}&t=${cancelToken}#reserve`,
+    success_url: successUrl || `${appUrl}/?payment=success&session_id={CHECKOUT_SESSION_ID}#reserve`,
+    cancel_url: cancelUrl || `${appUrl}/?payment=cancelled&b=${bookingId}&t=${cancelToken}#reserve`,
   });
 }
 

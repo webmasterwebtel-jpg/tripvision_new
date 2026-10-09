@@ -22,6 +22,8 @@ const ICONS = {
   alert: '<path d="M12 9v4m0 4h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>',
   plane: '<path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2l-1.1 1.1 6.4 3.6-3.3 3.3-2.7-.5L3 14.8l3.2 1.4 1.4 3.2 1.1-1.1-.5-2.7 3.3-3.3 3.6 6.4z"/>',
   car: '<path d="M5 17h14M3 13l2-6a2 2 0 0 1 1.9-1.4h10.2A2 2 0 0 1 19 7l2 6v4h-2M3 13v4h2M3 13h18"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="16.5" cy="17" r="1.8"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  back: '<path d="M19 12H5m5-5-5 5 5 5"/>',
   pack: '<rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V6a3 3 0 0 1 6 0v2M4 13h16"/>',
 };
 const icon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
@@ -367,6 +369,7 @@ document.addEventListener('drop', (e) => {
 async function loadPartner() {
   const d = await api('/partner/dashboard');
   DATA.partner = d.partner;
+  if (user?.role === 'partner' && d.partner?.tradeName && user.name !== d.partner.tradeName) { user = { ...user, name: d.partner.tradeName }; try { sessionStorage.setItem(KEY.user, JSON.stringify(user)); } catch { /* indisponible */ } if (typeof renderNav === 'function' && $('#whoName')) renderNav(); }
   DATA.vehicles = d.vehicles || [];
   DATA.bookings = d.bookings || [];
 }
@@ -496,16 +499,39 @@ document.addEventListener('click', (e) => {
   if (none) none.hidden = shown > 0;
 });
 
+/* ---------- Messagerie : plusieurs conversations, ouvertes ou clôturées ---------- */
+const CH = { id: null, view: 'list' };
+let chatSig = '';
+const TOPICS = () => (user.role === 'partner'
+  ? ['Une réservation', 'Mon annonce ou mes véhicules', 'Paiement ou commission', 'Mon compte', 'Autre question']
+  : ['Ma réservation', 'Paiement ou remboursement', 'Un vol ou un pack', 'Mon compte', 'Autre question']);
+const shortDate = (d) => { const x = new Date(d), t = new Date(); return x.toDateString() === t.toDateString() ? x.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : x.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); };
 async function chatPage() {
-  const d = await api('/chat');
-  const you = user.role === 'partner' ? 'Vous' : 'Vous';
-  const bubbles = (list) => list.length ? list.map(m => `<div class="bubble ${m.sender === 'partner' ? 'admin' : 'partner'}">${esc(m.body)}<small>${m.sender === 'partner' ? you : 'TripVision'} · ${fmtDate(m.created_at)}</small></div>`).join('') : `<div class="empty">${icon('chat')}<strong>Aucun message</strong><span>Écrivez à l’équipe TripVision : nous répondons dès que possible.</span></div>`;
-  chatCount = d.messages.length;
+  const threads = await api('/chat/threads');
+  if (!CH.id || !threads.some(t => t.id === CH.id)) CH.id = threads[0]?.id || null;
+  const d = CH.id ? await api(`/chat/threads/${CH.id}`) : null;
+  chatCount = d ? d.messages.length : 0;
+  chatSig = threads.map(t => `${t.id}${t.updated_at}${t.status}`).join('|');
   refreshBadges();
-  return pageHead('Assistance', '<em>Messagerie</em>', 'Échangez directement avec l’équipe TripVision. Vous recevez un e-mail à chaque réponse.') + `
-    <section class="card chat-card">
+  const closed = d?.thread.status === 'closed';
+  const bubbles = (list) => list.map(m => m.sender === 'system'
+    ? `<div class="bubble system">${esc(m.body)}<small>${fmtDate(m.created_at)}</small></div>`
+    : `<div class="bubble ${m.sender === 'partner' ? 'admin' : 'partner'}">${esc(m.body)}<small>${m.sender === 'partner' ? 'Vous' : 'TripVision'} · ${fmtDate(m.created_at)}</small></div>`).join('');
+  const list = threads.map(t => `<button type="button" class="thread ${t.id === CH.id ? 'on' : ''} ${t.status === 'closed' ? 'is-closed' : ''}" data-action="chat-open" data-id="${esc(t.id)}">
+      <span class="thread-top"><strong>${esc(t.subject)}</strong><time>${shortDate(t.updated_at)}</time></span>
+      <span class="thread-sub">${esc(String(t.last_message || '').slice(0, 70))}</span>
+      <span class="thread-tags">${t.status === 'closed' ? '<span class="badge plain">Clôturée</span>' : '<span class="badge ok">Ouverte</span>'}${t.unread ? `<em class="dot">${t.unread}</em>` : ''}</span></button>`).join('');
+  const pane = d ? `
+      <header class="chat-head"><button class="icon-btn chat-back" type="button" data-action="chat-back" aria-label="Retour aux conversations">${icon('back')}</button><div><strong>${esc(d.thread.subject)}</strong><span class="muted">${closed ? `Clôturée${d.thread.closed_at ? ` le ${fmtDay(d.thread.closed_at)}` : ''}` : `Ouverte le ${fmtDay(d.thread.created_at)}`}</span></div></header>
       <div class="chat-body chat-scroll" id="chatBody">${bubbles(d.messages)}</div>
-      <form id="chatForm" class="chat-form"><textarea name="message" rows="2" required maxlength="2000" placeholder="Votre message…" aria-label="Votre message"></textarea><button class="btn primary" type="submit">Envoyer</button></form>
+      ${closed
+        ? `<div class="chat-closed-note"><span>Cette conversation est clôturée. Pour une nouvelle question, démarrez une autre conversation.</span><button class="btn primary small" type="button" data-action="chat-new">Nouvelle conversation</button></div>`
+        : `<form id="chatForm" class="chat-form" data-thread="${esc(d.thread.id)}"><textarea name="message" rows="2" required maxlength="2000" placeholder="Votre message…" aria-label="Votre message"></textarea><button class="btn primary" type="submit">Envoyer</button></form>`}`
+    : `<div class="empty">${icon('chat')}<strong>Aucune conversation</strong><span>Posez votre question à l’équipe TripVision : nous répondons dès que possible.</span><button class="btn primary" type="button" data-action="chat-new">Nouvelle conversation</button></div>`;
+  return pageHead('Assistance', '<em>Messagerie</em>', 'Une conversation par sujet : suivez-les toutes ici. Vous recevez un e-mail à chaque réponse.', `<button class="btn primary small" type="button" data-action="chat-new">${icon('plus')} Nouvelle conversation</button>`) + `
+    <section class="card chat-card chat-layout" data-view="${CH.view}">
+      <aside class="chat-list">${list || '<p class="muted pad">Aucune conversation pour le moment.</p>'}</aside>
+      <div class="chat-pane">${pane}</div>
     </section>`;
 }
 
@@ -616,7 +642,7 @@ function bookingActions(b) {
 function clientItems() {
   return [
     ...DATA.bookings.map(b => ({ kind: 'car', id: b.id, ref: b.reference, title: b.vehicle_name, line: b.pickup_address || 'Lieu à confirmer', dates: [b.start_date, b.end_date].filter(Boolean).map(fmtDay).join(' → '), status: b.status, created: b.created_at, cancel: 'bookings', unseen: b.unseen_client, extra: b })),
-    ...DATA.requests.map(r => ({ kind: r.offer_type, id: r.id, ref: refOf(r.id), title: r.offer_title, line: r.summary || '', dates: `${r.trip_type === 'oneway' ? 'Aller simple · ' : r.trip_type === 'roundtrip' ? 'Aller-retour · ' : ''}${r.travelers} voyageur${r.travelers > 1 ? 's' : ''} · ${money(r.total)}`, status: r.status, created: r.created_at, cancel: 'requests', unseen: Boolean(r.status_changed_at && (!r.client_seen_at || new Date(r.client_seen_at) < new Date(r.status_changed_at))), extra: r })),
+    ...DATA.requests.map(r => ({ kind: r.offer_type, id: r.id, ref: refOf(r.id), title: r.offer_title, line: r.summary || '', dates: `${r.trip_type === 'oneway' ? 'Aller simple · ' : r.trip_type === 'roundtrip' ? 'Aller-retour · ' : ''}${r.travelers} voyageur${r.travelers > 1 ? 's' : ''} · ${money(r.total)}${r.payment_status === 'paid' ? ' · payé en ligne' : r.payment_status === 'refunded' ? ' · remboursé' : ''}`, status: r.status, created: r.created_at, cancel: 'requests', unseen: Boolean(r.status_changed_at && (!r.client_seen_at || new Date(r.client_seen_at) < new Date(r.status_changed_at))), extra: r })),
   ].sort((a, b) => new Date(b.created) - new Date(a.created));
 }
 const KIND = { car: ['car', 'Location de voiture'], flight: ['plane', 'Vol'], pack: ['pack', 'Pack week-end'] };
@@ -719,25 +745,44 @@ const CLIENT_PAGES = {
 };
 
 /* ---------- Mon compte (partenaire et client) ---------- */
+const deviceIcon = (d) => (/iPhone|Android/.test(d) ? '<path d="M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM11 18h2"/>' : '<path d="M3 5h18v11H3zM8 20h8M12 16v4"/>');
 async function accountPage() {
   const me = await api('/auth/me');
   const u = me.user;
-  user = { ...user, name: u.name };
+  const isPartner = user.role === 'partner';
+  if (isPartner) await loadPartner();
+  const co = isPartner ? DATA.partner : null;
+  // Un compte partenaire est celui de l'entreprise : on affiche la société, pas une personne.
+  const shown = isPartner ? (co?.tradeName || u.name) : u.name;
+  user = { ...user, name: shown };
   sessionStorage.setItem(KEY.user, JSON.stringify(user));
-  return pageHead('Compte', 'Mon <em>compte</em>', 'Gérez vos informations personnelles et la sécurité de votre accès.') + `
-    <section class="card profile-hero"><span class="avatar xl">${esc(initials(u.name))}</span>
-      <div><h3>${esc(u.name)}</h3><div class="profile-meta"><span class="role-chip dark">${user.role === 'partner' ? 'Partenaire' : 'Client'}</span><span class="muted">${esc(u.email)}</span></div>
-        <p class="muted">Dernière connexion : ${fmtDate(u.lastLoginAt)} · Compte créé le ${fmtDay(u.createdAt)}</p></div></section>
+  renderNav();
+  let logins = [];
+  try { logins = await api('/auth/logins'); } catch { /* facultatif */ }
+  const companyCard = isPartner ? `
+    <section class="card">
+      <div class="card-head"><div><h3>Ma société</h3><p>Les informations affichées à vos clients et à TripVision.</p></div><a class="btn small" href="#company">${icon('company')} ${co ? 'Modifier' : 'Compléter'}</a></div>
+      ${co ? `<dl class="kv-grid">
+        <div><dt>Nom commercial</dt><dd>${esc(co.tradeName)}</dd></div><div><dt>Raison sociale</dt><dd>${esc(co.legalName)}</dd></div>
+        <div><dt>SIRET</dt><dd>${esc(co.siret)}</dd></div><div><dt>Siège</dt><dd>${esc(co.headOffice)}</dd></div>
+        <div><dt>E-mail de réservation</dt><dd>${esc(co.bookingEmail)}</dd></div><div><dt>E-mail de contact</dt><dd>${esc(co.contactEmail)}</dd></div>
+        <div><dt>Téléphone</dt><dd>${esc(co.phone || '—')}</dd></div><div><dt>Ville</dt><dd>${esc(co.city || '—')}</dd></div></dl>` : '<p class="muted">Votre dossier entreprise n’est pas encore renseigné.</p>'}
+    </section>` : `
     <form id="profileForm" class="card">
       <div class="card-head"><div><h3>Informations personnelles</h3><p>Vos coordonnées de contact.</p></div></div>
       <div class="form-grid">
         ${field('Prénom', `name="firstName" required maxlength="60" autocomplete="given-name" value="${fv(u.firstName)}"`)}
         ${field('Nom', `name="lastName" required maxlength="60" autocomplete="family-name" value="${fv(u.lastName)}"`)}
-        ${field('Téléphone', `name="phone" type="tel" maxlength="30" autocomplete="tel" placeholder="+33 6 00 00 00 00" value="${fv(u.phone)}"`)}
+        ${field('Téléphone', `name="phone" type="tel" required minlength="6" maxlength="30" autocomplete="tel" placeholder="+33 6 00 00 00 00" value="${fv(u.phone)}"`)}
         ${field('Adresse e-mail', `value="${fv(u.email)}" disabled title="L’e-mail est votre identifiant de connexion"`)}
         <div class="form-actions"><button class="btn primary" type="submit">Enregistrer les modifications</button></div>
       </div>
-    </form>
+    </form>`;
+  return pageHead('Compte', 'Mon <em>compte</em>', isPartner ? 'Les informations de votre entreprise et la sécurité de votre accès.' : 'Gérez vos informations personnelles et la sécurité de votre accès.') + `
+    <section class="card profile-hero"><span class="avatar xl">${esc(initials(shown))}</span>
+      <div><h3>${esc(shown)}</h3><div class="profile-meta"><span class="role-chip dark">${isPartner ? 'Partenaire' : 'Client'}</span><span class="muted">${esc(u.email)}</span></div>
+        <p class="muted">Dernière connexion : ${fmtDate(u.lastLoginAt)} · Compte créé le ${fmtDay(u.createdAt)}</p></div></section>
+    ${companyCard}
     <form id="passwordForm" class="card">
       <div class="card-head"><div><h3>Mot de passe</h3><p>Choisissez un mot de passe que vous n’utilisez nulle part ailleurs.</p></div></div>
       <div class="form-grid">
@@ -746,7 +791,13 @@ async function accountPage() {
         ${field('Confirmer le nouveau mot de passe', 'name="confirm" type="password" required autocomplete="new-password"')}
         <div class="form-actions"><button class="btn primary" type="submit">Changer le mot de passe</button></div>
       </div>
-    </form>`;
+    </form>
+    <section class="card">
+      <div class="card-head"><div><h3>Sécurité de l’accès</h3><p>Pour votre protection, la session se ferme d’elle-même après <b>15 minutes d’inactivité</b>.</p></div><button class="btn small danger" type="button" data-um-logout-account>${icon('logout')} Se déconnecter</button></div>
+      <h4 class="sec-sub">Dernières connexions</h4>
+      ${logins.length ? `<ul class="login-list">${logins.map((l, i) => `<li><span class="li-ic"><svg viewBox="0 0 24 24" aria-hidden="true">${deviceIcon(l.device)}</svg></span><div><strong>${esc(l.device)}</strong><small>${esc(l.ip)}</small></div><time>${fmtDate(l.at)}</time>${i === 0 ? '<span class="badge ok">Actuelle</span>' : ''}</li>`).join('')}</ul>` : '<p class="muted">Aucune connexion enregistrée.</p>'}
+      <p class="muted sec-note">Une connexion que vous ne reconnaissez pas ? Changez immédiatement votre mot de passe.</p>
+    </section>`;
 }
 
 /* ---------- Formulaire véhicule ---------- */
@@ -789,6 +840,21 @@ function openBookingModal(b) {
 /* ---------- Actions ---------- */
 const find = (list, id) => DATA[list].find(x => x.id === id);
 const ACT = {
+  'chat-open': (id) => { CH.id = id; CH.view = 'thread'; render(false); },
+  'chat-back': () => { CH.view = 'list'; render(false); },
+  'chat-new': () => openModal({
+    eyebrow: 'Messagerie', title: 'Nouvelle conversation', confirmLabel: 'Envoyer', loadingText: 'Envoi…',
+    bodyHtml: `<div class="form-grid tight">
+      <label class="full">Sujet<select name="topic" required>${TOPICS().map(t => `<option>${esc(t)}</option>`).join('')}</select></label>
+      ${field('Précision (facultatif)', 'name="detail" maxlength="80" placeholder="Ex. la référence TV-1234"', true)}
+      <label class="full">Votre message<textarea name="message" rows="5" required maxlength="2000" placeholder="Expliquez-nous votre demande…"></textarea></label></div>`,
+    run: async (form) => {
+      const f = Object.fromEntries(new FormData(form));
+      const r = await api('/chat/threads', { method: 'POST', body: JSON.stringify({ subject: f.detail?.trim() ? `${f.topic} · ${f.detail.trim()}` : f.topic, message: f.message }) });
+      CH.id = r.id; CH.view = 'thread';
+      return { title: 'Conversation créée', text: 'Nous vous répondons dès que possible.' };
+    },
+  }),
   'order-pdf': async (id, el) => {
     const path = el?.dataset.kind === 'requests' ? 'requests' : 'bookings';
     try {
@@ -888,7 +954,7 @@ document.addEventListener('submit', async (e) => {
       form.reset();
       toast('Mot de passe modifié.');
     } else if (form.id === 'chatForm') {
-      await api('/chat/messages', { method: 'POST', body: JSON.stringify({ message: data.message }) });
+      await api(`/chat/threads/${form.dataset.thread}/messages`, { method: 'POST', body: JSON.stringify({ message: data.message }) });
       form.reset();
       await render(false);
     }
@@ -930,8 +996,9 @@ window.addEventListener('hashchange', () => { closeModalNow(); render(); });
 setInterval(async () => {
   if (document.hidden || !user || currentSection() !== 'chat' || modalState) return;
   try {
-    const d = await fetch('/api/chat', { headers: { Authorization: `Bearer ${token}` } }).then(r => (r.ok ? r.json() : null));
-    if (d && d.messages.length !== chatCount && !document.activeElement?.matches('#chatForm textarea')) render(false);
+    const d = await fetch('/api/chat/threads', { headers: { Authorization: `Bearer ${token}` } }).then(r => (r.ok ? r.json() : null));
+    const sig = d ? d.map(t => `${t.id}${t.updated_at}${t.status}`).join('|') : chatSig;
+    if (d && sig !== chatSig && !document.activeElement?.matches('#chatForm textarea')) render(false);
   } catch { /* hors ligne */ }
 }, 20000);
 
@@ -976,3 +1043,29 @@ document.addEventListener('click', (e) => {
   menu.hidden = true;
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('#userMenu')) $('#userMenu').hidden = true; });
+document.addEventListener('click', (e) => { if (e.target.closest('[data-um-logout-account]')) $('#logoutBtn').click(); });
+
+/* ---------- Déconnexion automatique après 15 minutes d'inactivité ---------- */
+(function idleGuard() {
+  const LIMIT = 15 * 60 * 1000, WARN = 60 * 1000;
+  let last = Date.now(), warned = false, box = null;
+  const hide = () => { box?.remove(); box = null; warned = false; };
+  const bump = () => { if (Date.now() - last > LIMIT) return; last = Date.now(); if (warned) hide(); };
+  ['pointerdown', 'pointermove', 'keydown', 'scroll', 'touchstart', 'wheel'].forEach((ev) => addEventListener(ev, bump, { passive: true }));
+  const tick = () => {
+    if (!token) return;
+    const idle = Date.now() - last;
+    if (idle >= LIMIT) { signOut('Vous avez été déconnecté après 15 minutes d’inactivité.'); return; }
+    if (idle >= LIMIT - WARN && !warned) {
+      warned = true;
+      box = document.createElement('div');
+      box.className = 'idle-warn';
+      box.setAttribute('role', 'alertdialog');
+      box.innerHTML = '<div><strong>Toujours là ?</strong><span>Sans activité, vous serez déconnecté dans une minute.</span></div><button type="button" class="btn small primary">Rester connecté</button>';
+      box.querySelector('button').onclick = () => { last = Date.now(); hide(); api('/auth/ping').catch(() => {}); };
+      document.body.appendChild(box);
+    }
+  };
+  setInterval(tick, 5000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+})();

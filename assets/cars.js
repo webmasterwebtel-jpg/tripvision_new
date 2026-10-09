@@ -54,13 +54,13 @@
     }).catch(() => {});
   });
   /* ---------- Après 10 minutes d'inactivité, la page Voitures redevient vierge ---------- */
-  const IDLE_MS = 10 * 60 * 1000;
+  const IDLE_MS = 15 * 60 * 1000;
   let lastActivity = Date.now();
   ['pointerdown', 'pointermove', 'keydown', 'scroll', 'touchstart', 'wheel'].forEach((ev) => addEventListener(ev, () => { lastActivity = Date.now(); }, { passive: true }));
   function resetCars() {
     searched = false;
     try { sessionStorage.removeItem('tvCarSearch'); } catch { /* rien */ }
-    Object.assign(F, { priceTouched: false, cats: new Set(), gear: '', seats: 0, maxPrice: 0, freeCancel: false, unlimited: false, deposit: '', lessors: new Set() });
+    Object.assign(F, FRESH());
     const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const t = new Date(), n = new Date(t.getTime() + 864e5);
     const f = document.getElementById('carSearchForm')?.elements;
@@ -71,7 +71,7 @@
   const checkIdle = () => {
     if (!searched || Date.now() - lastActivity < IDLE_MS) return;
     const inReserve = document.getElementById('reserve')?.classList.contains('active');
-    if (!inReserve) resetCars();
+    if (!inReserve) { resetCars(); if (document.getElementById('cars')?.classList.contains('active')) scrollTo({ top: 0, behavior: 'smooth' }); }
   };
   setInterval(checkIdle, 30000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) checkIdle(); });
@@ -118,7 +118,8 @@
     saveSearch();
     fetchTimer = setTimeout(fetchCars, 250);
   });
-  const F = { cats: new Set(), gear: '', seats: 0, maxPrice: 0, freeCancel: false, unlimited: false, deposit: '', lessors: new Set(), sort: 'price' };
+  const F = { cats: new Set(), gear: '', seats: 0, maxPrice: 0, freeCancel: false, unlimited: false, deposit: '', lessors: new Set(), fuels: new Set(), ac: false, freeMod: false, fullIns: false, bags: 0, minAge: '', sort: 'price' };
+  const FRESH = () => ({ priceTouched: false, cats: new Set(), gear: '', seats: 0, maxPrice: 0, freeCancel: false, unlimited: false, deposit: '', lessors: new Set(), fuels: new Set(), ac: false, freeMod: false, fullIns: false, bags: 0, minAge: '' });
 
   /* ---------- Durée et prix ---------- */
   // Dates de la recherche : celles validées, sinon celles du formulaire (valeurs par défaut comprises).
@@ -235,6 +236,7 @@
   }
 
   /* ---------- Filtres et tri ---------- */
+  const fuelOf = (v) => String(v.fuelType || '').trim() || 'Non précisé';
   function filtered() {
     const rows = state.vehicles.filter((v) => {
       if (F.cats.size && !F.cats.has(v.category)) return false;
@@ -246,6 +248,12 @@
       if (F.deposit === '0' && !(v.deposit === 0)) return false;
       if (F.deposit && F.deposit !== '0' && !(v.deposit != null && v.deposit <= Number(F.deposit))) return false;
       if (F.lessors.size && !F.lessors.has(lessorOf(v))) return false;
+      if (F.fuels.size && !F.fuels.has(fuelOf(v))) return false;
+      if (F.ac && !v.airConditioning) return false;
+      if (F.freeMod && !v.freeModification) return false;
+      if (F.fullIns && !v.fullInsurance) return false;
+      if (F.bags && Number(v.bags || 0) < F.bags) return false;
+      if (F.minAge && v.minAge && Number(v.minAge) > Number(F.minAge)) return false;
       return true;
     });
     const d = searchDays();
@@ -257,20 +265,29 @@
     const box = document.getElementById('rentFilters');
     if (!box) return;
     const all = state.vehicles;
-    const cats = [...new Set(all.map((v) => v.category))].sort();
+    // Toutes les catégories du back-office (même sans offre sur cette recherche), puis celles que seuls les véhicules déclarent.
+    const cats = [...CATS.map((c) => c.name), ...[...new Set(all.map((v) => v.category))].filter((n) => !CATS.some((c) => c.name === n)).sort()];
+    const nCat = (n) => all.filter((v) => v.category === n).length;
+    const fuels = [...new Set(['Essence', 'Diesel', 'Hybride', 'Électrique', ...all.map(fuelOf).filter((x) => x !== 'Non précisé')])];
+    const nFuel = (n) => all.filter((v) => fuelOf(v) === n).length;
     const lessors = [...new Set(all.map(lessorOf))].sort();
     const maxPrice = Math.max(90, Math.ceil(Math.max(0, ...all.map((v) => Number(v.priceDay) || 0)) / 10) * 10);
     if (!F.priceTouched || F.maxPrice > maxPrice) F.maxPrice = maxPrice;
-    const check = (name, val, label, on) => `<label class="rf-check"><input type="checkbox" data-rf="${name}" value="${E(val)}" ${on ? 'checked' : ''}><span>${E(label)}</span></label>`;
+    const check = (name, val, label, on, n, off) => `<label class="rf-check ${off ? 'off' : ''}"><input type="checkbox" data-rf="${name}" value="${E(val)}" ${on ? 'checked' : ''} ${off ? 'disabled' : ''}><span>${E(label)}</span>${n != null ? `<em>${n}</em>` : ''}</label>`;
+    const sel = (key, label, opts, cur) => `<label class="rf-sel">${label}<select data-rf="${key}">${opts.map(([v, l]) => `<option value="${v}" ${String(cur) === String(v) ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`;
     box.innerHTML = `
       <div class="rf-head"><strong>Affiner</strong><button type="button" class="rf-reset" data-rf-reset>Réinitialiser</button></div>
-      <fieldset><legend>Type de véhicule</legend>${cats.map((c) => check('cat', c, c, F.cats.has(c))).join('') || '<p class="muted">—</p>'}</fieldset>
+      <fieldset><legend>Type de véhicule</legend>${cats.map((c) => check('cat', c, c, F.cats.has(c), nCat(c), !nCat(c) && !F.cats.has(c))).join('') || '<p class="muted">—</p>'}</fieldset>
       <fieldset><legend>Boîte de vitesses</legend>
         ${[['', 'Toutes'], ['Manuelle', 'Manuelle'], ['Automatique', 'Automatique']].map(([v, l]) => `<label class="rf-radio"><input type="radio" name="rfGear" data-rf="gear" value="${v}" ${F.gear === v ? 'checked' : ''}><span>${l}</span></label>`).join('')}</fieldset>
       <fieldset><legend>Places minimum</legend><select data-rf="seats">${[[0, 'Indifférent'], [4, '4 et plus'], [5, '5 et plus'], [7, '7 et plus'], [9, '9 et plus']].map(([v, l]) => `<option value="${v}" ${F.seats === v ? 'selected' : ''}>${l}</option>`).join('')}</select></fieldset>
+      <fieldset><legend>Bagages minimum</legend><select data-rf="bags">${[[0, 'Indifférent'], [1, '1 et plus'], [2, '2 et plus'], [3, '3 et plus'], [4, '4 et plus']].map(([v, l]) => `<option value="${v}" ${F.bags === v ? 'selected' : ''}>${l}</option>`).join('')}</select></fieldset>
+      <fieldset><legend>Carburant</legend>${fuels.map((f) => check('fuel', f, f, F.fuels.has(f), nFuel(f), !nFuel(f) && !F.fuels.has(f))).join('')}</fieldset>
+      <fieldset><legend>Équipements</legend>${check('ac', '1', 'Climatisation', F.ac, all.filter((v) => v.airConditioning).length)}</fieldset>
       <fieldset><legend>Prix par jour : <b id="rfPriceLabel">${F.maxPrice} €</b> max</legend><input type="range" data-rf="price" min="5" max="${maxPrice}" step="5" value="${F.maxPrice}"></fieldset>
-      <fieldset><legend>Inclus</legend>${check('freeCancel', '1', 'Annulation gratuite', F.freeCancel)}${check('unlimited', '1', 'Kilométrage illimité', F.unlimited)}
+      <fieldset><legend>Inclus</legend>${check('freeCancel', '1', 'Annulation gratuite', F.freeCancel)}${check('freeMod', '1', 'Modifications gratuites', F.freeMod)}${check('unlimited', '1', 'Kilométrage illimité', F.unlimited)}${check('fullIns', '1', 'Assurance tous risques', F.fullIns)}
         <label class="rf-sel">Dépôt de garantie<select data-rf="deposit">${[['', 'Indifférent'], ['0', 'Sans dépôt'], ['500', '500 € maximum'], ['1000', '1 000 € maximum'], ['2000', '2 000 € maximum']].map(([v, l]) => `<option value="${v}" ${F.deposit === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label></fieldset>
+      <fieldset><legend>Conducteur</legend>${sel('minAge', 'Âge du conducteur', [['', 'Indifférent'], ['21', '21 ans ou moins exigé'], ['23', '23 ans ou moins exigé'], ['25', '25 ans ou moins exigé']], F.minAge)}</fieldset>
       ${lessors.length > 1 ? `<fieldset><legend>Loueur</legend>${lessors.map((l) => check('lessor', l, l, F.lessors.has(l))).join('')}</fieldset>` : ''}`;
   }
 
@@ -287,7 +304,7 @@
   async function paintEmptyActions() {
     const box = document.getElementById('carEmptyActions');
     if (!box) return;
-    const filtersOn = F.cats.size || F.gear || F.seats || F.freeCancel || F.unlimited || F.deposit || F.lessors.size || F.priceTouched;
+    const filtersOn = F.cats.size || F.gear || F.seats || F.freeCancel || F.unlimited || F.deposit || F.lessors.size || F.priceTouched || F.fuels.size || F.ac || F.freeMod || F.fullIns || F.bags || F.minAge;
     const draw = () => {
       const cities = (cityList || []).slice(0, 6);
       box.innerHTML = `${filtersOn ? '<button type="button" class="btn ghost" data-rf-reset>Réinitialiser les filtres</button>' : ''}<button type="button" class="btn" data-car-newsearch>Modifier ma recherche</button>${cities.length ? `<div class="empty-cities"><span>Voitures disponibles à :</span>${cities.map(([c, n]) => `<button type="button" class="chip" data-car-research="${E(c)}">${E(c)} <small>${n}</small></button>`).join('')}</div>` : ''}`;
@@ -330,7 +347,12 @@
     const el = e.target.closest?.('[data-rf]');
     if (el) {
       const k = el.dataset.rf;
-      if (k === 'cat' || k === 'lessor') { const set = k === 'cat' ? F.cats : F.lessors; el.checked ? set.add(el.value) : set.delete(el.value); }
+      if (k === 'cat' || k === 'lessor' || k === 'fuel') { const set = k === 'cat' ? F.cats : k === 'fuel' ? F.fuels : F.lessors; el.checked ? set.add(el.value) : set.delete(el.value); }
+      else if (k === 'ac') F.ac = el.checked;
+      else if (k === 'freeMod') F.freeMod = el.checked;
+      else if (k === 'fullIns') F.fullIns = el.checked;
+      else if (k === 'bags') F.bags = Number(el.value);
+      else if (k === 'minAge') F.minAge = el.value;
       else if (k === 'gear') F.gear = el.value;
       else if (k === 'seats') F.seats = Number(el.value);
       else if (k === 'deposit') F.deposit = el.value;
@@ -347,7 +369,7 @@
   document.addEventListener('click', (e) => {
     const tile = e.target.closest('[data-cat]');
     if (tile) { const c = tile.dataset.cat; F.cats.has(c) ? F.cats.delete(c) : F.cats.add(c); renderFilters(); paintCars(); return; }
-    if (e.target.closest('[data-rf-reset]')) { Object.assign(F, { priceTouched: false, cats: new Set(), gear: '', seats: 0, maxPrice: 0, freeCancel: false, unlimited: false, deposit: '', lessors: new Set() }); renderCars(); return; }
+    if (e.target.closest('[data-rf-reset]')) { Object.assign(F, FRESH()); renderCars(); return; }
     if (e.target.closest('[data-rf-toggle]')) document.getElementById('rentFilters')?.classList.toggle('open');
     const terms = e.target.closest('[data-car-terms]');
     if (terms) { openTerms(terms.dataset.carTerms); return; }
@@ -612,6 +634,7 @@
   function openReserve(id) {
     const v = find(id);
     if (!v) return;
+    window.TVFX?.track('car_view', v.id, v.city, v.country, v.name || v.model);
     if (!payLoaded) loadPay();
     R = { id, step: 1, protection: false, extras: new Map(), data: {}, done: null, returnKey: v.returnLocations?.[0]?.key || null };
     renderReserve();
@@ -695,6 +718,7 @@
     const q = new URLSearchParams(location.search);
     const kind = q.get('payment');
     if (!kind) return;
+    if (q.get('kind') === 'pack') { window.packPaymentReturn?.(q); return; }
     paymentReturn = true;
     try { sessionStorage.removeItem('tvReserve'); } catch { /* rien */ }
     const root = document.getElementById('reserveRoot');

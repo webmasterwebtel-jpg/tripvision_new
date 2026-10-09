@@ -571,3 +571,32 @@ a.btn.block { text-decoration: none; }
 @media (max-width: 720px) { .hrs-row { grid-template-columns: 1fr 1fr; } .hrs-day { grid-column: 1 / -1; } .hrs-to { display: none; } }
 
 .cat-thumb{width:64px;height:40px;object-fit:contain;background:#fff;border:1px solid #e5e0da;border-radius:4px}
+
+/* Messagerie : messages système et pied de conversation clôturée */
+.bubble.system{align-self:center;max-width:90%;background:transparent;border:1px dashed var(--line,#d8dfdb);color:#5c6660;text-align:center;font-size:12.5px;padding:6px 14px;border-radius:999px}
+.bubble.system small{display:block;margin-top:2px;opacity:.7}
+.chat-form-actions{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.chat-closed{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.chat-closed p{margin:0}
+
+/* Tendances */
+.trend-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:18px}
+.trend-card .card-head{margin-bottom:6px}
+.trend-list{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:12px}
+.trend-list li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;align-items:center}
+.trend-rank{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:rgba(15,107,79,.1);color:#0f6b4f;font-weight:800;font-size:13px}
+.trend-line{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.trend-line strong{overflow-wrap:anywhere}.trend-line em{font-style:normal;font-size:12.5px;color:#6b7a72}
+.trend-bar{height:8px;margin-top:6px;border-radius:99px;background:rgba(15,59,46,.08);overflow:hidden}
+.trend-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#0f6b4f,#47c9a2);animation:trendGrow .8s ease both;transform-origin:left}
+@keyframes trendGrow{from{transform:scaleX(0)}}
+.trend-empty{padding:10px 0}
+.trend-spark{width:100%;height:120px;display:block;margin-top:8px}
+.trend-spark .area{fill:rgba(15,107,79,.12)}.trend-spark .ln{fill:none;stroke:#0f6b4f;stroke-width:2.4;vector-effect:non-scaling-stroke}
+.trend-feature{margin-top:18px}
+.trend-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.trend-chip{display:inline-flex;gap:8px;align-items:baseline;padding:8px 14px;border-radius:999px;background:#0f3b2e;color:#fff;font-weight:600}
+.trend-chip b{color:#e9c97a}.trend-chip small{opacity:.7;font-weight:400}
+@media(max-width:900px){.trend-grid{grid-template-columns:1fr}}
+.trend-card>.trend-list,.trend-card>.trend-spark,.trend-card>.trend-empty,.trend-card>.trend-chips{margin-left:22px;margin-right:22px;margin-bottom:22px;width:auto}
+.trend-card>.trend-spark{width:calc(100% - 44px)}

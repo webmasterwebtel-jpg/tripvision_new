@@ -48,7 +48,7 @@
       <h2 id="tvgaTitle">Votre compte TripVision</h2><p class="lead" id="tvgaLead"></p>
       <div class="tvga-tabs"><button type="button" data-t="login" class="on">Se connecter</button><button type="button" data-t="signup">Créer un compte</button></div>
       <form data-f="login"><label>E-mail<input name="email" type="email" required autocomplete="email"></label><label>Mot de passe<input name="password" type="password" required autocomplete="current-password"></label><p class="tvga-err"></p><button class="btn" type="submit">Continuer</button></form>
-      <form data-f="signup" hidden><label>Nom complet<input name="name" required minlength="2" autocomplete="name"></label><label>E-mail<input name="email" type="email" required autocomplete="email"></label><label>Mot de passe<input name="password" type="password" required minlength="8" data-pw-rules autocomplete="new-password"></label>
+      <form data-f="signup" hidden><label>Nom complet<input name="name" required minlength="2" autocomplete="name"></label><label>E-mail<input name="email" type="email" required autocomplete="email"></label><label>Téléphone<input name="phone" type="tel" required minlength="6" maxlength="30" autocomplete="tel" placeholder="+33 6 12 34 56 78"></label><label>Mot de passe<input name="password" type="password" required minlength="8" data-pw-rules autocomplete="new-password"></label>
         <label class="tvga-chk"><input type="checkbox" name="terms" required> J’ai lu et j’accepte les conditions d’utilisation de TripVision et la gestion de mes données pour traiter mes réservations.</label><p class="tvga-err"></p><button class="btn" type="submit" disabled>Créer mon compte</button></form>
       <div class="tvga-ok" data-sent hidden></div>
       <p class="tvga-note">Votre session n’est conservée que le temps de cette réservation.</p></div>`;
@@ -71,7 +71,7 @@
         let data;
         if (f.dataset.f === 'login') data = await call('/auth/login', { email: fd.email, password: fd.password });
         else {
-          const r = await call('/auth/register-client', { name: fd.name, email: fd.email, password: fd.password });
+          const r = await call('/auth/register-client', { name: fd.name, email: fd.email, phone: fd.phone, password: fd.password });
           const box = modal.querySelector('[data-sent]');
           box.innerHTML = `Un e-mail d’activation vient d’être envoyé à <b>${esc(r.email)}</b>. Cliquez sur le lien reçu, puis revenez ici pour vous connecter. Rien de ce que vous avez saisi n’est perdu.`;
           box.hidden = false;

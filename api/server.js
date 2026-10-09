@@ -238,7 +238,8 @@ async function findValidToken(token) {
 
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(1) });
 const changePasswordSchema = z.object({ password: z.string().min(1) });
-const clientRegisterSchema = z.object({ name: z.string().min(2), email: z.string().email(), password: z.string().min(8), marketing: z.boolean().optional() });
+const phoneField = z.string().trim().min(6, 'Indiquez un numéro de téléphone valide.').max(30).refine((v) => v.replace(/\D/g, '').length >= 6, 'Indiquez un numéro de téléphone valide.');
+const clientRegisterSchema = z.object({ name: z.string().min(2), email: z.string().email(), password: z.string().min(8), phone: phoneField, marketing: z.boolean().optional() });
 const partnerSchema = z.object({
   legalName: z.string().min(2), tradeName: z.string().min(2), headOffice: z.string().min(2), agencies: z.string().min(2),
   siret: z.string().min(2), bookingEmail: z.string().email(), contactEmail: z.string().email(), managerName: z.string().min(2),
@@ -301,6 +302,8 @@ async function endRentals() {
 async function expireUnpaid() {
   const { rows } = await query(`SELECT id, stripe_session_id FROM bookings WHERE payment_status = 'awaiting' AND created_at < now() - interval '40 minutes'`);
   for (const b of rows) { if (b.stripe_session_id) await expireSession(b.stripe_session_id); await failBooking(b.id); }
+  const { rows: packs } = await query(`SELECT id, stripe_session_id FROM offer_requests WHERE payment_status = 'awaiting' AND created_at < now() - interval '40 minutes'`);
+  for (const r of packs) { if (r.stripe_session_id) await expireSession(r.stripe_session_id); await failPack(r.id); }
 }
 setInterval(() => { endRentals().catch((e) => console.error('Fin de location :', e.message)); if (paymentsEnabled) expireUnpaid().catch((e) => console.error('Paiements expirés :', e.message)); }, 60000);
 
@@ -451,7 +454,7 @@ function mapBooking(b, vehicleName) {
     extras: b.extras || [], total_estimate: b.total_estimate == null ? null : Number(b.total_estimate), conditions_snapshot: b.conditions_snapshot || null, conditions_accepted_at: b.conditions_accepted_at || null,
     unseen_staff: !b.staff_seen_at, unseen_partner: !b.partner_seen_at,
     unseen_client: Boolean(b.status_changed_at && (!b.client_seen_at || new Date(b.client_seen_at) < new Date(b.status_changed_at))),
-    vehicle_name: vehicleName || 'Location de véhicule', young_driver_notice: b.driver_age != null && Number(b.driver_age) < 26,
+    company: b.company || null, vehicle_name: vehicleName || 'Location de véhicule', young_driver_notice: b.driver_age != null && Number(b.driver_age) < 26,
   };
 }
 
@@ -485,8 +488,20 @@ app.get('/api/auth/me', auth(), h(async (req, res) => {
 }));
 
 const profileSchema = z.object({ firstName: z.string().trim().min(1).max(60), lastName: z.string().trim().min(1).max(60), phone: z.string().trim().max(30).optional() });
+// Dernières connexions du compte (appareil et adresse masquée), affichées dans « Mon compte ».
+const describeAgent = (ua = '') => {
+  const os = /iPhone|iPad/i.test(ua) ? 'iPhone / iPad' : /Android/i.test(ua) ? 'Android' : /Windows/i.test(ua) ? 'Windows' : /Mac OS X|Macintosh/i.test(ua) ? 'Mac' : /Linux/i.test(ua) ? 'Linux' : 'Appareil';
+  const br = /Edg\//.test(ua) ? 'Edge' : /OPR\/|Opera/.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Navigateur';
+  return `${br} · ${os}`;
+};
+const maskIp = (ip = '') => (ip.includes(':') ? `${ip.split(':').slice(0, 2).join(':')}:…` : ip.split('.').length === 4 ? `${ip.split('.').slice(0, 2).join('.')}.•.•` : '—');
+app.get('/api/auth/logins', auth(), h(async (req, res) => {
+  const { rows } = await query('SELECT created_at, ip_address, user_agent FROM login_history WHERE user_id = $1 ORDER BY created_at DESC LIMIT 8', [req.user.id]);
+  res.json(rows.map((r) => ({ at: r.created_at, device: describeAgent(r.user_agent || ''), ip: maskIp(r.ip_address || '') })));
+}));
 app.patch('/api/auth/profile', auth(), h(async (req, res) => {
   const p = profileSchema.parse(req.body);
+  if (req.user.role === 'client' && String(p.phone || '').replace(/\D/g, '').length < 6) return res.status(400).json({ error: 'VALIDATION_ERROR', message: 'Indiquez un numéro de téléphone valide.' });
   const name = `${p.firstName} ${p.lastName}`;
   await query('UPDATE users SET first_name = $1, last_name = $2, phone = $3, name = $4, updated_at = now() WHERE id = $5', [p.firstName, p.lastName, p.phone || null, name, req.user.id]);
   await audit(req.user.id, 'update_profile', 'user', req.user.id, clientIp(req));
@@ -585,8 +600,8 @@ app.post('/api/auth/register-client', h(async (req, res) => {
   if (existing.rows.length) return res.status(409).json({ error: 'EMAIL_EXISTS' });
   const passwordHash = await bcrypt.hash(body.password, 10);
   const { rows } = await query(
-    'INSERT INTO users(email, name, role, password_hash) VALUES ($1,$2,\'client\',$3) RETURNING *',
-    [email, body.name.trim(), passwordHash]
+    'INSERT INTO users(email, name, role, password_hash, phone) VALUES ($1,$2,\'client\',$3,$4) RETURNING *',
+    [email, body.name.trim(), passwordHash, body.phone.trim()]
   );
   const user = rows[0];
   await sendVerification(user);
@@ -599,7 +614,7 @@ app.get('/api/client/dashboard', auth('client'), h(async (req, res) => {
     `SELECT b.*, v.model AS vehicle_model FROM bookings b LEFT JOIN vehicles v ON v.id = b.vehicle_id WHERE lower(b.customer_email) = lower($1) AND b.payment_status NOT IN ('awaiting', 'failed') ORDER BY b.created_at DESC`,
     [req.user.email]
   );
-  const { rows: requests } = await query('SELECT * FROM offer_requests WHERE lower(customer_email) = lower($1) ORDER BY created_at DESC', [req.user.email]);
+  const { rows: requests } = await query("SELECT * FROM offer_requests WHERE lower(customer_email) = lower($1) AND payment_status NOT IN ('awaiting', 'failed') ORDER BY created_at DESC", [req.user.email]);
   res.json({
     user: { id: req.user.id, email: req.user.email, name: req.user.name },
     bookings: bookings.map(b => mapBooking(b, b.vehicle_model)),
@@ -636,7 +651,7 @@ app.get('/api/client/requests/:id/pdf', auth('client'), h(async (req, res) => {
   const r = rows[0];
   if (!r) return res.status(404).json({ error: 'NOT_FOUND' });
   const reference = bookingRef(r.id);
-  const doc = requestPdf({ reference, type: r.offer_type, status: r.status, title: r.offer_title, summary: r.summary, tripType: r.trip_type, travelers: r.travelers, createdAt: r.created_at, customer: r.customer_name, email: r.customer_email, phone: r.customer_phone, total: r.total });
+  const doc = requestPdf({ reference, type: r.offer_type, status: r.status, title: r.offer_title, summary: r.summary, tripType: r.trip_type, travelers: r.travelers, createdAt: r.created_at, customer: r.customer_name, email: r.customer_email, phone: r.customer_phone, total: r.total, paid: r.payment_status === 'paid' ? Number(r.paid_amount ?? r.total) : null });
   sendPdf(res, doc, reference);
 }));
 
@@ -755,6 +770,8 @@ app.post('/api/public/contact', h(async (req, res) => {
   res.status(201).json({ sent: true });
 }));
 
+// Entreprise auprès de laquelle l'offre est prise : le partenaire saisi sur l'offre, sinon la compagnie du vol, sinon TripVision.
+const offerCompany = (o) => String(o.partner_name || '').trim() || String(o.details?.flight?.airline || '').trim() || 'TripVision';
 const offerRequestSchema = z.object({
   offerId: z.string().uuid(), name: z.string().trim().max(100).optional(), email: z.string().trim().email().max(160), marketing: z.boolean().optional(),
   phone: z.string().trim().max(40).optional(), travelers: z.coerce.number().int().min(1).max(9).default(1), message: z.string().trim().max(2000).optional(),
@@ -786,8 +803,8 @@ app.post('/api/public/offer-requests', h(async (req, res) => {
   const total = unit * b.travelers;
   const withReturn = tripType !== 'oneway' && o.end_date;
   await query(
-    `INSERT INTO offer_requests(offer_id, offer_type, offer_title, summary, customer_name, customer_email, customer_phone, travelers, total, message, trip_type) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-    [o.id, o.type, o.title, `${o.from_city || '—'} → ${o.to_city}${o.start_date ? ' · ' + String(o.start_date).slice(0, 10) + (withReturn ? ' → ' + String(o.end_date).slice(0, 10) : '') : ''}`, b.name, b.email.toLowerCase(), b.phone || null, b.travelers, total, b.message || null, tripType]
+    `INSERT INTO offer_requests(offer_id, offer_type, offer_title, summary, customer_name, customer_email, customer_phone, travelers, total, message, trip_type, partner_name) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+    [o.id, o.type, o.title, `${o.from_city || '—'} → ${o.to_city}${o.start_date ? ' · ' + String(o.start_date).slice(0, 10) + (withReturn ? ' → ' + String(o.end_date).slice(0, 10) : '') : ''}`, b.name, b.email.toLowerCase(), b.phone || null, b.travelers, total, b.message || null, tripType, offerCompany(o)]
   );
   const contact = o.type === 'flight' ? await recordContact({ email: b.email, name: b.name, phone: b.phone, source: 'vol', consent: b.marketing, count: 1 }) : { returning: false };
   const { rows: created } = await query('SELECT id FROM offer_requests WHERE lower(customer_email) = $1 ORDER BY created_at DESC LIMIT 1', [b.email.toLowerCase()]);
@@ -836,6 +853,101 @@ async function announceBooking(row) {
   pushNotification(await clientUserId(row.customer_email), { kind: 'booking', title: confirmed ? 'Réservation confirmée' : 'Réservation enregistrée', body: `${bookingRef(row.id)} · ${ctx.name}`, link: 'orders', refId: row.id });
   notify(row.customer_email, notificationEmail({ subject: confirmed ? 'Votre réservation TripVision est confirmée' : 'Votre réservation TripVision est enregistrée', title: confirmed ? 'Réservation confirmée' : 'Réservation enregistrée', intro: confirmed ? 'Merci ! Votre paiement est reçu et votre véhicule est réservé. Il vous reste à régler le solde au loueur lors du retrait.' : 'Merci ! Votre réservation est enregistrée.', details: details.filter(([k]) => k !== 'Client'), buttonLabel: 'Voir ma réservation', url: espaceLink('orders') }));
 }
+
+// ---------- Réservation d'un pack avec paiement en ligne ----------
+const packBookingSchema = z.object({
+  offerId: z.string().uuid(), travelers: z.coerce.number().int().min(1).max(9).default(1), name: z.string().trim().max(100).optional(),
+  phone: phoneField, message: z.string().trim().max(2000).optional(),
+});
+function packDetails(o, r, ref) {
+  return [['Référence', ref], ['Séjour', r.offer_title], ['Trajet', `${o.from_city || '—'} → ${o.to_city}`], ['Dates', [mailDay(o.start_date), o.end_date ? mailDay(o.end_date) : ''].filter(Boolean).join(' → ')], ['Voyageurs', String(r.travelers)], [r.payment_status === 'paid' ? 'Payé en ligne' : 'Total', `${Number(r.paid_amount ?? r.total)} €`]];
+}
+async function announcePack(r) {
+  const { rows } = await query('SELECT * FROM offers WHERE id = $1', [r.offer_id]);
+  const o = rows[0] || {};
+  const ref = bookingRef(r.id);
+  const paid = r.payment_status === 'paid';
+  const details = packDetails(o, r, ref);
+  notify(STAFF_EMAIL, notificationEmail({ subject: `[TripVision] ${paid ? 'Pack réservé et payé' : 'Nouvelle demande de pack'} ${ref}`, title: paid ? 'Pack réservé et payé' : 'Nouvelle demande de pack', intro: paid ? `${mailText(r.customer_name)} vient de réserver et de payer un séjour.` : `${mailText(r.customer_name)} souhaite réserver un séjour.`, details: [...details, ['Client', r.customer_name]], buttonLabel: 'Ouvrir le back-office', url: staffLink('bookings') }), r.customer_email);
+  pushNotification('staff', { kind: 'request', title: paid ? 'Pack réservé et payé' : 'Nouvelle demande de pack', body: `${ref} · ${r.customer_name}`, link: 'bookings', refId: String(r.id) });
+  pushNotification(await clientUserId(r.customer_email), { kind: 'request', title: paid ? 'Réservation confirmée' : 'Demande enregistrée', body: `${ref} · ${r.offer_title}`, link: 'orders', refId: String(r.id) });
+  notify(r.customer_email, notificationEmail({ subject: paid ? 'Votre réservation TripVision est confirmée' : 'Votre demande TripVision est bien reçue', title: paid ? 'Réservation confirmée' : 'Demande bien reçue', intro: paid ? 'Merci ! Votre paiement est reçu et votre séjour est réservé. Retrouvez le détail et votre justificatif dans votre espace.' : 'Merci ! Nous avons bien reçu votre demande et revenons vers vous très vite pour la confirmer.', details, buttonLabel: 'Voir ma réservation', url: espaceLink('orders') }));
+}
+async function failPack(id) {
+  const { rows } = await query(`UPDATE offer_requests SET payment_status = 'failed', status = 'cancelled', status_changed_at = now() WHERE id = $1 AND payment_status = 'awaiting' RETURNING id`, [id]);
+  return Boolean(rows[0]);
+}
+async function finalizePackPaid(id, session) {
+  const { rows } = await query(
+    `UPDATE offer_requests SET payment_status = 'paid', status = 'confirmed', status_changed_at = now(), paid_amount = $2, paid_at = now(), stripe_payment_intent = $3 WHERE id = $1 AND payment_status = 'awaiting' RETURNING *`,
+    [id, (session.amount_total || 0) / 100, typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id || null]);
+  if (rows[0]) await announcePack(rows[0]);
+  return rows[0] || null;
+}
+async function refundPack(r) {
+  if (!paymentsEnabled || r.payment_status !== 'paid' || !r.stripe_payment_intent) return;
+  try {
+    await refundPayment(r.stripe_payment_intent);
+    await query(`UPDATE offer_requests SET payment_status = 'refunded' WHERE id = $1`, [r.id]);
+    await pushNotification('staff', { kind: 'request', title: 'Pack remboursé', body: `${bookingRef(r.id)} · ${Number(r.paid_amount || 0)} €`, link: 'bookings', refId: String(r.id) });
+  } catch (err) {
+    console.error('Remboursement Stripe impossible :', err.message);
+    await pushNotification('staff', { kind: 'request', title: 'Remboursement à faire à la main', body: `${bookingRef(r.id)} : le remboursement automatique a échoué.`, link: 'bookings', refId: String(r.id) });
+  }
+}
+app.post('/api/pack-bookings', auth('client'), h(async (req, res) => {
+  const b = packBookingSchema.parse(req.body);
+  const ip = clientIp(req);
+  if (await isLockedOut(`contact:${ip}`, ip)) return res.status(429).json({ error: 'TOO_MANY_ATTEMPTS' });
+  const { rows } = await query(`SELECT * FROM offers WHERE id = $1 AND type = 'pack' AND status = 'active' AND deleted_at IS NULL AND (publish_at IS NULL OR publish_at <= now())`, [b.offerId]);
+  const o = rows[0];
+  if (!o) return res.status(404).json({ error: 'NOT_FOUND' });
+  await recordFailedAttempt(`contact:${ip}`, ip);
+  const total = Number(o.price) * b.travelers;
+  const name = b.name || req.user.name || req.user.email.split('@')[0];
+  const summary = `${o.from_city || '—'} → ${o.to_city}${o.start_date ? ' · ' + String(o.start_date).slice(0, 10) + (o.end_date ? ' → ' + String(o.end_date).slice(0, 10) : '') : ''}`;
+  const { rows: made } = await query(
+    `INSERT INTO offer_requests(offer_id, offer_type, offer_title, summary, customer_name, customer_email, customer_phone, travelers, total, message, payment_status, cancel_token, partner_name) VALUES ($1,'pack',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+    [o.id, o.title, summary, name, req.user.email.toLowerCase(), b.phone, b.travelers, total, b.message || null, paymentsEnabled ? 'awaiting' : 'none', randomBytes(24).toString('hex'), offerCompany(o)]);
+  const r = made[0];
+  const ref = bookingRef(r.id);
+  if (!paymentsEnabled) {
+    await announcePack(r);
+    return res.status(201).json({ requested: true, reference: ref });
+  }
+  try {
+    const session = await createCheckout({
+      bookingId: r.id, reference: ref, cancelToken: r.cancel_token, email: r.customer_email, kind: 'pack', appUrl: APP_URL,
+      lines: [{ label: `${o.title} · ${b.travelers} voyageur${b.travelers > 1 ? 's' : ''}`, amount: total }],
+      description: `Séjour TripVision ${ref}`,
+      successUrl: `${APP_URL}/?payment=success&kind=pack&session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${APP_URL}/?payment=cancelled&kind=pack&r=${r.id}&t=${r.cancel_token}&o=${o.id}`,
+    });
+    await query('UPDATE offer_requests SET stripe_session_id = $1 WHERE id = $2', [session.id, r.id]);
+    return res.status(201).json({ checkoutUrl: session.url, reference: ref });
+  } catch (err) {
+    console.error('Stripe :', err.message);
+    await failPack(r.id);
+    return res.status(502).json({ error: 'PAYMENT_UNAVAILABLE', message: 'Le paiement en ligne est momentanément indisponible. Réessayez dans quelques instants.' });
+  }
+}));
+app.get('/api/payments/pack-session/:id', h(async (req, res) => {
+  if (!paymentsEnabled) return res.status(404).json({ error: 'NOT_FOUND' });
+  const { rows } = await query('SELECT * FROM offer_requests WHERE stripe_session_id = $1', [req.params.id]);
+  let r = rows[0];
+  if (!r) return res.status(404).json({ error: 'NOT_FOUND' });
+  const session = await retrieveSession(req.params.id);
+  if (session.payment_status === 'paid') r = (await finalizePackPaid(r.id, session)) || (await query('SELECT * FROM offer_requests WHERE id = $1', [r.id])).rows[0];
+  else if (session.status === 'expired') { await failPack(r.id); r = (await query('SELECT * FROM offer_requests WHERE id = $1', [r.id])).rows[0]; }
+  res.json({ status: r.payment_status, reference: bookingRef(r.id), title: r.offer_title, summary: r.summary, travelers: r.travelers, total: Number(r.total), paid: r.paid_amount == null ? null : Number(r.paid_amount), offerId: r.offer_id });
+}));
+app.post('/api/payments/pack-cancel', h(async (req, res) => {
+  const { requestId, token } = z.object({ requestId: z.string().uuid(), token: z.string().min(10).max(100) }).parse(req.body);
+  const { rows } = await query('SELECT * FROM offer_requests WHERE id = $1 AND cancel_token = $2', [requestId, token]);
+  if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
+  if (rows[0].payment_status === 'awaiting') { if (rows[0].stripe_session_id) await expireSession(rows[0].stripe_session_id); await failPack(requestId); }
+  res.json({ ok: true });
+}));
 
 // ---------- Paiement en ligne (Stripe) ----------
 async function failBooking(bookingId) {
@@ -890,9 +1002,11 @@ app.post('/api/stripe/webhook', h(async (req, res) => {
   let event;
   try { event = constructEvent(req.rawBody, req.headers['stripe-signature']); } catch { return res.status(400).json({ error: 'INVALID_SIGNATURE' }); }
   const session = event.data.object;
-  const bookingId = session.metadata?.booking_id;
+  const bookingId = session.metadata?.booking_id, requestId = session.metadata?.request_id;
   if (bookingId && event.type === 'checkout.session.completed' && session.payment_status === 'paid') await finalizePaid(bookingId, session);
   else if (bookingId && event.type === 'checkout.session.expired') await failBooking(bookingId);
+  else if (requestId && event.type === 'checkout.session.completed' && session.payment_status === 'paid') await finalizePackPaid(requestId, session);
+  else if (requestId && event.type === 'checkout.session.expired') await failPack(requestId);
   res.json({ received: true });
 }));
 
@@ -1035,7 +1149,7 @@ app.post('/api/partner/vehicles', auth('partner'), h(async (req, res) => {
 // ---------- Admin / back-office ----------
 app.get('/api/admin/badges', auth(...BACKOFFICE_ROLES), h(async (req, res) => {
   const { rows } = await query(`SELECT
-    (SELECT count(*) FROM bookings WHERE staff_seen_at IS NULL AND payment_status NOT IN ('awaiting', 'failed')) + (SELECT count(*) FROM offer_requests WHERE staff_seen_at IS NULL) AS bookings,
+    (SELECT count(*) FROM bookings WHERE staff_seen_at IS NULL AND payment_status NOT IN ('awaiting', 'failed')) + (SELECT count(*) FROM offer_requests WHERE staff_seen_at IS NULL AND payment_status NOT IN ('awaiting', 'failed')) AS bookings,
     (SELECT count(*) FROM contact_messages WHERE handled_at IS NULL) AS messages,
     (SELECT COALESCE(sum(unread_admin), 0) FROM chat_threads) AS chats,
     (SELECT count(*) FROM partner_applications WHERE status = 'pending') AS applications`);
@@ -1050,9 +1164,9 @@ app.get('/api/admin/dashboard', auth(...BACKOFFICE_ROLES), h(async (_req, res) =
     query('SELECT * FROM offers WHERE deleted_at IS NULL ORDER BY created_at DESC'),
   ]);
   const { rows: bookings } = await query(
-    `SELECT b.*, v.model AS vehicle_model, (v.partner_id IS NOT NULL) AS partner_owned FROM bookings b LEFT JOIN vehicles v ON v.id = b.vehicle_id WHERE b.payment_status NOT IN ('awaiting', 'failed') ORDER BY b.created_at DESC`
+    `SELECT b.*, v.model AS vehicle_model, (v.partner_id IS NOT NULL) AS partner_owned, COALESCE(p.trade_name, 'TripVision') AS company FROM bookings b LEFT JOIN vehicles v ON v.id = b.vehicle_id LEFT JOIN partners p ON p.id = v.partner_id WHERE b.payment_status NOT IN ('awaiting', 'failed') ORDER BY b.created_at DESC`
   );
-  const { rows: offerRequests } = await query('SELECT * FROM offer_requests ORDER BY created_at DESC LIMIT 300');
+  const { rows: offerRequests } = await query("SELECT * FROM offer_requests WHERE payment_status NOT IN ('awaiting', 'failed') ORDER BY created_at DESC LIMIT 300");
   const unseenBookings = bookings.filter(b => !b.staff_seen_at).length + offerRequests.filter(r => !r.staff_seen_at).length;
   const { rows: unread } = await query('SELECT count(*)::int AS n FROM contact_messages WHERE handled_at IS NULL');
   const { rows: extra } = await query("SELECT (SELECT count(*)::int FROM partner_applications WHERE status = 'pending') AS applications, (SELECT COALESCE(sum(unread_admin), 0)::int FROM chat_threads) AS chats");
@@ -1212,6 +1326,7 @@ app.patch('/api/admin/offer-requests/:id/status', auth(...BACKOFFICE_ROLES), can
   const { status } = statusSchema(['pending', 'confirmed', 'cancelled']).parse(req.body);
   const { rows } = await query('UPDATE offer_requests SET status = $1, status_changed_at = now(), staff_seen_at = COALESCE(staff_seen_at, now()) WHERE id = $2 RETURNING *', [status, req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
+  if (status === 'cancelled') await refundPack(rows[0]);
   if (status !== 'pending') pushNotification(await clientUserId(rows[0].customer_email), { kind: 'request', title: status === 'confirmed' ? 'Demande confirmée' : 'Demande annulée', body: `${bookingRef(rows[0].id)} · ${rows[0].offer_title}`, link: 'orders', refId: rows[0].id });
   if (status !== 'pending') notify(rows[0].customer_email, notificationEmail({ subject: status === 'confirmed' ? 'Votre demande TripVision est confirmée' : 'Votre demande TripVision a été annulée', title: status === 'confirmed' ? 'Demande confirmée' : 'Demande annulée', intro: status === 'confirmed' ? 'Bonne nouvelle : votre demande de réservation est confirmée.' : 'Votre demande de réservation a été annulée.', details: [['Référence', bookingRef(rows[0].id)], ['Offre', rows[0].offer_title]], buttonLabel: 'Voir ma réservation', url: espaceLink('orders') }));
   await audit(req.user.id, `offer_request_${status}`, 'offer_request', req.params.id, clientIp(req));
@@ -1255,7 +1370,7 @@ app.post('/api/admin/partner-applications/:id/reject', auth(...BACKOFFICE_ROLES)
 
 // ---------- Messagerie partenaire <-> équipe ----------
 const chatMessageSchema = z.object({ message: z.string().trim().min(1).max(4000) });
-const chatThreadInfo = (t) => ({ id: t.id, partner_name: t.partner_name, partner_email: t.partner_email, kind: t.kind, updated_at: t.updated_at });
+const chatThreadInfo = (t) => ({ id: t.id, subject: t.subject, status: t.status, partner_name: t.partner_name, partner_email: t.partner_email, kind: t.kind, created_at: t.created_at, updated_at: t.updated_at, closed_at: t.closed_at, closed_by: t.closed_by });
 const chatMessages = async (threadId) => (await query('SELECT id, sender, body, created_at FROM chat_messages WHERE thread_id = $1 ORDER BY created_at ASC', [threadId])).rows;
 
 async function ownVehicle(userId, id) {
@@ -1328,31 +1443,154 @@ app.patch('/api/partner/bookings/:id/status', auth('partner'), h(async (req, res
 }));
 
 const CHAT_ROLES = ['partner', 'client'];
-app.get('/api/chat', auth(...CHAT_ROLES), h(async (req, res) => {
-  const { rows } = await query('SELECT * FROM chat_threads WHERE partner_user_id = $1', [req.user.id]);
+const MAX_OPEN_THREADS = 5;
+const newThreadSchema = z.object({ subject: z.string().trim().min(2).max(120), message: z.string().trim().min(1).max(4000) });
+async function chatIdentity(user) {
+  const { rows } = await query('SELECT trade_name, contact_email FROM partners WHERE user_id = $1 AND deleted_at IS NULL', [user.id]);
+  return { name: rows[0]?.trade_name || user.name || user.email, email: rows[0]?.contact_email || user.email };
+}
+const ownThread = async (user, id) => (await query('SELECT * FROM chat_threads WHERE id = $1 AND partner_user_id = $2', [id, user.id])).rows[0] || null;
+function alertStaffOfMessage(thread, user, fresh) {
+  const who = user.role === 'partner' ? 'partenaire' : 'client';
+  notify(STAFF_EMAIL, notificationEmail({ subject: `[TripVision] ${fresh ? 'Nouvelle conversation' : 'Nouveau message'} — ${thread.partner_name}`, title: fresh ? 'Nouvelle conversation' : 'Nouveau message', intro: `${mailText(thread.partner_name)} (${who}) vous a écrit dans la messagerie.`, buttonLabel: 'Ouvrir la messagerie', url: staffLink('chats') }));
+  pushNotification('staff', { kind: 'chat', title: fresh ? 'Nouvelle conversation' : 'Nouveau message', body: `${thread.partner_name} (${who}) · ${thread.subject}`, link: 'chats' });
+}
+
+app.get('/api/chat/threads', auth(...CHAT_ROLES), h(async (req, res) => {
+  const { rows } = await query(
+    `SELECT t.id, t.subject, t.status, t.created_at, t.updated_at, t.closed_at, t.unread_partner AS unread,
+            (SELECT body FROM chat_messages m WHERE m.thread_id = t.id AND m.sender <> 'system' ORDER BY m.created_at DESC LIMIT 1) AS last_message
+     FROM chat_threads t WHERE t.partner_user_id = $1 ORDER BY (t.status = 'open') DESC, t.updated_at DESC LIMIT 100`, [req.user.id]);
+  res.json(rows);
+}));
+app.post('/api/chat/threads', auth(...CHAT_ROLES), h(async (req, res) => {
+  const b = newThreadSchema.parse(req.body);
+  const { rows: open } = await query(`SELECT count(*)::int AS n FROM chat_threads WHERE partner_user_id = $1 AND status = 'open'`, [req.user.id]);
+  if (open[0].n >= MAX_OPEN_THREADS) return res.status(409).json({ error: 'TOO_MANY_THREADS', message: `Vous avez déjà ${MAX_OPEN_THREADS} conversations ouvertes. Poursuivez-en une ou attendez sa clôture.` });
+  const who = await chatIdentity(req.user);
+  const { rows } = await query('INSERT INTO chat_threads(partner_user_id, partner_name, partner_email, kind, subject) VALUES ($1,$2,$3,$4,$5) RETURNING *', [req.user.id, who.name, who.email, req.user.role, b.subject]);
   const thread = rows[0];
-  if (!thread) return res.json({ thread: null, messages: [] });
-  await query('UPDATE chat_threads SET unread_partner = 0 WHERE id = $1', [thread.id]);
-  res.json({ thread: chatThreadInfo(thread), messages: await chatMessages(thread.id) });
+  await query("INSERT INTO chat_messages(thread_id, sender, body) VALUES ($1,'partner',$2)", [thread.id, b.message]);
+  await query('UPDATE chat_threads SET unread_admin = 1 WHERE id = $1', [thread.id]);
+  alertStaffOfMessage(thread, req.user, true);
+  res.status(201).json({ id: thread.id });
+}));
+app.get('/api/chat/threads/:id', auth(...CHAT_ROLES), h(async (req, res) => {
+  const t = await ownThread(req.user, req.params.id);
+  if (!t) return res.status(404).json({ error: 'NOT_FOUND' });
+  await query('UPDATE chat_threads SET unread_partner = 0 WHERE id = $1', [t.id]);
+  res.json({ thread: chatThreadInfo(t), messages: await chatMessages(t.id) });
+}));
+app.post('/api/chat/threads/:id/messages', auth(...CHAT_ROLES), h(async (req, res) => {
+  const { message: text } = chatMessageSchema.parse(req.body);
+  const t = await ownThread(req.user, req.params.id);
+  if (!t) return res.status(404).json({ error: 'NOT_FOUND' });
+  if (t.status === 'closed') return res.status(409).json({ error: 'THREAD_CLOSED', message: 'Cette conversation est clôturée. Démarrez-en une nouvelle si besoin.' });
+  const { rows } = await query("INSERT INTO chat_messages(thread_id, sender, body) VALUES ($1,'partner',$2) RETURNING id, sender, body, created_at", [t.id, text]);
+  await query('UPDATE chat_threads SET unread_admin = unread_admin + 1, updated_at = now() WHERE id = $1', [t.id]);
+  alertStaffOfMessage(t, req.user, false);
+  res.status(201).json({ message: rows[0] });
 }));
 
-app.post('/api/chat/messages', auth(...CHAT_ROLES), h(async (req, res) => {
-  const { message: text } = chatMessageSchema.parse(req.body);
-  let { rows } = await query('SELECT * FROM chat_threads WHERE partner_user_id = $1', [req.user.id]);
-  let thread = rows[0];
-  if (!thread) {
-    const { rows: partnerRows } = await query('SELECT trade_name, contact_email FROM partners WHERE user_id = $1 AND deleted_at IS NULL', [req.user.id]);
-    const created = await query(
-      'INSERT INTO chat_threads(partner_user_id, partner_name, partner_email, kind) VALUES ($1,$2,$3,$4) RETURNING *',
-      [req.user.id, partnerRows[0]?.trade_name || req.user.name || req.user.email, partnerRows[0]?.contact_email || req.user.email, req.user.role]
-    );
-    thread = created.rows[0];
+// ---------- Tendances : ce que les visiteurs consultent, cliquent, cherchent et réservent ----------
+const TRACK_KINDS = ['dest_view', 'flight_click', 'pack_view', 'car_view', 'search_flight', 'search_car', 'search_pack'];
+const TRACK_WEIGHT = { dest_view: 1, pack_view: 1, car_view: 1, search_flight: 2, search_car: 2, search_pack: 2, flight_click: 4 };
+const BOOKING_WEIGHT = 10;
+const trackSeen = new Map();
+const trackSchema = z.object({
+  kind: z.enum(TRACK_KINDS), key: z.string().trim().min(1).max(120),
+  city: z.string().trim().max(80).optional(), country: z.string().trim().max(80).optional(), label: z.string().trim().max(160).optional(),
+});
+setInterval(() => { const cut = Date.now() - 31 * 60 * 1000; for (const [k, t] of trackSeen) if (t < cut) trackSeen.delete(k); }, 10 * 60 * 1000);
+app.post('/api/public/track', h(async (req, res) => {
+  const t = trackSchema.safeParse(req.body);
+  if (!t.success) return res.status(204).end();
+  const ip = clientIp(req);
+  const minute = `m|${ip}|${Math.floor(Date.now() / 60000)}`;
+  trackSeen.set(minute, (trackSeen.get(minute) || 0) + 1);
+  if (trackSeen.get(minute) > 60) return res.status(204).end();
+  // Un même visiteur n'est compté qu'une fois par page toutes les 30 minutes.
+  const k = `${ip}|${t.data.kind}|${t.data.key}`;
+  if (Date.now() - (trackSeen.get(k) || 0) < 30 * 60 * 1000) return res.status(204).end();
+  trackSeen.set(k, Date.now());
+  const d = t.data;
+  await query('INSERT INTO site_events(kind, key, city, country, label) VALUES ($1,$2,$3,$4,$5)', [d.kind, d.key, d.city || null, d.country || null, d.label || null]);
+  res.status(204).end();
+}));
+
+const periodRange = (period) => {
+  const now = new Date(), to = new Date(now.getTime() + 60000);
+  if (period === 'month') return [new Date(now.getFullYear(), now.getMonth(), 1), to];
+  const days = period === '90d' ? 90 : period === '12m' ? 365 : 30;
+  return [new Date(now.getTime() - days * 86400000), to];
+};
+const bump = (map, key, base, field, n, w) => {
+  if (!key) return;
+  const o = map.get(key) || { ...base, views: 0, clicks: 0, searches: 0, bookings: 0, score: 0 };
+  o[field] += n; o.score += n * w;
+  map.set(key, o);
+};
+const top = (map, n = 10) => [...map.values()].sort((a, b) => b.score - a.score || b.bookings - a.bookings).slice(0, n);
+async function trendsData(from, to) {
+  const [{ rows: ev }, { rows: bk }, { rows: rq }, { rows: daily }] = await Promise.all([
+    query('SELECT kind, key, city, country, max(label) AS label, count(*)::int AS n FROM site_events WHERE created_at >= $1 AND created_at < $2 GROUP BY kind, key, city, country', [from, to]),
+    query(`SELECT v.id, v.model, COALESCE(NULLIF(v.details->>'city', ''), v.pickup_address) AS city, COALESCE(v.details->>'country', '') AS country, count(*)::int AS n FROM bookings b JOIN vehicles v ON v.id = b.vehicle_id WHERE b.payment_status NOT IN ('awaiting', 'failed') AND b.status <> 'inactive' AND b.created_at >= $1 AND b.created_at < $2 GROUP BY v.id, v.model, 3, 4`, [from, to]),
+    query(`SELECT r.offer_type, o.id AS offer_id, o.title, o.from_city, o.to_city, o.country, count(*)::int AS n FROM offer_requests r JOIN offers o ON o.id = r.offer_id WHERE r.payment_status NOT IN ('awaiting', 'failed') AND r.status <> 'cancelled' AND r.created_at >= $1 AND r.created_at < $2 GROUP BY r.offer_type, o.id, o.title, o.from_city, o.to_city, o.country`, [from, to]),
+    query(`SELECT date_trunc('day', created_at)::date AS d, count(*)::int AS n FROM site_events WHERE created_at >= $1 AND created_at < $2 GROUP BY 1 ORDER BY 1`, [from, to]),
+  ]);
+  const countries = new Map(), cities = new Map(), flights = new Map(), packs = new Map(), cars = new Map(), carCities = new Map();
+  const totals = { views: 0, clicks: 0, searches: 0, bookings: 0 };
+  const field = (kind) => (kind === 'flight_click' ? 'clicks' : kind.startsWith('search') ? 'searches' : 'views');
+  for (const e of ev) {
+    const f = field(e.kind), w = TRACK_WEIGHT[e.kind];
+    totals[f] += e.n;
+    if (e.kind === 'car_view' || e.kind === 'search_car') { bump(carCities, e.city, { city: e.city, country: e.country }, f, e.n, w); if (e.kind === 'car_view') bump(cars, e.key, { id: e.key, label: e.label, city: e.city }, f, e.n, w); continue; }
+    bump(countries, e.country, { country: e.country }, f, e.n, w);
+    bump(cities, e.city, { city: e.city, country: e.country }, f, e.n, w);
+    if (e.kind === 'flight_click') bump(flights, e.key, { id: e.key, label: e.label, city: e.city, country: e.country }, f, e.n, w);
+    if (e.kind === 'pack_view') bump(packs, e.key, { id: e.key, label: e.label, city: e.city, country: e.country }, f, e.n, w);
   }
-  const { rows: msgRows } = await query("INSERT INTO chat_messages(thread_id, sender, body) VALUES ($1,'partner',$2) RETURNING id, sender, body, created_at", [thread.id, text]);
-  await query('UPDATE chat_threads SET unread_admin = unread_admin + 1, updated_at = now() WHERE id = $1', [thread.id]);
-  notify(STAFF_EMAIL, notificationEmail({ subject: `[TripVision] Nouveau message — ${thread.partner_name}`, title: 'Nouveau message', intro: `${mailText(thread.partner_name)} (${req.user.role === 'partner' ? 'partenaire' : 'client'}) vous a écrit dans la messagerie.`, buttonLabel: 'Ouvrir la messagerie', url: staffLink('chats') }));
-  pushNotification('staff', { kind: 'chat', title: 'Nouveau message', body: `${thread.partner_name} (${req.user.role === 'partner' ? 'partenaire' : 'client'})`, link: 'chats' });
-  res.status(201).json({ message: msgRows[0] });
+  for (const b of bk) {
+    totals.bookings += b.n;
+    bump(cars, String(b.id), { id: String(b.id), label: b.model, city: b.city }, 'bookings', b.n, BOOKING_WEIGHT);
+    bump(carCities, b.city, { city: b.city, country: b.country }, 'bookings', b.n, BOOKING_WEIGHT);
+  }
+  for (const r of rq) {
+    totals.bookings += r.n;
+    bump(countries, r.country, { country: r.country }, 'bookings', r.n, BOOKING_WEIGHT);
+    bump(cities, r.to_city, { city: r.to_city, country: r.country }, 'bookings', r.n, BOOKING_WEIGHT);
+    bump(r.offer_type === 'pack' ? packs : flights, String(r.offer_id), { id: String(r.offer_id), label: r.title, city: r.to_city, country: r.country }, 'bookings', r.n, BOOKING_WEIGHT);
+  }
+  return { totals, countries: top(countries), cities: top(cities), flights: top(flights), packs: top(packs), cars: top(cars), carCities: top(carCities), daily: daily.map((x) => ({ d: x.d, n: x.n })) };
+}
+app.get('/api/admin/trends', auth(...BACKOFFICE_ROLES), h(async (req, res) => {
+  const period = ['month', '30d', '90d', '12m'].includes(req.query.period) ? req.query.period : '30d';
+  const [from, to] = periodRange(period);
+  res.json({ period, from, to, ...(await trendsData(from, to)) });
+}));
+
+// Mise en avant automatique sur le site public : recalculée sur les 30 derniers jours (mise en cache 10 minutes).
+let trendingCache = { at: 0, data: null };
+const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+app.get('/api/public/trending', h(async (_req, res) => {
+  if (trendingCache.data && Date.now() - trendingCache.at < 10 * 60 * 1000) return res.json(trendingCache.data);
+  const [from, to] = periodRange('30d');
+  const t = await trendsData(from, to);
+  const activity = t.totals.views + t.totals.clicks + t.totals.searches + t.totals.bookings;
+  let cities = t.cities.filter((c) => c.city).slice(0, 6).map((c, i) => ({ city: c.city, country: c.country, score: c.score, rank: i + 1 }));
+  let estimated = false;
+  if (cities.length < 4) {
+    // Pas encore assez de visites : on met à la une les destinations qui comptent le plus d'offres publiées.
+    estimated = true;
+    const { rows } = await query(`SELECT to_city AS city, max(country) AS country, count(*)::int AS n FROM offers WHERE status = 'active' AND deleted_at IS NULL AND to_city IS NOT NULL GROUP BY to_city ORDER BY n DESC, to_city LIMIT 6`);
+    cities = rows.map((r, i) => ({ city: r.city, country: r.country, score: r.n, rank: i + 1 }));
+  }
+  const data = {
+    month: `${MONTHS[new Date().getMonth()]} ${new Date().getFullYear()}`, monthName: MONTHS[new Date().getMonth()], estimated, activity,
+    cities, flights: t.flights.slice(0, 4).map((x) => x.id), packs: t.packs.slice(0, 3).map((x) => x.id), cars: t.cars.slice(0, 4).map((x) => x.id), countries: t.countries.slice(0, 5).map((c) => c.country),
+  };
+  trendingCache = { at: Date.now(), data };
+  res.json(data);
 }));
 
 // ---------- Notifications (équipe, partenaire, client) ----------
@@ -1388,7 +1626,7 @@ app.get('/api/me/badges', auth(...CHAT_ROLES), h(async (req, res) => {
   } else {
     const { rows } = await query(
       `SELECT (SELECT count(*) FROM bookings WHERE lower(customer_email) = lower($1) AND status_changed_at IS NOT NULL AND (client_seen_at IS NULL OR client_seen_at < status_changed_at))
-            + (SELECT count(*) FROM offer_requests WHERE lower(customer_email) = lower($1) AND status_changed_at IS NOT NULL AND (client_seen_at IS NULL OR client_seen_at < status_changed_at)) AS n`, [req.user.email]);
+            + (SELECT count(*) FROM offer_requests WHERE lower(customer_email) = lower($1) AND payment_status NOT IN ('awaiting', 'failed') AND status_changed_at IS NOT NULL AND (client_seen_at IS NULL OR client_seen_at < status_changed_at)) AS n`, [req.user.email]);
     bookings = Number(rows[0].n);
   }
   res.json({ chat: chat[0].n, bookings, notifications: await unreadNotifications(req.user) });
@@ -1419,10 +1657,11 @@ app.post('/api/admin/offer-requests/:id/seen', auth(...BACKOFFICE_ROLES), h(asyn
 
 app.get('/api/admin/chats', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
   const { rows } = await query(
-    `SELECT t.id, t.partner_name, t.partner_email, t.kind, t.updated_at, t.unread_admin AS unread,
-            (SELECT body FROM chat_messages m WHERE m.thread_id = t.id ORDER BY m.created_at DESC LIMIT 1) AS last_message,
-            (SELECT sender FROM chat_messages m WHERE m.thread_id = t.id ORDER BY m.created_at DESC LIMIT 1) AS last_sender
-     FROM chat_threads t ORDER BY t.updated_at DESC LIMIT 300`
+    `SELECT t.id, t.subject, t.status, t.partner_name, t.partner_email, t.kind, t.created_at, t.updated_at, t.closed_at, t.closed_by, t.unread_admin AS unread,
+            (SELECT count(*)::int FROM chat_messages m WHERE m.thread_id = t.id AND m.sender <> 'system') AS messages,
+            (SELECT body FROM chat_messages m WHERE m.thread_id = t.id AND m.sender <> 'system' ORDER BY m.created_at DESC LIMIT 1) AS last_message,
+            (SELECT sender FROM chat_messages m WHERE m.thread_id = t.id AND m.sender <> 'system' ORDER BY m.created_at DESC LIMIT 1) AS last_sender
+     FROM chat_threads t ORDER BY (t.status = 'open') DESC, t.updated_at DESC LIMIT 400`
   );
   res.json(rows);
 }));
@@ -1431,7 +1670,7 @@ app.get('/api/admin/chats/:id', auth(...BACKOFFICE_ROLES), h(async (req, res) =>
   const { rows } = await query('SELECT * FROM chat_threads WHERE id = $1', [req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
   await query('UPDATE chat_threads SET unread_admin = 0 WHERE id = $1', [rows[0].id]);
-  res.json({ thread: chatThreadInfo(rows[0]), messages: await chatMessages(rows[0].id) });
+  res.json({ thread: chatThreadInfo(rows[0]), messages: await chatMessages(rows[0].id), canManage: hasPermission(req.user, 'chats.manage') });
 }));
 
 app.post('/api/admin/chats/:id/messages', auth(...BACKOFFICE_ROLES), h(async (req, res) => {
@@ -1439,12 +1678,30 @@ app.post('/api/admin/chats/:id/messages', auth(...BACKOFFICE_ROLES), h(async (re
   const { rows } = await query('SELECT * FROM chat_threads WHERE id = $1', [req.params.id]);
   const thread = rows[0];
   if (!thread) return res.status(404).json({ error: 'NOT_FOUND' });
+  if (thread.status === 'closed') return res.status(409).json({ error: 'THREAD_CLOSED', message: 'Cette conversation est clôturée : rouvrez-la pour répondre.' });
   const { rows: msgRows } = await query("INSERT INTO chat_messages(thread_id, sender, body) VALUES ($1,'admin',$2) RETURNING id, sender, body, created_at", [thread.id, text]);
   await query('UPDATE chat_threads SET unread_partner = unread_partner + 1, updated_at = now() WHERE id = $1', [thread.id]);
   pushNotification(thread.partner_user_id, { kind: 'chat', title: 'Vous avez une réponse', body: 'L’équipe TripVision a répondu à votre message.', link: 'chat' });
   const mail = await sendMail({ to: thread.partner_email, ...notificationEmail({ subject: '[TripVision] Vous avez une réponse', title: 'Vous avez une réponse', intro: 'L’équipe TripVision a répondu à votre message. Connectez-vous à votre espace pour le lire et poursuivre la conversation.', buttonLabel: 'Ouvrir ma messagerie', url: espaceLink('chat') }) });
   res.status(201).json({ message: msgRows[0], notified: mail.sent });
 }));
+
+// Clôturer / rouvrir une conversation : réservé à l'IT, à l'admin et aux managers qui en ont reçu le droit.
+const ROLE_LABEL = { it: 'l’équipe IT', admin: 'un administrateur', manager: 'un manager' };
+async function setThreadStatus(req, res, status) {
+  const { rows } = await query('SELECT * FROM chat_threads WHERE id = $1', [req.params.id]);
+  const t = rows[0];
+  if (!t) return res.status(404).json({ error: 'NOT_FOUND' });
+  if (t.status === status) return res.json({ ok: true, status });
+  const closing = status === 'closed';
+  await query(`UPDATE chat_threads SET status = $2, closed_at = ${closing ? 'now()' : 'NULL'}, closed_by = ${closing ? '$3' : 'NULL'}, updated_at = now(), unread_partner = unread_partner + 1 WHERE id = $1`, closing ? [t.id, status, req.user.name || req.user.email] : [t.id, status]);
+  await query("INSERT INTO chat_messages(thread_id, sender, body) VALUES ($1,'system',$2)", [t.id, closing ? `Conversation clôturée par ${ROLE_LABEL[req.user.role] || 'l’équipe'}.` : `Conversation rouverte par ${ROLE_LABEL[req.user.role] || 'l’équipe'}.`]);
+  pushNotification(t.partner_user_id, { kind: 'chat', title: closing ? 'Conversation clôturée' : 'Conversation rouverte', body: t.subject, link: 'chat' });
+  await audit(req.user.id, closing ? 'chat_closed' : 'chat_reopened', 'chat_thread', t.id, clientIp(req));
+  res.json({ ok: true, status });
+}
+app.post('/api/admin/chats/:id/close', auth(...BACKOFFICE_ROLES), can('chats.manage'), h((req, res) => setThreadStatus(req, res, 'closed')));
+app.post('/api/admin/chats/:id/reopen', auth(...BACKOFFICE_ROLES), can('chats.manage'), h((req, res) => setThreadStatus(req, res, 'open')));
 
 // ---------- Messages de contact ----------
 app.get('/api/admin/messages', auth(...BACKOFFICE_ROLES), h(async (_req, res) => {
@@ -1618,7 +1875,7 @@ app.get('/api/admin/clients', auth(...BACKOFFICE_ROLES), canClients('accounts.cr
   const { rows } = await query(
     `SELECT u.id, u.email, u.name, u.phone, u.active, u.created_at, u.last_login_at, u.reset_requested_at,
             (SELECT count(*)::int FROM bookings b WHERE lower(b.customer_email) = lower(u.email) AND b.payment_status NOT IN ('awaiting', 'failed')) AS bookings,
-            (SELECT count(*)::int FROM offer_requests r WHERE lower(r.customer_email) = lower(u.email)) AS requests
+            (SELECT count(*)::int FROM offer_requests r WHERE lower(r.customer_email) = lower(u.email) AND r.payment_status NOT IN ('awaiting', 'failed')) AS requests
      FROM users u WHERE u.role = 'client' AND u.deleted_at IS NULL ORDER BY u.created_at DESC LIMIT 1000`);
   res.json(rows);
 }));
@@ -1627,7 +1884,7 @@ app.get('/api/admin/clients/:id', auth(...BACKOFFICE_ROLES), canClients('account
   const client = await loadClient(req, res);
   if (!client) return;
   const { rows: bookings } = await query(`SELECT b.*, v.model AS vehicle_model FROM bookings b LEFT JOIN vehicles v ON v.id = b.vehicle_id WHERE lower(b.customer_email) = lower($1) AND b.payment_status NOT IN ('awaiting', 'failed') ORDER BY b.created_at DESC LIMIT 100`, [client.email]);
-  const { rows: requests } = await query('SELECT * FROM offer_requests WHERE lower(customer_email) = lower($1) ORDER BY created_at DESC LIMIT 100', [client.email]);
+  const { rows: requests } = await query("SELECT * FROM offer_requests WHERE lower(customer_email) = lower($1) AND payment_status NOT IN ('awaiting', 'failed') ORDER BY created_at DESC LIMIT 100", [client.email]);
   res.json({ client, bookings: bookings.map(b => mapBooking(b, b.vehicle_model)), requests });
 }));
 

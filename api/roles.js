@@ -16,7 +16,7 @@ export const PERMISSIONS = [
   'bookings.manage',
   'partners.manage', 'partners.delete',
   'accounts.create', 'accounts.edit', 'accounts.delete',
-  'mailing.export', 'categories.manage',
+  'mailing.export', 'categories.manage', 'chats.manage',
 ];
 
 export const DEFAULT_MANAGER_PERMISSIONS = {

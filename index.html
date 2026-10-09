@@ -7,7 +7,7 @@
   <meta name="description" content="TripVision sélectionne des bons plans vols, locations de voiture et packs week-end depuis la France." />
   <link rel="stylesheet" href="styles.css?v=20260927-admin-1" />
   <script src="assets/boot.js"></script>
-  <link rel="stylesheet" href="premium.css?v=20261014-v38" />
+  <link rel="stylesheet" href="premium.css?v=20261014-v43" />
 </head>
 <body>
   <svg class="tv-icon-sprite" aria-hidden="true" focusable="false">
@@ -93,6 +93,12 @@
         <p class="hh-more"><a href="#flights" data-page-link="flights">Voir tous les vols →</a></p>
       </div></section>
 
+      <section class="hh-section hh-trending" id="homeTrending" hidden><div class="wrap">
+        <div class="hh-head"><span class="eyebrow" id="trEyebrow">Tendances</span><h2 id="trTitle">Les destinations <em>du moment</em></h2><p id="trSub"></p></div>
+        <div class="trend-tiles" id="trendTiles"></div>
+        <div class="deal-grid trend-deals" id="trendDeals"></div>
+      </div></section>
+
       <section class="hh-section hh-cars"><div class="wrap">
         <div class="hh-head"><span class="eyebrow">Voitures</span><h2>Une catégorie pour <em>chaque trajet</em></h2></div>
         <div class="hh-cat-wrap"><button class="hh-cat-nav prev" type="button" aria-label="Catégories précédentes" data-cat-nav="-1"><svg class="tv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button><div class="hh-cat-strip"><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/mini.jpg" alt="Mini" loading="lazy" decoding="async"><b>Mini</b></a><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/economique.jpg" alt="Économique" loading="lazy" decoding="async"><b>Économique</b></a><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/compacte.jpg" alt="Compacte" loading="lazy" decoding="async"><b>Compacte</b></a><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/intermediaire.jpg" alt="Intermédiaire" loading="lazy" decoding="async"><b>Intermédiaire</b></a><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/routiere.jpg" alt="Routière" loading="lazy" decoding="async"><b>Routière</b></a><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/suv.jpg" alt="SUV et Break" loading="lazy" decoding="async"><b>SUV et Break</b></a><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/monospace.jpg" alt="Monospace" loading="lazy" decoding="async"><b>Monospace</b></a><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/utilitaire.jpg" alt="Utilitaire" loading="lazy" decoding="async"><b>Utilitaire</b></a></div><button class="hh-cat-nav next" type="button" aria-label="Catégories suivantes" data-cat-nav="1"><svg class="tv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
@@ -155,12 +161,12 @@
             <div class="flight-route-row">
               <label class="flight-route-field">
                 <span>Départ</span>
-                <div class="flight-input-line"><b>DE</b><input name="fromCity" placeholder="Ville de départ" autocomplete="off" data-geo="place"></div>
+                <div class="flight-input-line"><b>DE</b><input name="fromCity" placeholder="Aéroport de départ" autocomplete="off" data-geo="place" data-geo-only="airports"></div>
               </label>
               <button type="button" class="flight-swap" id="flightSwap" aria-label="Inverser départ et destination">⇄</button>
               <label class="flight-route-field">
                 <span>Destination</span>
-                <div class="flight-input-line"><b>À</b><input name="toCity" placeholder="Destination" autocomplete="off" data-geo="place"></div>
+                <div class="flight-input-line"><b>À</b><input name="toCity" placeholder="Aéroport d’arrivée" autocomplete="off" data-geo="place" data-geo-only="airports"></div>
               </label>
             </div>
 
@@ -168,6 +174,7 @@
               <label><span>Départ</span><input name="departDate" type="date"></label>
               <label class="flight-return-field"><span>Retour</span><input name="returnDate" type="date"></label>
               <label><span>Voyageurs</span><select name="travelers"><option value="1">1 voyageur</option><option value="2">2 voyageurs</option><option value="3">3 voyageurs</option><option value="4">4 voyageurs</option><option value="5">5+ voyageurs</option></select></label>
+              <label class="flight-cabin-field"><span>Classe</span><div class="cabin-pick" data-cabin-pick><input type="hidden" name="cabin" value="all"></div></label>
             </div>
 
             <button class="btn flight-primary-cta" type="submit">Afficher les vols disponibles <span>→</span></button>
@@ -386,6 +393,7 @@
                 <div class="saas-auth-head"><div class="eyebrow">Nouveau voyageur</div><h2>Créer mon compte</h2><p>Créez votre espace TripVision en quelques secondes.</p></div>
                 <label>Nom complet<input name="name" placeholder="Prénom et nom" required></label>
                 <label>Adresse e-mail<input name="email" placeholder="vous@exemple.fr" type="email" autocomplete="email" required></label>
+                <label>Téléphone<input name="phone" placeholder="+33 6 12 34 56 78" type="tel" autocomplete="tel" minlength="6" maxlength="30" required></label>
                 <label>Mot de passe<div class="password-field"><input name="password" placeholder="14 caractères minimum" type="password" minlength="14" data-pw-rules autocomplete="new-password" required><button class="password-toggle" type="button">Afficher</button></div></label>
                 <button class="btn auth-main-btn" type="submit">Créer mon compte</button>
                 <p class="auth-bottom">Vous avez déjà un compte ? <button type="button" class="auth-link-btn" data-auth-view="signin">Se connecter</button></p>
@@ -505,14 +513,16 @@
 
   <footer class="footer"><div class="wrap footer-grid footer-grid-final"><div class="footer-brand-block"><a class="brand brand-premium brand-logo" href="#home" data-page-link="home" aria-label="TripVision — Voyager autrement"><img src="/assets/tripvision-logo-original.png?v=20260920-1" alt="TripVision — Voyager autrement" width="2048" height="682" decoding="async"></a></div><div><h4>Voyager</h4><a href="#flights" data-page-link="flights">Vols</a><a href="#cars" data-page-link="cars">Voitures</a><a href="#packs" data-page-link="packs">Week-ends</a></div><div><h4>Informations</h4><a href="#contact" data-page-link="contact">Contact</a><a href="mailto:info@tripvision.fr">info@tripvision.fr</a><a href="#login" data-page-link="login">Mon Espace Client</a><a href="#partner" data-page-link="partner">Espace partenaire</a></div></div><div class="wrap bottom footer-bottom-final"><span>© 2026 TripVision. Tous droits réservés.</span></div></footer>
   <script src="assets/pw-rules.js?v=1"></script>
-  <script src="assets/geo-picker.js?v=5"></script>
+  <script src="assets/geo-picker.js?v=8"></script>
+  <script src="assets/cabin-pick.js?v=1"></script>
   <script src="assets/gallery.js?v=5"></script>
   <script src="assets/spin.js?v=5"></script>
-  <script src="assets/guest-auth.js?v=2"></script>
+  <script src="assets/guest-auth.js?v=3"></script>
   <script src="assets/destinations.js?v=2"></script>
-  <script src="assets/fx.js?v=4"></script>
-  <script src="assets/pages.js?v=2"></script>
-  <script src="assets/cars.js?v=34"></script>
-  <script src="script.js?v=20261013-v36"></script>
+  <script src="assets/scene.js?v=1"></script>
+  <script src="assets/fx.js?v=7"></script>
+  <script src="assets/pages.js?v=4"></script>
+  <script src="assets/cars.js?v=37"></script>
+  <script src="script.js?v=20261013-v39"></script>
 </body>
 </html>
