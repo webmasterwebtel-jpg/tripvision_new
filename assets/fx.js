@@ -83,7 +83,7 @@
   }
 
   /* ---------- Apparition au défilement ---------- */
-  const SEL = ['.dest-card', '.deal-card', '.bento', '.hh-panel', '.hh-cat', '.pack-card', '.flight-card', '.rent-card', '.cat-tile', '.tips-grid article',
+  const SEL = ['.dest-card', '.deal-card', '.bento', '.hh-panel', '.pack-card', '.flight-card', '.rent-card', '.cat-tile', '.tips-grid article',
     '.car-intro-steps>div', '.dp-places article', '.dp-tips li', '.pd-block', '.pd-glance li', '.hh-trust-grid>div', '.trust-grid>div', '.dest-head', '.dp-section>h2',
     '.car-faq details', '.pr-sec', '.pr-card', '.hh-stats .wrap>div'].join(',');
   let reveal;
@@ -217,7 +217,50 @@
     }, 1050);
   }, true);
 
+
+  /* ---------- Catégories de voitures de l'accueil : défilement lent en boucle + flèches ---------- */
+  function initCatCarousel() {
+    const wrap = document.querySelector('.hh-cat-wrap');
+    const strip = wrap?.querySelector('.hh-cat-strip');
+    if (!strip || strip.dataset.ready) return;
+    strip.dataset.ready = '1';
+    const items = [...strip.children];
+    items.forEach((el) => { const c = el.cloneNode(true); c.setAttribute('aria-hidden', 'true'); c.tabIndex = -1; c.removeAttribute('data-page-link'); strip.appendChild(c); });
+    const half = () => (strip.children[items.length].offsetLeft - strip.children[0].offsetLeft) || 0;
+    let pos = 0, last = 0, paused = false, visible = false, anim = null, resumeAt = 0;
+    const SPEED = 26; // pixels par seconde : lent
+    const wrapPos = () => { const h = half(); if (h > 0) pos = ((pos % h) + h) % h; };
+    const apply = () => { wrapPos(); strip.scrollLeft = pos; last = strip.scrollLeft; };
+    strip.addEventListener('scroll', () => { if (Math.abs(strip.scrollLeft - last) > 1.5) { pos = strip.scrollLeft; last = strip.scrollLeft; } }, { passive: true });
+    const hold = (ms = 1800) => { resumeAt = performance.now() + ms; };
+    ['pointerenter', 'focusin'].forEach((ev) => wrap.addEventListener(ev, () => { paused = true; }));
+    ['pointerleave', 'focusout'].forEach((ev) => wrap.addEventListener(ev, () => { paused = false; hold(900); }));
+    ['touchstart', 'wheel', 'pointerdown'].forEach((ev) => strip.addEventListener(ev, () => hold(3500), { passive: true }));
+    new IntersectionObserver((es) => { visible = es.some((e) => e.isIntersecting); }, { threshold: 0.05 }).observe(wrap);
+    const slide = (dir) => {
+      const step = (strip.children[0].offsetWidth + 16) * 2 * dir, from = pos, t0 = performance.now(), dur = 550;
+      cancelAnimationFrame(anim);
+      hold(4000);
+      const tick = (t) => {
+        const p = Math.min(1, (t - t0) / dur), k = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+        pos = from + step * k; apply();
+        if (p < 1) anim = requestAnimationFrame(tick); else { anim = null; hold(2500); }
+      };
+      anim = requestAnimationFrame(tick);
+    };
+    wrap.querySelectorAll('[data-cat-nav]').forEach((b) => b.addEventListener('click', () => slide(Number(b.dataset.catNav))));
+    if (reduce) return;
+    let prev = performance.now();
+    const loop = (t) => {
+      const dt = Math.min(64, t - prev) / 1000;
+      prev = t;
+      if (visible && !paused && !document.hidden && t > resumeAt && !anim) { pos += SPEED * dt; apply(); }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+
   window.TVFX = { busy, countTo, mountHero };
-  const init = () => { Object.keys(FORMS).forEach((id) => { const f = document.getElementById(id); if (f) f.noValidate = true; }); HEROES.forEach(mountHero); };
+  const init = () => { Object.keys(FORMS).forEach((id) => { const f = document.getElementById(id); if (f) f.noValidate = true; }); HEROES.forEach(mountHero); initCatCarousel(); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

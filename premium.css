@@ -3837,3 +3837,14 @@ html.fx .page.active{animation:fxPage .5s ease backwards}
 @keyframes fxCloud2{from{transform:translateX(150px);opacity:0}15%{opacity:.7}85%{opacity:.6}to{transform:translateX(-40px);opacity:0}}
 @media(prefers-reduced-motion:reduce){.fx-jet,.fx-trail{animation:none}}
 .service-empty{margin-bottom:8px}
+
+/* Catégories de voitures de l'accueil : défilement lent et flèches */
+.hh-cat-wrap{position:relative}
+.hh-cat-strip{scroll-snap-type:none;scrollbar-width:none;-ms-overflow-style:none;-webkit-mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent);mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
+.hh-cat-strip::-webkit-scrollbar{display:none}
+.hh-cat-nav{position:absolute;top:75px;z-index:3;width:46px;height:46px;margin-top:-23px;display:grid;place-items:center;border:1px solid rgba(15,59,46,.15);border-radius:50%;background:rgba(255,255,255,.94);color:#0f3b2e;box-shadow:0 12px 26px -12px rgba(10,42,33,.55);cursor:pointer;transition:transform .2s,background .2s,color .2s}
+.hh-cat-nav.prev{left:6px}.hh-cat-nav.next{right:6px}
+.hh-cat-nav .tv-icon{width:22px;height:22px;stroke-width:2.4}
+.hh-cat-nav:hover{background:#0f3b2e;color:#fff;transform:scale(1.08)}
+.hh-cat-nav:active{transform:scale(.96)}
+@media(max-width:700px){.hh-cat-nav{width:40px;height:40px;margin-top:-20px}}
