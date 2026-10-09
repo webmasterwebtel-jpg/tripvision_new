@@ -1,0 +1,23 @@
+:root{--green:#0f3b2e;--gold:#c8a24a;--ink:#14231d;--muted:#6b7a72;--line:#e4dfd6}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:Inter,system-ui,sans-serif;color:var(--ink);background:radial-gradient(700px 400px at 100% 0,rgba(200,162,74,.18),transparent 60%),radial-gradient(600px 400px at 0 100%,rgba(15,59,46,.12),transparent 60%),#f6f2ea}
+.act{min-height:100vh;display:grid;align-content:center;justify-items:center;gap:26px;padding:28px 16px}
+.act-logo img{display:block;height:auto}
+.act-card{width:100%;max-width:460px;padding:36px 34px;background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:0 30px 60px -36px rgba(10,42,33,.5)}
+h1{margin:6px 0 8px;font-family:"Cormorant Garamond",Georgia,serif;font-size:34px;line-height:1.05;color:var(--green)}
+h1 em{color:var(--gold);font-style:italic}
+.eyebrow{margin:0;font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;color:var(--gold)}
+.who{margin:0 0 18px;color:var(--muted);font-size:14px}
+label{display:grid;gap:6px;margin:0 0 14px;font-size:13px;font-weight:600;color:#33403b}
+input{padding:13px 14px;border:1px solid #cfc9bb;border-radius:10px;font:inherit;font-weight:400}
+input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(15,59,46,.12)}
+.btn{display:block;width:100%;padding:14px 18px;border:0;border-radius:999px;background:var(--green);color:#fff;font:inherit;font-weight:700;text-align:center;text-decoration:none;cursor:pointer;margin-top:8px}
+.btn:hover{background:#14503f}
+.btn:disabled{opacity:.6}
+.err{margin:0 0 8px;color:#a73535;font-size:13.5px}
+#loading,#done,#invalid{text-align:center}
+#loading p,#done p,#invalid p{color:var(--muted);line-height:1.6}
+.ok,.ko{width:72px;height:72px;margin:0 auto 10px;display:grid;place-items:center;border-radius:50%;font-size:34px;font-weight:700}
+.ok{background:#e3f1ea;color:#1f7a55}.ko{background:#fdeceb;color:#d64541}
+.spin{display:inline-block;width:38px;height:38px;border:4px solid #e4dfd6;border-top-color:var(--green);border-radius:50%;animation:r .8s linear infinite}
+@keyframes r{to{transform:rotate(360deg)}}

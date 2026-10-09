@@ -47,6 +47,7 @@ app.use(express.json({ limit: '2mb', verify: (req, _res, buf) => { if (req.origi
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 app.use('/backoffice', express.static(join(root, 'backoffice')));
 app.use('/espace', express.static(join(root, 'espace')));
+app.use('/activation', express.static(join(root, 'activation')));
 app.use('/assets', express.static(join(root, 'assets')));
 const siteFiles = ['index.html', 'styles.css', 'premium.css', 'script.js'];
 app.get('/', (_req, res) => res.sendFile(join(root, 'index.html')));
@@ -90,7 +91,8 @@ async function issueToken(userId, purpose, hours) {
   const token = randomBytes(32).toString('base64url');
   await query('UPDATE auth_tokens SET used_at = now() WHERE user_id = $1 AND used_at IS NULL', [userId]);
   await query("INSERT INTO auth_tokens(user_id, token_hash, purpose, expires_at) VALUES ($1, $2, $3, now() + ($4 || ' hours')::interval)", [userId, hashToken(token), purpose, String(hours)]);
-  return `${APP_URL}/backoffice/?token=${token}`;
+  // Le lien mène à la page d'activation commune : clients et partenaires n'ont jamais de lien vers le back-office.
+  return `${APP_URL}/activation/?token=${token}`;
 }
 
 async function sendAccessLink(user, purpose, { invitedBy, hours } = {}) {
@@ -100,7 +102,7 @@ async function sendAccessLink(user, purpose, { invitedBy, hours } = {}) {
   const result = await sendMail({ to: user.email, ...mail });
   return result.sent
     ? { emailSent: true }
-    : { emailSent: false, activationUrl: url, emailError: mailConfigured ? 'L’e-mail n’a pas pu être envoyé.' : 'L’envoi d’e-mails n’est pas configuré.' };
+    : { emailSent: false, activationUrl: url, emailError: (mailConfigured || process.env.BREVO_API_KEY) ? 'L’e-mail n’a pas pu être envoyé.' : 'L’envoi d’e-mails n’est pas configuré.' };
 }
 
 // Activation du compte client : lien à usage unique envoyé par e-mail, le compte ne se connecte qu'après.

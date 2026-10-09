@@ -7,7 +7,7 @@
   <meta name="description" content="TripVision sélectionne des bons plans vols, locations de voiture et packs week-end depuis la France." />
   <link rel="stylesheet" href="styles.css?v=20260927-admin-1" />
   <script src="assets/boot.js"></script>
-  <link rel="stylesheet" href="premium.css?v=20261014-v32" />
+  <link rel="stylesheet" href="premium.css?v=20261014-v34" />
 </head>
 <body>
   <svg class="tv-icon-sprite" aria-hidden="true" focusable="false">
@@ -38,6 +38,7 @@
       <a class="brand brand-premium brand-logo" href="#home" data-page-link="home" aria-label="TripVision — Voyager autrement"><img src="/assets/tripvision-logo-original.png?v=20260920-1" alt="TripVision — Voyager autrement" width="2048" height="682" decoding="async"></a>
       <button class="burger" id="burger" type="button" aria-label="Ouvrir le menu" aria-controls="mainNav" aria-expanded="false"><svg class="tv-icon" aria-hidden="true"><use href="#i-menu"></use></svg></button>
       <nav class="links" id="mainNav">
+        <a href="#home" data-page-link="home">Accueil</a>
         <a href="#flights" data-page-link="flights">Vols</a>
         <a href="#cars" data-page-link="cars">Voitures</a>
         <a href="#packs" data-page-link="packs">Week-ends</a>
@@ -49,79 +50,80 @@
 
   <main>
     <section class="page active premium-home" id="home">
-      <section class="premium-hero">
-        <div class="wrap premium-hero-inner">
-          <div class="premium-hero-copy">
-            <div class="premium-kicker">Bons plans voyage</div>
-            <h1>Partez l’esprit tranquille,<em>au prix qui vous convient.</em></h1>
-            <p>Vos billets d’avion, votre voiture et vos virées du week-end réunis au même endroit. Vous n’avez plus qu’à faire vos valises.</p>
-            <form class="premium-search" data-jump="cars">
-              <input name="q" placeholder="Ville, destination, catégorie de véhicule..." />
-              <button class="btn" type="submit">Explorer <span>→</span></button>
-            </form>
-            <div class="premium-trust">
-              <div class="premium-trust-item"><div class="premium-trust-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-check-circle"></use></svg></div><div><strong>Offres validées</strong><span>Par l’administration</span></div></div>
-              <div class="premium-trust-item"><div class="premium-trust-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-shield-check"></use></svg></div><div><strong>Partenaires contrôlés</strong><span>Une sélection de confiance</span></div></div>
-              <div class="premium-trust-item"><div class="premium-trust-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-headphones"></use></svg></div><div><strong>Réservation assistée</strong><span>Un accompagnement humain</span></div></div>
-            </div>
-          </div>
-          <div class="premium-hero-note">Des destinations<br>qui ont du sens</div>
+      <section class="hh-hero" id="homeHero">
+        <div class="hh-slides"><div class="hh-slide on" data-cap="Marrakech, Maroc" style="background-image:url('/assets/hero/marrakech.jpg')"></div><div class="hh-slide" data-cap="Nice, Côte d’Azur" style="background-image:url('/assets/hero/nice.jpg')"></div><div class="hh-slide" data-cap="Paris, France" style="background-image:url('/assets/hero/paris.jpg')"></div><div class="hh-slide" data-cap="Santorin, Grèce" style="background-image:url('/assets/hero/santorin.jpg')"></div><div class="hh-slide" data-cap="Abidjan, Côte d’Ivoire" style="background-image:url('/assets/hero/abidjan.jpg')"></div><div class="hh-slide" data-cap="Dakar, Sénégal" style="background-image:url('/assets/hero/dakar.jpg')"></div></div>
+        <div class="hh-shade"></div>
+        <div class="wrap hh-in">
+          <span class="hh-kicker">Vols · Voitures · Week-ends</span>
+          <h1>Le monde est à<br><em>portée de clic.</em></h1>
+          <p>Des vols vers l’Afrique et la France, des voitures de loueurs vérifiés et des escapades prêtes à partir. Choisissez, comparez, partez.</p>
+          <form class="hh-search" id="hhSearch" autocomplete="off">
+            <label><span>Où voulez-vous aller ?</span><input name="q" list="hhDestList" placeholder="Dakar, Marrakech, Paris, Santorin…"><datalist id="hhDestList"></datalist></label>
+            <button class="btn gold" type="submit">Découvrir <span>→</span></button>
+          </form>
+          <div class="hh-quick"><a href="#flights" data-page-link="flights">✈ Réserver un vol</a><a href="#cars" data-page-link="cars">🚗 Louer une voiture</a><a href="#packs" data-page-link="packs">🏖 Partir ce week-end</a></div>
         </div>
+        <div class="hh-foot wrap"><span id="hhCaption">Marrakech, Maroc</span><div class="hh-dots"><i class="hh-dot on"></i><i class="hh-dot"></i><i class="hh-dot"></i><i class="hh-dot"></i><i class="hh-dot"></i><i class="hh-dot"></i></div></div>
       </section>
 
-      <div class="wrap stats premium-hidden-stats" id="homeStats"></div>
+      <section class="hh-trust"><div class="wrap hh-trust-grid">
+        <div><svg class="tv-icon" aria-hidden="true"><use href="#i-shield-check"></use></svg><strong>Paiement sécurisé</strong><p>Carte bancaire via Stripe, données jamais conservées.</p></div>
+        <div><svg class="tv-icon" aria-hidden="true"><use href="#i-check"></use></svg><strong>Prix transparents</strong><p>Le total, la part en ligne et le solde sont affichés avant de payer.</p></div>
+        <div><svg class="tv-icon" aria-hidden="true"><use href="#i-plane"></use></svg><strong>Compagnies et loueurs vérifiés</strong><p>Les offres viennent de partenaires et de compagnies reconnues.</p></div>
+        <div><svg class="tv-icon" aria-hidden="true"><use href="#i-headphones"></use></svg><strong>Assistance humaine</strong><p>Une équipe qui répond avant, pendant et après votre voyage.</p></div>
+      </div></section>
+
+      <section class="hh-section"><div class="wrap">
+        <div class="hh-head"><span class="eyebrow">Inspirations</span><h2>Des destinations qui <em>font rêver</em></h2><p>Cliquez sur une ville : présentation, lieux à voir et offres disponibles.</p></div>
+        <div class="bento-grid"><a class="bento b1" href="#destination/dakar" data-page-link="destination/dakar"><img src="/assets/dest/dakar.jpg" alt="Dakar" loading="lazy" decoding="async"><span><b>Dakar</b><small>Sénégal</small></span></a><a class="bento b2" href="#destination/marrakech" data-page-link="destination/marrakech"><img src="/assets/dest/marrakech.jpg" alt="Marrakech" loading="lazy" decoding="async"><span><b>Marrakech</b><small>Maroc</small></span></a><a class="bento b3" href="#destination/paris" data-page-link="destination/paris"><img src="/assets/dest/paris.jpg" alt="Paris" loading="lazy" decoding="async"><span><b>Paris</b><small>France</small></span></a><a class="bento b4" href="#destination/abidjan" data-page-link="destination/abidjan"><img src="/assets/dest/abidjan.jpg" alt="Abidjan" loading="lazy" decoding="async"><span><b>Abidjan</b><small>Côte d’Ivoire</small></span></a><a class="bento b5" href="#destination/santorin" data-page-link="destination/santorin"><img src="/assets/dest/santorin.jpg" alt="Santorin" loading="lazy" decoding="async"><span><b>Santorin</b><small>Grèce</small></span></a><a class="bento b6" href="#destination/casablanca" data-page-link="destination/casablanca"><img src="/assets/dest/casablanca.jpg" alt="Casablanca" loading="lazy" decoding="async"><span><b>Casablanca</b><small>Maroc</small></span></a><a class="bento b7" href="#destination/barcelone" data-page-link="destination/barcelone"><img src="/assets/dest/barcelone.jpg" alt="Barcelone" loading="lazy" decoding="async"><span><b>Barcelone</b><small>Espagne</small></span></a><a class="bento b8" href="#destination/tunis" data-page-link="destination/tunis"><img src="/assets/dest/tunis.jpg" alt="Tunis" loading="lazy" decoding="async"><span><b>Tunis</b><small>Tunisie</small></span></a><a class="bento b9" href="#destination/lisbonne" data-page-link="destination/lisbonne"><img src="/assets/dest/lisbonne.jpg" alt="Lisbonne" loading="lazy" decoding="async"><span><b>Lisbonne</b><small>Portugal</small></span></a><a class="bento b10" href="#destination/rome" data-page-link="destination/rome"><img src="/assets/dest/rome.jpg" alt="Rome" loading="lazy" decoding="async"><span><b>Rome</b><small>Italie</small></span></a></div>
+      </div></section>
+
+      <section class="hh-section hh-services"><div class="wrap">
+        <div class="hh-head"><span class="eyebrow">Nos services</span><h2>Tout pour <em>préparer votre voyage</em></h2></div>
+        <div class="hh-panels">
+          <a class="hh-panel" href="#flights" data-page-link="flights" style="background-image:linear-gradient(180deg,rgba(6,24,19,.1),rgba(6,24,19,.82)),url('/assets/dest/hero_flights.jpg')"><span class="hh-ic">✈</span><h3>Vols</h3><p>Les meilleurs tarifs relevés chez les compagnies, entre la France et l’Afrique.</p><b>Voir les vols →</b></a>
+          <a class="hh-panel" href="#cars" data-page-link="cars" style="background-image:linear-gradient(180deg,rgba(6,24,19,.1),rgba(6,24,19,.82)),url('/assets/cat/suv.jpg')"><span class="hh-ic">🚗</span><h3>Voitures</h3><p>Louez auprès de loueurs en France, avec un prix clair pour la durée choisie.</p><b>Louer une voiture →</b></a>
+          <a class="hh-panel" href="#packs" data-page-link="packs" style="background-image:linear-gradient(180deg,rgba(6,24,19,.1),rgba(6,24,19,.82)),url('/assets/dest/santorin.jpg')"><span class="hh-ic">🏖</span><h3>Week-ends</h3><p>Vol et hôtel réunis, des escapades prêtes à partir pour quelques jours.</p><b>Trouver une escapade →</b></a>
+        </div>
+      </div></section>
+
+      <section class="hh-section hh-deals-wrap" hidden><div class="wrap">
+        <div class="hh-head"><span class="eyebrow">Bons plans du moment</span><h2>Les vols <em>les moins chers</em></h2><p>Tarifs « dès » relevés sur les sites des compagnies : le prix définitif est celui de la compagnie.</p></div>
+        <div class="deal-grid" id="homeDeals"></div>
+        <p class="hh-more"><a href="#flights" data-page-link="flights">Voir tous les vols →</a></p>
+      </div></section>
+
+      <section class="hh-section hh-cars"><div class="wrap">
+        <div class="hh-head"><span class="eyebrow">Voitures</span><h2>Une catégorie pour <em>chaque trajet</em></h2></div>
+        <div class="hh-cat-strip"><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/mini.jpg" alt="Mini" loading="lazy" decoding="async"><b>Mini</b></a><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/economique.jpg" alt="Économique" loading="lazy" decoding="async"><b>Économique</b></a><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/compacte.jpg" alt="Compacte" loading="lazy" decoding="async"><b>Compacte</b></a><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/intermediaire.jpg" alt="Intermédiaire" loading="lazy" decoding="async"><b>Intermédiaire</b></a><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/routiere.jpg" alt="Routière" loading="lazy" decoding="async"><b>Routière</b></a><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/suv.jpg" alt="SUV et Break" loading="lazy" decoding="async"><b>SUV et Break</b></a><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/monospace.jpg" alt="Monospace" loading="lazy" decoding="async"><b>Monospace</b></a><a class="hh-cat" href="#cars" data-page-link="cars"><img src="/assets/cat/utilitaire.jpg" alt="Utilitaire" loading="lazy" decoding="async"><b>Utilitaire</b></a></div>
+      </div></section>
+
+      <section class="hh-stats" id="hhStats"><div class="wrap">
+        <div><strong data-stat="dest">17</strong><span>destinations à découvrir</span></div>
+        <div><strong data-stat="flights">0</strong><span>vols au meilleur tarif</span></div>
+        <div><strong data-stat="cars">0</strong><span>voitures à louer</span></div>
+        <div><strong data-stat="packs">0</strong><span>séjours vol + hôtel</span></div>
+      </div></section>
 
       <section class="premium-discover">
         <div class="wrap discover-grid">
-          <div class="inspiration-block">
-            <div class="premium-section-kicker">Nos inspirations</div>
-            <div class="premium-title-row">
-              <h2>Destinations en vedette</h2>
-              <a href="#flights" data-page-link="flights">Voir toutes les destinations &nbsp;→</a>
-            </div>
-            <div class="destination-cards">
-              <a class="destination-card" href="#flights" data-page-link="flights">
-                <img src="https://images.unsplash.com/photo-1573843981267-be1999ff37cd?auto=format&fit=crop&w=700&q=86" alt="Maldives" />
-                <div class="destination-card-body"><h3>Maldives</h3><p>Plages de rêve</p><span class="destination-arrow">→</span></div>
-              </a>
-              <a class="destination-card" href="#flights" data-page-link="flights">
-                <img src="https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=700&q=86" alt="Sicile" />
-                <div class="destination-card-body"><h3>Sicile</h3><p>Culture & authenticité</p><span class="destination-arrow">→</span></div>
-              </a>
-              <a class="destination-card" href="#packs" data-page-link="packs">
-                <img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=700&q=86" alt="Santorin" />
-                <div class="destination-card-body"><h3>Santorin</h3><p>Soleil & panoramas</p><span class="destination-arrow">→</span></div>
-              </a>
-              <a class="destination-card" href="#packs" data-page-link="packs">
-                <img src="https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?auto=format&fit=crop&w=700&q=86" alt="Île Maurice" />
-                <div class="destination-card-body"><h3>Île Maurice</h3><p>Nature préservée</p><span class="destination-arrow">→</span></div>
-              </a>
-            </div>
-          </div>
-
           <aside class="partner-showcase">
-            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1100&q=86" alt="Destination tropicale TripVision" />
+            <img src="/assets/hero/marrakech.jpg" alt="Devenez partenaire TripVision" />
             <div class="partner-showcase-content">
               <div class="premium-section-kicker">Devenez partenaire</div>
               <h3>Rejoignez l’aventure TripVision</h3>
-              <p>Collaborez avec une plateforme de confiance et touchez une clientèle engagée.</p>
+              <p>Loueurs, hôtels, agences : publiez vos offres et touchez une clientèle engagée.</p>
               <a class="btn" href="#partner" data-page-link="partner">Devenir partenaire →</a>
             </div>
           </aside>
         </div>
-
-        <div class="wrap premium-way">
-          <div class="premium-way-head">
-            <div><div class="premium-section-kicker">Pourquoi TripVision ?</div><h2>Une nouvelle façon de voyager</h2></div>
-            <p class="premium-way-intro">Plus qu’une plateforme, TripVision réunit sélection, confiance et accompagnement pour transformer la recherche d’un voyage en expérience simple.</p>
-          </div>
-          <div class="premium-benefits">
-            <article class="premium-benefit"><span>01</span><h3>Des offres choisies</h3><p>Les vols, véhicules et week-ends sont publiés uniquement après validation.</p></article>
-            <article class="premium-benefit"><span>02</span><h3>Des partenaires suivis</h3><p>Les professionnels renseignent leurs offres et TripVision contrôle leur publication.</p></article>
-            <article class="premium-benefit"><span>03</span><h3>Un parcours fluide</h3><p>Recherche, sélection et demande de réservation sont réunies dans une même expérience.</p></article>
-          </div>
-        </div>
       </section>
+
+      <section class="hh-cta" style="background-image:linear-gradient(90deg,rgba(6,24,19,.88),rgba(6,24,19,.4)),url('/assets/hero/nice.jpg')"><div class="wrap">
+        <h2>Prêt à partir ?</h2><p>Trouvez votre vol, votre voiture ou votre prochaine escapade en quelques clics.</p>
+        <div class="hh-cta-btns"><a class="btn gold" href="#flights" data-page-link="flights">Voir les vols</a><a class="btn ghost-light" href="#packs" data-page-link="packs">Découvrir les week-ends</a></div>
+      </div></section>
+      <div class="wrap stats premium-hidden-stats" id="homeStats"></div>
     </section>
 
     <section class="page service-page flights-page" id="flights">
@@ -177,7 +179,7 @@
       <section class="dest-band">
         <div class="wrap">
           <div class="dest-head"><span class="eyebrow">Inspirations</span><h2>Destinations <em>populaires</em></h2><p>Un clic sur une destination pour voir les vols disponibles.</p></div>
-          <div class="dest-grid"><button type="button" class="dest-card" data-dest-flight="Dakar"><img src="assets/dest/dakar.jpg" alt="Dakar" loading="lazy" decoding="async"><span class="dest-info"><b>Dakar</b><small>Sénégal</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Abidjan"><img src="assets/dest/abidjan.jpg" alt="Abidjan" loading="lazy" decoding="async"><span class="dest-info"><b>Abidjan</b><small>Côte d’Ivoire</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Douala"><img src="assets/dest/douala.jpg" alt="Douala" loading="lazy" decoding="async"><span class="dest-info"><b>Douala</b><small>Cameroun</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Casablanca"><img src="assets/dest/casablanca.jpg" alt="Casablanca" loading="lazy" decoding="async"><span class="dest-info"><b>Casablanca</b><small>Maroc</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Marrakech"><img src="assets/dest/marrakech.jpg" alt="Marrakech" loading="lazy" decoding="async"><span class="dest-info"><b>Marrakech</b><small>Maroc</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Libreville"><img src="assets/dest/libreville.jpg" alt="Libreville" loading="lazy" decoding="async"><span class="dest-info"><b>Libreville</b><small>Gabon</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Brazzaville"><img src="assets/dest/brazzaville.jpg" alt="Brazzaville" loading="lazy" decoding="async"><span class="dest-info"><b>Brazzaville</b><small>Congo</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Tunis"><img src="assets/dest/tunis.jpg" alt="Tunis" loading="lazy" decoding="async"><span class="dest-info"><b>Tunis</b><small>Tunisie</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Paris"><img src="assets/dest/paris.jpg" alt="Paris" loading="lazy" decoding="async"><span class="dest-info"><b>Paris</b><small>France</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-flight="Marseille"><img src="assets/dest/marseille.jpg" alt="Marseille" loading="lazy" decoding="async"><span class="dest-info"><b>Marseille</b><small>France</small></span><i class="dest-go">→</i></button></div>
+          <div class="dest-grid"><a class="dest-card" href="#destination/dakar" data-page-link="destination/dakar"><img src="assets/dest/dakar.jpg" alt="Dakar" loading="lazy" decoding="async"><span class="dest-info"><b>Dakar</b><small>Sénégal</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/abidjan" data-page-link="destination/abidjan"><img src="assets/dest/abidjan.jpg" alt="Abidjan" loading="lazy" decoding="async"><span class="dest-info"><b>Abidjan</b><small>Côte d’Ivoire</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/douala" data-page-link="destination/douala"><img src="assets/dest/douala.jpg" alt="Douala" loading="lazy" decoding="async"><span class="dest-info"><b>Douala</b><small>Cameroun</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/casablanca" data-page-link="destination/casablanca"><img src="assets/dest/casablanca.jpg" alt="Casablanca" loading="lazy" decoding="async"><span class="dest-info"><b>Casablanca</b><small>Maroc</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/marrakech" data-page-link="destination/marrakech"><img src="assets/dest/marrakech.jpg" alt="Marrakech" loading="lazy" decoding="async"><span class="dest-info"><b>Marrakech</b><small>Maroc</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/libreville" data-page-link="destination/libreville"><img src="assets/dest/libreville.jpg" alt="Libreville" loading="lazy" decoding="async"><span class="dest-info"><b>Libreville</b><small>Gabon</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/brazzaville" data-page-link="destination/brazzaville"><img src="assets/dest/brazzaville.jpg" alt="Brazzaville" loading="lazy" decoding="async"><span class="dest-info"><b>Brazzaville</b><small>Congo</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/tunis" data-page-link="destination/tunis"><img src="assets/dest/tunis.jpg" alt="Tunis" loading="lazy" decoding="async"><span class="dest-info"><b>Tunis</b><small>Tunisie</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/paris" data-page-link="destination/paris"><img src="assets/dest/paris.jpg" alt="Paris" loading="lazy" decoding="async"><span class="dest-info"><b>Paris</b><small>France</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/marseille" data-page-link="destination/marseille"><img src="assets/dest/marseille.jpg" alt="Marseille" loading="lazy" decoding="async"><span class="dest-info"><b>Marseille</b><small>France</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/alger" data-page-link="destination/alger"><img src="assets/dest/alger.jpg" alt="Alger" loading="lazy" decoding="async"><span class="dest-info"><b>Alger</b><small>Algérie</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/cotonou" data-page-link="destination/cotonou"><img src="assets/dest/cotonou.jpg" alt="Cotonou" loading="lazy" decoding="async"><span class="dest-info"><b>Cotonou</b><small>Bénin</small></span><i class="dest-go">→</i></a></div>
         </div>
       </section>
 
@@ -244,6 +246,25 @@
               <div><b>3</b><h3>Comparez et réservez</h3><p>Réglez en ligne une petite commission, le reste se paie au loueur au retrait.</p></div>
             </div>
             <div class="car-intro-cats"><span class="eyebrow">Nos catégories de véhicules</span><div class="dest-grid" id="carCatIntro"></div></div>
+            <div class="car-tips">
+              <div class="hh-head"><span class="eyebrow">Bien louer sa voiture</span><h2>Nos conseils de <em>location</em></h2></div>
+              <div class="tips-grid">
+                <article><b>1</b><h3>Comparez le prix total</h3><p>Regardez ce qui est inclus : assurance, kilométrage, frais de conducteur supplémentaire ou de jeune conducteur.</p></article>
+                <article><b>2</b><h3>Préparez vos documents</h3><p>Permis valide, pièce d’identité et carte bancaire au nom du conducteur principal : le loueur peut les exiger au retrait.</p></article>
+                <article><b>3</b><h3>Comprenez la franchise</h3><p>La franchise est la somme qui reste à votre charge en cas de dommage. Le dépôt de garantie est demandé par le loueur à l’agence.</p></article>
+                <article><b>4</b><h3>Faites un état des lieux</h3><p>Avant de partir, photographiez le véhicule sous tous les angles et signalez toute rayure au loueur.</p></article>
+                <article><b>5</b><h3>Soignez le carburant</h3><p>Respectez la politique du loueur (souvent « plein à plein ») et gardez le ticket de la dernière station.</p></article>
+                <article><b>6</b><h3>Surveillez le kilométrage</h3><p>Kilométrage illimité ou limité par jour : au-delà, chaque kilomètre supplémentaire est facturé.</p></article>
+                <article><b>7</b><h3>Respectez l’heure de retour</h3><p>Chaque tranche de 24 h entamée est facturée : rendre le véhicule 1 minute en retard compte une journée de plus.</p></article>
+                <article><b>8</b><h3>Choisissez la bonne taille</h3><p>Bagages, passagers, routes : une citadine pour la ville, un SUV ou un monospace pour la famille et les longs trajets.</p></article>
+              </div>
+              <div class="car-faq">
+                <details><summary>Que paie-t-on en ligne ?</summary><p>Seulement la commission TripVision (10 % du prix de la location). Le solde, et le dépôt de garantie éventuel, se règlent directement au loueur lors du retrait.</p></details>
+                <details><summary>Puis-je annuler ou modifier ma réservation ?</summary><p>Les conditions d’annulation et de modification sont fixées par chaque loueur et affichées sur l’annonce avant de réserver.</p></details>
+                <details><summary>Que faire en cas de problème sur la route ?</summary><p>Contactez d’abord le loueur, dont les coordonnées figurent sur votre confirmation, puis écrivez-nous depuis votre espace client si besoin.</p></details>
+                <details><summary>Quel âge faut-il avoir ?</summary><p>L’âge minimum du conducteur est défini par le loueur : il est indiqué sur chaque annonce et pris en compte lors de la réservation.</p></details>
+              </div>
+            </div>
             <div class="car-intro-perks">
               <div><svg class="tv-icon" aria-hidden="true"><use href="#i-shield-check"></use></svg><strong>Loueurs vérifiés</strong><p>Chaque annonce est fournie et validée par des loueurs professionnels.</p></div>
               <div><svg class="tv-icon" aria-hidden="true"><use href="#i-shield-check"></use></svg><strong>Prix clair</strong><p>Total, part payée en ligne et solde à l’agence affichés avant de payer.</p></div>
@@ -267,6 +288,8 @@
     </section>
 
     <section class="page rsv-page" id="reserve"><div class="wrap" id="reserveRoot"></div></section>
+    <section class="page dest-page" id="destination"><div id="destRoot"></div></section>
+    <section class="page pack-page" id="packdetail"><div id="packRoot"></div></section>
 
     <section class="page service-page packs-page" id="packs">
       <section class="weekend-editorial-hero travel-photo-hero">
@@ -310,7 +333,7 @@
       <section class="dest-band">
         <div class="wrap">
           <div class="dest-head"><span class="eyebrow">Escapades</span><h2>Où partir <em>ce week-end ?</em></h2><p>Choisissez une destination pour découvrir les séjours proposés.</p></div>
-          <div class="dest-grid"><button type="button" class="dest-card" data-dest-pack="Marrakech"><img src="assets/dest/marrakech.jpg" alt="Marrakech" loading="lazy" decoding="async"><span class="dest-info"><b>Marrakech</b><small>Maroc</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-pack="Barcelone"><img src="assets/dest/barcelone.jpg" alt="Barcelone" loading="lazy" decoding="async"><span class="dest-info"><b>Barcelone</b><small>Espagne</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-pack="Lisbonne"><img src="assets/dest/lisbonne.jpg" alt="Lisbonne" loading="lazy" decoding="async"><span class="dest-info"><b>Lisbonne</b><small>Portugal</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-pack="Rome"><img src="assets/dest/rome.jpg" alt="Rome" loading="lazy" decoding="async"><span class="dest-info"><b>Rome</b><small>Italie</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-pack="Amsterdam"><img src="assets/dest/amsterdam.jpg" alt="Amsterdam" loading="lazy" decoding="async"><span class="dest-info"><b>Amsterdam</b><small>Pays-Bas</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-dest-pack="Santorin"><img src="assets/dest/santorin.jpg" alt="Santorin" loading="lazy" decoding="async"><span class="dest-info"><b>Santorin</b><small>Grèce</small></span><i class="dest-go">→</i></button></div>
+          <div class="dest-grid"><a class="dest-card" href="#destination/marrakech" data-page-link="destination/marrakech"><img src="assets/dest/marrakech.jpg" alt="Marrakech" loading="lazy" decoding="async"><span class="dest-info"><b>Marrakech</b><small>Maroc</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/barcelone" data-page-link="destination/barcelone"><img src="assets/dest/barcelone.jpg" alt="Barcelone" loading="lazy" decoding="async"><span class="dest-info"><b>Barcelone</b><small>Espagne</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/lisbonne" data-page-link="destination/lisbonne"><img src="assets/dest/lisbonne.jpg" alt="Lisbonne" loading="lazy" decoding="async"><span class="dest-info"><b>Lisbonne</b><small>Portugal</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/rome" data-page-link="destination/rome"><img src="assets/dest/rome.jpg" alt="Rome" loading="lazy" decoding="async"><span class="dest-info"><b>Rome</b><small>Italie</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/amsterdam" data-page-link="destination/amsterdam"><img src="assets/dest/amsterdam.jpg" alt="Amsterdam" loading="lazy" decoding="async"><span class="dest-info"><b>Amsterdam</b><small>Pays-Bas</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/santorin" data-page-link="destination/santorin"><img src="assets/dest/santorin.jpg" alt="Santorin" loading="lazy" decoding="async"><span class="dest-info"><b>Santorin</b><small>Grèce</small></span><i class="dest-go">→</i></a></div>
         </div>
       </section>
 
@@ -485,7 +508,9 @@
   <script src="assets/gallery.js?v=5"></script>
   <script src="assets/spin.js?v=5"></script>
   <script src="assets/guest-auth.js?v=2"></script>
+  <script src="assets/destinations.js?v=1"></script>
+  <script src="assets/pages.js?v=1"></script>
   <script src="assets/cars.js?v=33"></script>
-  <script src="script.js?v=20261013-v32"></script>
+  <script src="script.js?v=20261013-v34"></script>
 </body>
 </html>

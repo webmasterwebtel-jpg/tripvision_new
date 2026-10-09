@@ -19,6 +19,7 @@ function badge(s){return s==='approved'||s==='active'||s==='confirmed'?'<span cl
 function bindLinks(scope=document){$$('[data-page-link]',scope).forEach(a=>a.onclick=e=>{e.preventDefault();page(a.dataset.pageLink);location.hash=a.dataset.pageLink})}
 function page(id){
   document.documentElement.removeAttribute('data-boot');
+  if(id&&id.indexOf('/')>0){const kind=id.split('/')[0];window.TVPages?.route(id);id=kind==='pack'?'packdetail':kind==='destination'?'destination':'home'}
   if(token&&['client','partner'].includes(currentUser?.role)&&['login','partner','client'].includes(id)){location.replace('/espace/');return}
   if(id==='client'||id==='admin'||id==='admin-login')id='login';
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));
@@ -33,8 +34,8 @@ function setSession(data){if(['it','admin','manager'].includes(data.user?.role))
   if(pendingTab&&!pendingTab.closed){pendingTab.location.href='/espace/';pendingTab=null;page('home');location.hash='home'}else{try{sessionStorage.setItem('tripvisionToken',data.token);sessionStorage.setItem('tripvisionUser',JSON.stringify(data.user))}catch{}location.href='/espace/'}}
 function busy(btn,text){if(!btn)return()=>{};const html=btn.innerHTML;btn.disabled=true;btn.classList.add('is-loading');btn.innerHTML=`<span class="btn-spinner" aria-hidden="true"></span><span>${text}</span>`;return()=>{btn.disabled=false;btn.classList.remove('is-loading');btn.innerHTML=html}}
 function logout(){token='';currentUser=null;updateAccount();page('home');location.hash='home'}
-async function loadPublic(){try{const [flights,packs,vehicles]=await Promise.all([api('/public/offers?type=flight'),api('/public/offers?type=pack'),api(window.carsPath?window.carsPath():'/public/vehicles')]);state.flights=flights;state.packs=packs;state.vehicles=vehicles}catch(e){console.error(e);warnApi()}renderPublic()}
-function renderPublic(){renderHome();renderFlights();renderPacks();renderCars()}
+async function loadPublic(){try{const [flights,packs,vehicles]=await Promise.all([api('/public/offers?type=flight'),api('/public/offers?type=pack'),api(window.carsPath?window.carsPath():'/public/vehicles')]);state.flights=flights;state.packs=packs;state.vehicles=vehicles}catch(e){console.error(e);warnApi()}window.__tvLoaded=true;renderPublic()}
+function renderPublic(){renderHome();renderFlights();renderPacks();renderCars();window.TVPages?.refresh()}
 function renderHome(){const approved=state.vehicles.length;const destinations=new Set([...state.flights.map(f=>f.to_city),...state.vehicles.map(v=>v.city),...state.packs.map(p=>p.to_city)].filter(Boolean)).size;if($('#homeStats'))$('#homeStats').innerHTML=`<div class="stat"><strong>${approved}</strong><span>Voitures publiées</span></div><div class="stat"><strong>${destinations}</strong><span>Destinations</span></div><div class="stat"><strong>${state.flights.length+state.packs.length}</strong><span>Offres voyage</span></div>`}
 const cleanPlace=v=>String(v||'').replace(/\s*\([A-Za-z]{3}\)\s*$/,'').trim();
 const nrm=v=>String(v||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
@@ -74,7 +75,7 @@ function packCard(o){
   ${o.hotel_name?`<h3>${escapeHtml(o.hotel_name)} <span class="pack-stars">${stars}</span></h3>`:`<h3>${escapeHtml(title)}</h3>`}
   <ul class="pack-facts">${o.from_city?`<li><i>✈</i>Vols de ${escapeHtml(o.from_city)}</li>`:''}${o.start_date?`<li><i>📅</i>Départ le ${fmtDayFr(o.start_date)}${o.end_date?' · retour le '+fmtDayFr(o.end_date):''}</li>`:''}${nights?`<li><i>🌙</i>${nights+1} jours / ${nights} nuit${nights>1?'s':''}</li>`:''}${o.hotel_board?`<li><i>🍽</i>${escapeHtml(o.hotel_board)}</li>`:''}</ul>
   ${o.description?`<p class="pack-desc">${escapeHtml(o.description)}</p>`:''}</div>
-  <div class="pack-buy"><div><small>par personne, dès</small>${old?`<s>${money(o.old_price)}</s>`:''}<strong>${money(o.price)}</strong></div><button class="btn" type="button" data-offer-book="${o.id}">Voir l’offre →</button></div></article>`;
+  <div class="pack-buy"><div><small>par personne, dès</small>${old?`<s>${money(o.old_price)}</s>`:''}<strong>${money(o.price)}</strong></div><a class="btn" href="#pack/${o.id}" data-page-link="pack/${o.id}">Voir l’offre →</a></div></article>`;
 }
 function renderPackTabs(all){
   const box=$('#packTabs');if(!box)return;

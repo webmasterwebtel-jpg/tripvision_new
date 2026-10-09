@@ -29,7 +29,24 @@ export async function verifyMail() {
   try { await transporter.verify(); return { ok: true }; } catch (err) { return { ok: false, error: err.message }; }
 }
 
+// Envoi par l'API HTTPS de Brevo si BREVO_API_KEY est définie (utile sur un hébergeur qui bloque les ports SMTP).
+const { BREVO_API_KEY } = process.env;
+export const mailReady = Boolean(BREVO_API_KEY) || mailConfigured;
+async function sendViaBrevo({ to, subject, text, html, replyTo }) {
+  const from = String(SMTP_FROM || SMTP_USER || '');
+  const m = from.match(/^(.*)<([^>]+)>$/);
+  const sender = m ? { name: m[1].trim().replace(/^"|"$/g, '') || 'TripVision', email: m[2].trim() } : { name: 'TripVision', email: from.trim() };
+  const base = (process.env.APP_URL || '').replace(/\/$/, '');
+  const body = { sender, to: [{ email: to }], subject, textContent: text, htmlContent: html ? html.replace('cid:tvlogo', `${base}/assets/tripvision-logo-email.png`) : undefined };
+  if (replyTo) body.replyTo = { email: replyTo };
+  const r = await fetch('https://api.brevo.com/v3/smtp/email', { method: 'POST', headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json', accept: 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error(`Brevo ${r.status} ${(await r.text()).slice(0, 160)}`);
+}
 export async function sendMail({ to, subject, text, html, replyTo }) {
+  if (BREVO_API_KEY) {
+    try { await sendViaBrevo({ to, subject, text, html, replyTo }); return { sent: true }; }
+    catch (err) { console.error('Envoi e-mail (Brevo) impossible :', err.message); return { sent: false, error: err.message }; }
+  }
   if (!transporter) return { sent: false, error: 'SMTP non configuré' };
   try {
     await transporter.sendMail({ from: SMTP_FROM || SMTP_USER, to, subject, text, html, replyTo, attachments: html && html.includes('cid:tvlogo') ? [logoAttachment] : [] });

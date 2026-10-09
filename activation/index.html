@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Choisir mon mot de passe — TripVision</title>
+  <link rel="icon" href="/assets/tripvision-icon.png?v=2">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="activation.css?v=1">
+</head>
+<body>
+  <main class="act">
+    <a class="act-logo" href="/"><img src="/assets/tripvision-logo-email.png" alt="TripVision — Voyager autrement" width="190"></a>
+    <section class="act-card" id="card">
+      <div id="loading"><span class="spin"></span><p>Vérification du lien…</p></div>
+      <form id="form" hidden novalidate>
+        <p class="eyebrow" id="eyebrow">Activation</p>
+        <h1 id="title">Choisissez votre <em>mot de passe</em></h1>
+        <p class="who" id="who"></p>
+        <label>Nouveau mot de passe<input name="password" type="password" required autocomplete="new-password" data-pw-rules></label>
+        <label>Confirmer le mot de passe<input name="confirm" type="password" required autocomplete="new-password"></label>
+        <p class="err" id="err" role="alert" hidden></p>
+        <button class="btn" type="submit">Enregistrer mon mot de passe</button>
+      </form>
+      <div id="done" hidden>
+        <div class="ok">✓</div>
+        <h1>Mot de passe enregistré</h1>
+        <p id="doneText"></p>
+        <a class="btn" id="goto" href="/">Continuer</a>
+      </div>
+      <div id="invalid" hidden>
+        <div class="ko">!</div>
+        <h1>Lien invalide ou expiré</h1>
+        <p>Ce lien n’est plus valable (il est à usage unique et expire après quelques heures). Demandez-en un nouveau avec « Mot de passe oublié ? » sur la page de connexion.</p>
+        <a class="btn" href="/">Retourner sur TripVision</a>
+      </div>
+    </section>
+  </main>
+  <script src="/assets/pw-rules.js?v=1"></script>
+  <script src="activation.js?v=1"></script>
+</body>
+</html>

@@ -21,6 +21,8 @@ services:
         sync: false
       - key: CORS_ORIGIN
         value: "*"
+      - key: BREVO_API_KEY       # facultatif : envoi des e-mails par l'API HTTPS de Brevo (les ports SMTP sont bloqués sur l'offre gratuite de Render)
+        sync: false
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT

@@ -29,7 +29,7 @@ function copy(src, dest) {
   }
 }
 for (const f of ['index.html', 'styles.css', 'premium.css', 'script.js']) copy(path.join(root, f), path.join(dist, f));
-for (const d of ['assets', 'backoffice', 'espace']) copy(path.join(root, d), path.join(dist, d));
+for (const d of ['assets', 'backoffice', 'espace', 'activation']) copy(path.join(root, d), path.join(dist, d));
 
 fs.writeFileSync(path.join(dist, '_redirects'), [
   `/api/*          ${api}/api/:splat      200`,

@@ -1585,6 +1585,8 @@ document.addEventListener('submit', async (e) => {
       const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new ApiError(ERRORS[body.error] || 'E-mail ou mot de passe incorrect.');
+      // Le back-office est réservé à l'équipe TripVision : clients et partenaires ont leurs propres espaces.
+      if (!BO.includes(body.user?.role)) throw new ApiError('E-mail ou mot de passe incorrect.');
       meLoaded = true;
       saveSession(body);
       form.reset();
