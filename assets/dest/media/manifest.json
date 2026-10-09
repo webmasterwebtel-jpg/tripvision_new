@@ -1,0 +1,1056 @@
+{
+ "dakar": {
+  "images": [
+   {
+    "file": "dakar/p1.jpg",
+    "caption": "Monument de la Renaissance africaine",
+    "title": "Monument renaissance.jpg",
+    "artist": "Tafsir207",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Monument_renaissance.jpg"
+   },
+   {
+    "file": "dakar/p2.jpg",
+    "caption": "Le Lac Rose",
+    "title": "Lac Rose - Sénégal.jpg",
+    "artist": "Issiaga0",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Lac_Rose_-_S%C3%A9n%C3%A9gal.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "dakar/v1.mp4",
+    "poster": "dakar/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "dakar/v2.mp4",
+    "poster": "dakar/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "abidjan": {
+  "images": [
+   {
+    "file": "abidjan/p1.jpg",
+    "caption": "La lagune Ébrié",
+    "title": "La lagune Ebrié - Abidjan.jpg",
+    "artist": "Yduffi",
+    "license": "CC BY 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:La_lagune_Ebri%C3%A9_-_Abidjan.jpg"
+   },
+   {
+    "file": "abidjan/p2.jpg",
+    "caption": "Abidjan, vue sur le Plateau",
+    "title": "PlateauSudAbidjanMai2016 2.JPG",
+    "artist": "Citizen59",
+    "license": "CC BY 3.0",
+    "url": "https://commons.wikimedia.org/wiki/File:PlateauSudAbidjanMai2016_2.JPG"
+   }
+  ],
+  "videos": [
+   {
+    "file": "abidjan/v1.mp4",
+    "poster": "abidjan/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "abidjan/v2.mp4",
+    "poster": "abidjan/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "douala": {
+  "images": [
+   {
+    "file": "douala/p1.jpg",
+    "caption": "Cathédrale Saint-Pierre-et-Saint-Paul",
+    "title": "Cathedrale St Pierre et St Paul.JPG",
+    "artist": "Guillaume WA",
+    "license": "CC BY-SA 3.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Cathedrale_St_Pierre_et_St_Paul.JPG"
+   },
+   {
+    "file": "douala/p2.jpg",
+    "caption": "Bonanjo",
+    "title": "BONANJO MONUMENT DOUALA CAMEROON.jpg",
+    "artist": "Blaizo 237",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:BONANJO_MONUMENT_DOUALA_CAMEROON.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "douala/v1.mp4",
+    "poster": "douala/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "douala/v2.mp4",
+    "poster": "douala/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "casablanca": {
+  "images": [
+   {
+    "file": "casablanca/p1.jpg",
+    "caption": "Mosquée Hassan II",
+    "title": "Hassan II Mosque - general framing, Casablanca, Morocco.jpg",
+    "artist": "Tinuzzo",
+    "license": "CC BY 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Hassan_II_Mosque_-_general_framing,_Casablanca,_Morocco.jpg"
+   },
+   {
+    "file": "casablanca/p2.jpg",
+    "caption": "Place Mohammed V",
+    "title": "Casa didier55 015.jpg",
+    "artist": "Dr. Didier Hinz",
+    "license": "CC BY-SA 3.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Casa_didier55_015.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "casablanca/v1.mp4",
+    "poster": "casablanca/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "casablanca/v2.mp4",
+    "poster": "casablanca/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "marrakech": {
+  "images": [
+   {
+    "file": "marrakech/p1.jpg",
+    "caption": "Place Jemaa el-Fna",
+    "title": "Džma el Fna, Marrákeš, 2025 (01).jpg",
+    "artist": "Draceane",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:D%C5%BEma_el_Fna,_Marr%C3%A1ke%C5%A1,_2025_(01).jpg"
+   },
+   {
+    "file": "marrakech/p2.jpg",
+    "caption": "Jardin Majorelle",
+    "title": "Le jardin des majorelle 21.JPG",
+    "artist": "Viault",
+    "license": "CC BY-SA 3.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Le_jardin_des_majorelle_21.JPG"
+   }
+  ],
+  "videos": [
+   {
+    "file": "marrakech/v1.mp4",
+    "poster": "marrakech/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "marrakech/v2.mp4",
+    "poster": "marrakech/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "libreville": {
+  "images": [
+   {
+    "file": "libreville/p1.jpg",
+    "caption": "Boulevard de l’Indépendance",
+    "title": "Boulevard de l'indépendance Libreville .jpg",
+    "artist": "Delrick Trevor",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Boulevard_de_l%27ind%C3%A9pendance_Libreville_.jpg"
+   },
+   {
+    "file": "libreville/p2.jpg",
+    "caption": "Musée national des Arts et Traditions",
+    "title": "Façade du batiment d'exposition.jpg",
+    "artist": "MNATGABON",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Fa%C3%A7ade_du_batiment_d%27exposition.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "libreville/v1.mp4",
+    "poster": "libreville/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "libreville/v2.mp4",
+    "poster": "libreville/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "brazzaville": {
+  "images": [
+   {
+    "file": "brazzaville/p1.jpg",
+    "caption": "Basilique Sainte-Anne-du-Congo",
+    "title": "Brazzaville - Basilique Sainte-Anne-du-Congo.jpg",
+    "artist": "Henri van der Noot",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Brazzaville_-_Basilique_Sainte-Anne-du-Congo.jpg"
+   },
+   {
+    "file": "brazzaville/p2.jpg",
+    "caption": "La corniche de Brazzaville",
+    "title": "Route au bord de la ville de Brazzaville Corniche Bokoba veroly.jpg",
+    "artist": "Bokoba veroly",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Route_au_bord_de_la_ville_de_Brazzaville_Corniche_Bokoba_veroly.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "brazzaville/v1.mp4",
+    "poster": "brazzaville/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "brazzaville/v2.mp4",
+    "poster": "brazzaville/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "tunis": {
+  "images": [
+   {
+    "file": "tunis/p1.jpg",
+    "caption": "Sidi Bou Saïd",
+    "title": "Phare de SIDI BOU SAID.JPG",
+    "artist": "Selma JMII",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Phare_de_SIDI_BOU_SAID.JPG"
+   },
+   {
+    "file": "tunis/p2.jpg",
+    "caption": "Site archéologique de Carthage",
+    "title": "Carthage 2024 01.jpg",
+    "artist": "Ad Meskens\nYou are free to use this picture for any purpose as long as you credit its author, Ad Meskens.\nExample:  © Ad Meskens / Wikimedia Commons\n  If you use this work outside of the Wikimedia projects, a message or a copy is very much appreciated.\n\n\tThis image is not in the public domain. A statement such as \"From Wikimedia Commons\" or similar is not by itself sufficient. If you do not provide clear attribution to the author you do not comply with the terms of the file's license and you may not use this file. If you are unable or unwilling to provide attribution you should contact Ad Meskens to negotiate a different license.",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Carthage_2024_01.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "tunis/v1.mp4",
+    "poster": "tunis/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "tunis/v2.mp4",
+    "poster": "tunis/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "alger": {
+  "images": [
+   {
+    "file": "alger/p1.jpg",
+    "caption": "La Casbah",
+    "title": "78A3230.jpg",
+    "artist": "Firaspict",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:78A3230.jpg"
+   },
+   {
+    "file": "alger/p2.jpg",
+    "caption": "Jardin d’Essai du Hamma",
+    "title": "Botanical Garden Hamma.jpg",
+    "artist": "Khaled zouaoui",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Botanical_Garden_Hamma.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "alger/v1.mp4",
+    "poster": "alger/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "alger/v2.mp4",
+    "poster": "alger/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "cotonou": {
+  "images": [
+   {
+    "file": "cotonou/p1.jpg",
+    "caption": "Cathédrale Notre-Dame de Cotonou",
+    "title": "Cathédrale Notre-Dame de Cotonou.jpg",
+    "artist": "Saliousoft",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Cath%C3%A9drale_Notre-Dame_de_Cotonou.jpg"
+   },
+   {
+    "file": "cotonou/p2.jpg",
+    "caption": "Marché Dantokpa",
+    "title": "VENDEUSE DE CONDIMENTS SUR LA PASSERELLE MARCHE DANTOKPA-COTONOU BENIN.jpg",
+    "artist": "Adoscam",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:VENDEUSE_DE_CONDIMENTS_SUR_LA_PASSERELLE_MARCHE_DANTOKPA-COTONOU_BENIN.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "cotonou/v1.mp4",
+    "poster": "cotonou/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "cotonou/v2.mp4",
+    "poster": "cotonou/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "paris": {
+  "images": [
+   {
+    "file": "paris/p1.jpg",
+    "caption": "Basilique du Sacré-Cœur",
+    "title": "Basilique du Sacré-Cœur.001 - Montmartre.jpg",
+    "artist": "Fernando Losada Rodríguez",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Basilique_du_Sacr%C3%A9-C%C5%93ur.001_-_Montmartre.jpg"
+   },
+   {
+    "file": "paris/p2.jpg",
+    "caption": "Notre-Dame et l’île de la Cité",
+    "title": "Notre-Dame de Paris and Île de la Cité at dusk 140516 1.jpg",
+    "artist": "DXR",
+    "license": "CC BY-SA 3.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Notre-Dame_de_Paris_and_%C3%8Ele_de_la_Cit%C3%A9_at_dusk_140516_1.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "paris/v1.mp4",
+    "poster": "paris/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "paris/v2.mp4",
+    "poster": "paris/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "marseille": {
+  "images": [
+   {
+    "file": "marseille/p1.jpg",
+    "caption": "Notre-Dame de la Garde",
+    "title": "Marseille Basilique Notre-Dame-de-la-Garde Extérieure Dôme 4.jpg",
+    "artist": "Zairon",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Marseille_Basilique_Notre-Dame-de-la-Garde_Ext%C3%A9rieure_D%C3%B4me_4.jpg"
+   },
+   {
+    "file": "marseille/p2.jpg",
+    "caption": "Les calanques",
+    "title": "Les calanques de Marseille, vues depuis le Téthys II (Ifremer 00737-84902 - 41254).jpg",
+    "artist": "Olivier Dugornay",
+    "license": "CC BY 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Les_calanques_de_Marseille,_vues_depuis_le_T%C3%A9thys_II_(Ifremer_00737-84902_-_41254).jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "marseille/v1.mp4",
+    "poster": "marseille/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "marseille/v2.mp4",
+    "poster": "marseille/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "barcelone": {
+  "images": [
+   {
+    "file": "barcelone/p1.jpg",
+    "caption": "Camp Nou",
+    "title": "Camp Nou in Barcelona.jpg",
+    "artist": "Teakjun",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Camp_Nou_in_Barcelona.jpg"
+   },
+   {
+    "file": "barcelone/p2.jpg",
+    "caption": "Parc Güell",
+    "title": "Park Güell - 50030738571.jpg",
+    "artist": "Jorge Franganillo",
+    "license": "CC BY 2.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Park_G%C3%BCell_-_50030738571.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "barcelone/v1.mp4",
+    "poster": "barcelone/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "barcelone/v2.mp4",
+    "poster": "barcelone/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "lisbonne": {
+  "images": [
+   {
+    "file": "lisbonne/p1.jpg",
+    "caption": "Tour de Belém",
+    "title": "Belém Tower and the 25 de Abril Bridge in the background.jpg",
+    "artist": "Lisbon Photoshoots",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Bel%C3%A9m_Tower_and_the_25_de_Abril_Bridge_in_the_background.jpg"
+   },
+   {
+    "file": "lisbonne/p2.jpg",
+    "caption": "Alfama, de nuit",
+    "title": "Lisbon (Alfama Graça) photographed by night (27542313670).jpg",
+    "artist": "Pedro Ribeiro Simões from Lisboa, Portugal",
+    "license": "CC BY 2.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Lisbon_(Alfama_Gra%C3%A7a)_photographed_by_night_(27542313670).jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "lisbonne/v1.mp4",
+    "poster": "lisbonne/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "lisbonne/v2.mp4",
+    "poster": "lisbonne/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "rome": {
+  "images": [
+   {
+    "file": "rome/p1.jpg",
+    "caption": "Le Forum romain",
+    "title": "Foro Romano visto dal Vittoriano Roma.jpg",
+    "artist": "This Photo was taken by Wolfgang Moroder.  \n\nFeel free to use my photos, but please mention me as the author and send me a  message. \n\n\n\nThis image is not in the public domain. Please respect the copyright protection. It may only be used according to the rules mentioned here. This specifically excludes use in social media, if applicable terms of the licenses listed here not appropriate.\n\n\n\nPlease do not upload an updated image here without consultation with the Author. The author would like to make corrections only at his own source. This ensures that the changes are preserved.Please if you think that any changes should be required, please inform the author.Otherwise you can upload a new image with a new name. Please use one of the templates derivative or extract.",
+    "license": "CC BY-SA 3.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Foro_Romano_visto_dal_Vittoriano_Roma.jpg"
+   },
+   {
+    "file": "rome/p2.jpg",
+    "caption": "Fontaine de Trevi",
+    "title": "Fuente de las tres vías 03.jpg",
+    "artist": "Álvaro de la Paz Franco",
+    "license": "CC0",
+    "url": "https://commons.wikimedia.org/wiki/File:Fuente_de_las_tres_v%C3%ADas_03.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "rome/v1.mp4",
+    "poster": "rome/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "rome/v2.mp4",
+    "poster": "rome/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "amsterdam": {
+  "images": [
+   {
+    "file": "amsterdam/p1.jpg",
+    "caption": "Les canaux d’Amsterdam",
+    "title": "Amsterdam Canal Houses (52556779860).jpg",
+    "artist": "Nan Palmero from San Antonio, TX, USA",
+    "license": "CC BY 2.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Amsterdam_Canal_Houses_(52556779860).jpg"
+   },
+   {
+    "file": "amsterdam/p2.jpg",
+    "caption": "Maison d’Anne Frank",
+    "title": "Amsterdam (NL), Anne-Frank-Huis, 2022 (1).jpg",
+    "artist": "Lệ Xuân",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Amsterdam_(NL),_Anne-Frank-Huis,_2022_(1).jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "amsterdam/v1.mp4",
+    "poster": "amsterdam/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "amsterdam/v2.mp4",
+    "poster": "amsterdam/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "santorin": {
+  "images": [
+   {
+    "file": "santorin/p1.jpg",
+    "caption": "Oia",
+    "title": "1000 Three domes of Oia in Santorini Photo by Giles Laurent.jpg",
+    "artist": "Giles Laurent",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:1000_Three_domes_of_Oia_in_Santorini_Photo_by_Giles_Laurent.jpg"
+   },
+   {
+    "file": "santorin/p2.jpg",
+    "caption": "Fira",
+    "title": "Fira Santorin 39.jpg",
+    "artist": "Olaf Tausch",
+    "license": "CC BY 3.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Fira_Santorin_39.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "santorin/v1.mp4",
+    "poster": "santorin/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "santorin/v2.mp4",
+    "poster": "santorin/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "nice": {
+  "images": [
+   {
+    "file": "nice/p1.jpg",
+    "caption": "Colline du Château",
+    "title": "Nice, France 2016-475.jpg",
+    "artist": "Victor Grigas",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Nice,_France_2016-475.jpg"
+   },
+   {
+    "file": "nice/p2.jpg",
+    "caption": "Èze",
+    "title": "20211112.Eze.Stadt.-008.jpg",
+    "artist": "Bybbisch94, Christian Gebhardt",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:20211112.Eze.Stadt.-008.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "nice/v1.mp4",
+    "poster": "nice/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "nice/v2.mp4",
+    "poster": "nice/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "lyon": {
+  "images": [
+   {
+    "file": "lyon/p1.jpg",
+    "caption": "Basilique de Fourvière",
+    "title": "Fourvière Church.jpg",
+    "artist": "Pierre.cochat",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Fourvi%C3%A8re_Church.jpg"
+   },
+   {
+    "file": "lyon/p2.jpg",
+    "caption": "Vue depuis Fourvière",
+    "title": "Lyon 1er - Les Subsistances - Depuis le toit de la basilique Notre-Dame de Fourvière.jpg",
+    "artist": "Romainbehar",
+    "license": "CC0",
+    "url": "https://commons.wikimedia.org/wiki/File:Lyon_1er_-_Les_Subsistances_-_Depuis_le_toit_de_la_basilique_Notre-Dame_de_Fourvi%C3%A8re.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "lyon/v1.mp4",
+    "poster": "lyon/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "lyon/v2.mp4",
+    "poster": "lyon/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "bordeaux": {
+  "images": [
+   {
+    "file": "bordeaux/p1.jpg",
+    "caption": "Miroir d’eau et place de la Bourse",
+    "title": "Miroir d'eau et place de la Bourse (Bordeaux) (1).jpg",
+    "artist": "Gzen92",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Miroir_d%27eau_et_place_de_la_Bourse_(Bordeaux)_(1).jpg"
+   },
+   {
+    "file": "bordeaux/p2.jpg",
+    "caption": "Cathédrale Saint-André",
+    "title": "Bordeaux - Cathédrale Primatiale Saint-André (8039901095).jpg",
+    "artist": "Grand Parc - Bordeaux, France from France",
+    "license": "CC BY 2.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Bordeaux_-_Cath%C3%A9drale_Primatiale_Saint-Andr%C3%A9_(8039901095).jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "bordeaux/v1.mp4",
+    "poster": "bordeaux/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "bordeaux/v2.mp4",
+    "poster": "bordeaux/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "toulouse": {
+  "images": [
+   {
+    "file": "toulouse/p1.jpg",
+    "caption": "Le Pont-Neuf",
+    "title": "Pont-Neuf de Toulouse 3.jpg",
+    "artist": "kallerna",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Pont-Neuf_de_Toulouse_3.jpg"
+   },
+   {
+    "file": "toulouse/p2.jpg",
+    "caption": "Basilique Saint-Sernin",
+    "title": "Toulouse - vue du Vieux Toulouse depuis St Sernin 02.jpg",
+    "artist": "Frédéric Neupont",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Toulouse_-_vue_du_Vieux_Toulouse_depuis_St_Sernin_02.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "toulouse/v1.mp4",
+    "poster": "toulouse/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "toulouse/v2.mp4",
+    "poster": "toulouse/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "lille": {
+  "images": [
+   {
+    "file": "lille/p1.jpg",
+    "caption": "Vieux-Lille",
+    "title": "Maisons rue du Vieux Faubourg.jpg",
+    "artist": "VVVCFFrance",
+    "license": "CC0",
+    "url": "https://commons.wikimedia.org/wiki/File:Maisons_rue_du_Vieux_Faubourg.jpg"
+   },
+   {
+    "file": "lille/p2.jpg",
+    "caption": "Marché de Wazemmes",
+    "title": "Lille 2016 Marché Couvert de Wazemmes (1).jpg",
+    "artist": "©  Pierre André",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Lille_2016_March%C3%A9_Couvert_de_Wazemmes_(1).jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "lille/v1.mp4",
+    "poster": "lille/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "lille/v2.mp4",
+    "poster": "lille/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "nantes": {
+  "images": [
+   {
+    "file": "nantes/p1.jpg",
+    "caption": "Château des ducs de Bretagne",
+    "title": "Château des ducs de Bretagne (Nantes) ext 2024 - 30.jpg",
+    "artist": "Chatsam",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Ch%C3%A2teau_des_ducs_de_Bretagne_(Nantes)_ext_2024_-_30.jpg"
+   },
+   {
+    "file": "nantes/p2.jpg",
+    "caption": "Jardin des plantes",
+    "title": "France PdlL 44 Nantes Jardin des Plantes 01.jpg",
+    "artist": "Calips",
+    "license": "CC BY-SA 3.0",
+    "url": "https://commons.wikimedia.org/wiki/File:France_PdlL_44_Nantes_Jardin_des_Plantes_01.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "nantes/v1.mp4",
+    "poster": "nantes/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "nantes/v2.mp4",
+    "poster": "nantes/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "istanbul": {
+  "images": [
+   {
+    "file": "istanbul/p1.jpg",
+    "caption": "La Mosquée bleue",
+    "title": "Istanbul-Mosquée Bleue-1981.jpg",
+    "artist": "Daniel Villafruela.",
+    "license": "CC BY 3.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Istanbul-Mosqu%C3%A9e_Bleue-1981.jpg"
+   },
+   {
+    "file": "istanbul/p2.jpg",
+    "caption": "Sainte-Sophie",
+    "title": "Hagia Sophia Istanbul July 2022-2.jpg",
+    "artist": "Alvesgaspar",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Hagia_Sophia_Istanbul_July_2022-2.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "istanbul/v1.mp4",
+    "poster": "istanbul/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "istanbul/v2.mp4",
+    "poster": "istanbul/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "londres": {
+  "images": [
+   {
+    "file": "londres/p1.jpg",
+    "caption": "London Eye",
+    "title": "At London 2025 639.jpg",
+    "artist": "Photograph by Mike Peel (www.mikepeel.net).",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:At_London_2025_639.jpg"
+   },
+   {
+    "file": "londres/p2.jpg",
+    "caption": "La City de Londres",
+    "title": "City of London skyline from London City Hall - Oct 2008 - Aligned.jpg",
+    "artist": "David Illif with image-alignment and Photoshoping by User:Colin and Kim Hansen",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:City_of_London_skyline_from_London_City_Hall_-_Oct_2008_-_Aligned.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "londres/v1.mp4",
+    "poster": "londres/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "londres/v2.mp4",
+    "poster": "londres/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "prague": {
+  "images": [
+   {
+    "file": "prague/p1.jpg",
+    "caption": "Château de Prague",
+    "title": "Prague 11.07.2017 Prague Castle and St. Vitus Cathedral (36704973446).jpg",
+    "artist": "Björn S...",
+    "license": "CC BY-SA 2.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Prague_11.07.2017_Prague_Castle_and_St._Vitus_Cathedral_(36704973446).jpg"
+   },
+   {
+    "file": "prague/p2.jpg",
+    "caption": "La Vltava",
+    "title": "Vltava river in Prague.jpg",
+    "artist": "Dmitry A. Mottl",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Vltava_river_in_Prague.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "prague/v1.mp4",
+    "poster": "prague/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "prague/v2.mp4",
+    "poster": "prague/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "athenes": {
+  "images": [
+   {
+    "file": "athenes/p1.jpg",
+    "caption": "Le Parthénon",
+    "title": "Parthenon east side Acropolis Athens, Greece.jpg",
+    "artist": "Jebulon",
+    "license": "CC0",
+    "url": "https://commons.wikimedia.org/wiki/File:Parthenon_east_side_Acropolis_Athens,_Greece.jpg"
+   },
+   {
+    "file": "athenes/p2.jpg",
+    "caption": "L’Érechthéion",
+    "title": "Erechtheion Acropolis Athens.jpg",
+    "artist": "Chepry 💬 (Andrzej Barabasz) 📷 🇵🇱",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Erechtheion_Acropolis_Athens.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "athenes/v1.mp4",
+    "poster": "athenes/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "athenes/v2.mp4",
+    "poster": "athenes/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "venise": {
+  "images": [
+   {
+    "file": "venise/p1.jpg",
+    "caption": "La place Saint-Marc",
+    "title": "Piazza San Marco and Venice on Easter 2013.JPG",
+    "artist": "This Photo was taken by Wolfgang Moroder.  \n\nFeel free to use my photos, but please mention me as the author and send me a  message. \n\n\n\nThis image is not in the public domain. Please respect the copyright protection. It may only be used according to the rules mentioned here. This specifically excludes use in social media, if applicable terms of the licenses listed here not appropriate.\n\n\n\nPlease do not upload an updated image here without consultation with the Author. The author would like to make corrections only at his own source. This ensures that the changes are preserved.Please if you think that any changes should be required, please inform the author.Otherwise you can upload a new image with a new name. Please use one of the templates derivative or extract.",
+    "license": "CC BY-SA 3.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Piazza_San_Marco_and_Venice_on_Easter_2013.JPG"
+   },
+   {
+    "file": "venise/p2.jpg",
+    "caption": "Santa Maria della Salute",
+    "title": "Canal Grande Chiesa della Salute e Dogana dal ponte dell Accademia.jpg",
+    "artist": "This Photo was taken by Wolfgang Moroder.  \n\nFeel free to use my photos, but please mention me as the author and send me a  message. \n\n\n\nThis image is not in the public domain. Please respect the copyright protection. It may only be used according to the rules mentioned here. This specifically excludes use in social media, if applicable terms of the licenses listed here not appropriate.\n\n\n\nPlease do not upload an updated image here without consultation with the Author. The author would like to make corrections only at his own source. This ensures that the changes are preserved.Please if you think that any changes should be required, please inform the author.Otherwise you can upload a new image with a new name. Please use one of the templates derivative or extract.",
+    "license": "CC BY-SA 3.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Canal_Grande_Chiesa_della_Salute_e_Dogana_dal_ponte_dell_Accademia.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "venise/v1.mp4",
+    "poster": "venise/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "venise/v2.mp4",
+    "poster": "venise/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "porto": {
+  "images": [
+   {
+    "file": "porto/p1.jpg",
+    "caption": "Pont Dom-Luís Ier",
+    "title": "Puente Don Luis I, Oporto, Portugal, 2012-05-09, DD 15.JPG",
+    "artist": "Diego Delso",
+    "license": "CC BY-SA 3.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Puente_Don_Luis_I,_Oporto,_Portugal,_2012-05-09,_DD_15.JPG"
+   },
+   {
+    "file": "porto/p2.jpg",
+    "caption": "Croisière sur le Douro",
+    "title": "Porto - Rio Douro 7 Bridges Cruise 15 (23311432992).jpg",
+    "artist": "royckmeyer",
+    "license": "CC BY-SA 2.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Porto_-_Rio_Douro_7_Bridges_Cruise_15_(23311432992).jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "porto/v1.mp4",
+    "poster": "porto/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "porto/v2.mp4",
+    "poster": "porto/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "madrid": {
+  "images": [
+   {
+    "file": "madrid/p1.jpg",
+    "caption": "Santiago Bernabéu",
+    "title": "Real Madrid's Santiago Bernabéu Stadium, Madrid, Spain (Ank Kumar) 02.jpg",
+    "artist": "Ank Kumar",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Real_Madrid%27s_Santiago_Bernab%C3%A9u_Stadium,_Madrid,_Spain_(Ank_Kumar)_02.jpg"
+   },
+   {
+    "file": "madrid/p2.jpg",
+    "caption": "Palais royal",
+    "title": "Βασιλικό Ανάκτορο της Μαδρίτης 2026-08-15 4346.jpg",
+    "artist": "C messier",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:%CE%92%CE%B1%CF%83%CE%B9%CE%BB%CE%B9%CE%BA%CF%8C_%CE%91%CE%BD%CE%AC%CE%BA%CF%84%CE%BF%CF%81%CE%BF_%CF%84%CE%B7%CF%82_%CE%9C%CE%B1%CE%B4%CF%81%CE%AF%CF%84%CE%B7%CF%82_2026-08-15_4346.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "madrid/v1.mp4",
+    "poster": "madrid/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "madrid/v2.mp4",
+    "poster": "madrid/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ },
+ "bruxelles": {
+  "images": [
+   {
+    "file": "bruxelles/p1.jpg",
+    "caption": "Atomium",
+    "title": "Atomium - Brussels, Belgium - DSC07666.jpg",
+    "artist": "Daderot",
+    "license": "CC0",
+    "url": "https://commons.wikimedia.org/wiki/File:Atomium_-_Brussels,_Belgium_-_DSC07666.jpg"
+   },
+   {
+    "file": "bruxelles/p2.jpg",
+    "caption": "Galeries royales Saint-Hubert",
+    "title": "Galeries royales Saint-Hubert, Bruselas, Bélgica, 2021-12-15, DD 14-16 HDR.jpg",
+    "artist": "Diego Delso",
+    "license": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Galeries_royales_Saint-Hubert,_Bruselas,_B%C3%A9lgica,_2021-12-15,_DD_14-16_HDR.jpg"
+   }
+  ],
+  "videos": [
+   {
+    "file": "bruxelles/v1.mp4",
+    "poster": "bruxelles/v1.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   },
+   {
+    "file": "bruxelles/v2.mp4",
+    "poster": "bruxelles/v2.jpg",
+    "kind": "reel",
+    "credits": "Reportage animé à partir de photos"
+   }
+  ]
+ }
+}

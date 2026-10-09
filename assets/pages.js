@@ -44,6 +44,7 @@
         <span class="eyebrow">À voir, à faire</span><h2>Les lieux <em>à ne pas manquer</em></h2>
         <div class="dp-places">${d.places.map(([t, x], i) => `<article><b>${String(i + 1).padStart(2, '0')}</b><h3>${E(t)}</h3><p>${E(x)}</p></article>`).join('')}</div>
       </div></section>
+      <section class="dp-section dp-media" id="dpMedia" hidden><div class="wrap"><span class="eyebrow">Aperçu</span><h2>${E(d.name)} <em>en images et en vidéos</em></h2><div class="dm-grid" id="dmGrid"></div></div></section>
       <section class="dp-section wrap dp-tips"><span class="eyebrow">Avant de partir</span><h2>Conseils <em>pratiques</em></h2>
         <ul>${d.tips.map((t) => `<li>${E(t)}</li>`).join('')}</ul></section>
       <section class="dp-section dp-deals" id="dpDeals"><div class="wrap">
@@ -58,7 +59,47 @@
       </div></section>`;
     if (typeof bindLinks === 'function') bindLinks(root);
     window.TVFX?.track('dest_view', d.slug, d.name, d.country, d.name);
+    mountMedia(d);
   }
+
+  /* ---------- Aperçu d'une destination : 2 photos et 2 vidéos ---------- */
+  let mediaManifest = null;
+  const loadManifest = () => (mediaManifest ? Promise.resolve(mediaManifest) : fetch('/assets/dest/media/manifest.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({})).then((m) => (mediaManifest = m)));
+  const mediaIO = typeof IntersectionObserver !== 'undefined' ? new IntersectionObserver((es) => es.forEach((e) => {
+    const v = e.target;
+    if (e.isIntersecting && e.intersectionRatio >= 0.5) { if (!v.dataset.manual) v.play().catch(() => {}); } else { v.pause(); }
+  }), { threshold: [0, 0.5, 0.9] }) : null;
+  async function mountMedia(d) {
+    const sec = document.getElementById('dpMedia'), grid = document.getElementById('dmGrid');
+    if (!sec || !grid) return;
+    const m = (await loadManifest())[d.slug];
+    if (!m || (!m.images?.length && !m.videos?.length)) return;
+    if (document.getElementById('dpMedia') !== sec) return;
+    const photo = (i) => `<button type="button" class="dm-tile photo" data-dm-photo="/assets/dest/media/${E(i.file)}" data-dm-credit="${E([i.artist, i.license].filter(Boolean).join(' · '))}" data-dm-cap="${E(i.caption || d.name)}" aria-label="Agrandir : ${E(i.caption || d.name)}"><img src="/assets/dest/media/${E(i.file)}" alt="${E(i.caption || d.name)}" loading="lazy" decoding="async"><span class="dm-cap">${E(i.caption || d.name)}</span><span class="dm-zoom">${I('search')}</span></button>`;
+    const video = (v, k) => `<figure class="dm-tile video"><video muted loop playsinline preload="none" poster="/assets/dest/media/${E(v.poster)}" aria-label="Vidéo : ${E(d.name)}"><source src="/assets/dest/media/${E(v.file)}" type="video/mp4"></video><button type="button" class="dm-play" aria-label="Lire ou mettre en pause la vidéo">${I('plane')}</button><figcaption class="dm-cap">Ambiance à ${E(d.name)}</figcaption></figure>`;
+    const imgs = m.images || [], vids = m.videos || [];
+    // photo | vidéo / vidéo | photo
+    const order = [imgs[0] && photo(imgs[0]), vids[0] && video(vids[0], 0), vids[1] && video(vids[1], 1), imgs[1] && photo(imgs[1])].filter(Boolean);
+    grid.innerHTML = order.join('');
+    grid.dataset.count = String(order.length);
+    sec.hidden = false;
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || navigator.connection?.saveData;
+    grid.querySelectorAll('video').forEach((v) => { if (!still) mediaIO?.observe(v); });
+  }
+  document.addEventListener('click', (e) => {
+    const p = e.target.closest('[data-dm-photo]');
+    if (p) {
+      const lb = document.createElement('div');
+      lb.className = 'dm-lb';
+      lb.innerHTML = `<figure><img src="${p.dataset.dmPhoto}" alt="${p.dataset.dmCap || ''}"><figcaption><b>${p.dataset.dmCap || ''}</b>${p.dataset.dmCredit ? `<small>Photo : ${p.dataset.dmCredit}</small>` : ''}</figcaption></figure><button type="button" aria-label="Fermer">×</button>`;
+      lb.addEventListener('click', () => lb.remove());
+      document.addEventListener('keydown', function esc(ev) { if (ev.key === 'Escape') { lb.remove(); document.removeEventListener('keydown', esc); } });
+      document.body.appendChild(lb);
+      return;
+    }
+    const b = e.target.closest('.dm-play');
+    if (b) { const v = b.closest('.dm-tile').querySelector('video'); v.dataset.manual = '1'; v.paused ? v.play().catch(() => {}) : v.pause(); b.closest('.dm-tile').classList.toggle('paused', v.paused); }
+  });
 
   /* ---------- Fiche d'un pack ---------- */
   function packPage(id) {
