@@ -48,6 +48,11 @@ const offerImages=o=>o.images?.length?o.images:[o.image];
 function cardOffer(o){const title=o.title||`${o.from_city||''} → ${o.to_city||''}`;return `<article class="offer" data-offer-id="${o.id}">${TVGallery.html(offerImages(o),title)}<div class="offer-body"><span class="badge">${escapeHtml(o.badge||'Offre')}</span><h3>${escapeHtml(title)}</h3><p class="meta">${escapeHtml(o.partner_name||'TripVision')} · ${escapeHtml(o.country||'')}</p>${o.start_date?`<p class="meta"><svg class="tv-icon" aria-hidden="true"><use href="#i-calendar"></use></svg> ${fmtDayFr(o.start_date)}${o.end_date?' → '+fmtDayFr(o.end_date):''}</p>`:''}${o.hotel_name?`<p class="meta offer-hotel">🏨 ${escapeHtml(o.hotel_name)}${o.hotel_stars?' · '+'★'.repeat(Number(o.hotel_stars)):''}${o.hotel_nights?' · '+o.hotel_nights+' nuit'+(Number(o.hotel_nights)>1?'s':''):''}${o.hotel_board?' · '+escapeHtml(o.hotel_board):''}</p>`:''}<p class="meta">${escapeHtml(o.description||'')}</p><div class="price"><div><strong>${money(o.price)}</strong>${o.old_price?` <span class="meta"><s>${money(o.old_price)}</s></span>`:''}<p class="meta">par voyageur</p></div><button class="btn small" type="button" data-offer-book="${o.id}">Réserver →</button></div></div></article>`}
 function legHtml(label,date,from,to,dep,arr,off,dur,stops,no){if(!dep&&!arr)return `<div class="leg"><div class="leg-label"><b>${label}</b> · ${fmtDayFr(date)}${no?` · ${escapeHtml(no)}`:''}</div><div class="leg-line leg-notime"><div class="leg-t"><strong>${escapeHtml(from)}</strong></div><div class="leg-track"><span class="leg-dur">Horaires sur le site de la compagnie</span><i><em><svg class="tv-icon" aria-hidden="true"><use href="#i-plane"></use></svg></em></i><span class="leg-stops">${stopsText(stops)}</span></div><div class="leg-t"><strong>${escapeHtml(to)}</strong></div></div></div>`;return `<div class="leg"><div class="leg-label"><b>${label}</b> · ${fmtDayFr(date)}${no?` · ${escapeHtml(no)}`:''}</div><div class="leg-line"><div class="leg-t"><strong>${escapeHtml(dep||'--:--')}</strong><span>${escapeHtml(from)}</span></div><div class="leg-track"><span class="leg-dur">${durText(dur)||'&nbsp;'}</span><i><em><svg class="tv-icon" aria-hidden="true"><use href="#i-plane"></use></svg></em></i><span class="leg-stops ${stops?'has':''}">${stopsText(stops)}</span></div><div class="leg-t"><strong>${escapeHtml(arr||'--:--')}${off?`<sup>+${off}</sup>`:''}</strong><span>${escapeHtml(to)}</span></div></div></div>`}
 function flightCard(o){const f=o.flight;if(!f)return cardOffer(o);const title=o.title||`${o.from_city||''} → ${o.to_city||''}`,trav=serviceFilters.flight.travelers||1,round=f.tripType==='roundtrip';const fromC=airportCode(f.fromAirport,o.from_city),toC=airportCode(f.toAirport,o.to_city);return `<article class="flight-card" data-offer-id="${o.id}"><div class="flight-photo">${TVGallery.html(offerImages(o),title)}<span class="badge">${escapeHtml(o.badge||'Offre')}</span></div><div class="flight-main"><header class="flight-head"><strong class="airline">${escapeHtml(f.airline)}</strong><span>${escapeHtml(o.from_city||'')} → ${escapeHtml(o.to_city||'')}${o.country?' · '+escapeHtml(o.country):''}</span></header>${legHtml('Aller',o.start_date,fromC,toC,f.departTime,f.arriveTime,f.arriveDayOffset,f.durationMin,f.stops,f.flightNumber)}${round?legHtml('Retour',o.end_date,toC,fromC,f.returnDepartTime,f.returnArriveTime,f.returnDayOffset,f.durationMin,f.stops,f.returnFlightNumber):''}<footer class="flight-perks"><span>${round?'Aller-retour':'Aller simple'}</span><span>${escapeHtml(f.cabin||'Économique')}</span>${f.baggage?`<span>${escapeHtml(f.baggage)}</span>`:''}</footer>${o.description?`<p class="meta">${escapeHtml(o.description)}</p>`:''}</div><aside class="flight-buy"><small>${round?'Aller-retour':'Aller simple'} · par voyageur</small>${o.old_price?`<s class="meta">${money(o.old_price)}</s>`:''}<strong>${money(o.price)}</strong>${round&&f.oneWayPrice?`<span class="meta oneway-price">Aller simple : <b>${money(f.oneWayPrice)}</b></span>`:''}${trav>1?`<span class="meta">Total ${trav} voyageurs : <b>${money(o.price*trav)}</b></span>`:''}${f.bookingUrl&&/^https?:\/\//i.test(f.bookingUrl)?`<a class="btn" href="${escapeHtml(f.bookingUrl)}" target="_blank" rel="noopener noreferrer">Réserver sur ${escapeHtml(f.airline||'le site de la compagnie')} ↗</a><span class="meta airline-note">Réservation sur le site de la compagnie</span>`:`<button class="btn" type="button" disabled>Lien de réservation bientôt disponible</button>`}</aside></article>`}
+function clearServiceSearch(kind){
+  if(kind==='flight'){serviceFilters.flight={fromCity:'',toCity:'',departDate:'',returnDate:'',travelers:1};const q=$('#flightSearch');if(q)q.value='';const d=$('#flightDirect');if(d)d.checked=false;const f=$('#flightSimulator');if(f){f.elements.fromCity.value='';f.elements.toCity.value=''}renderFlights()}
+  else if(kind==='pack'){serviceFilters.pack={fromCity:'',toCity:'',startDate:'',endDate:'',travelers:2};packTab='all';const f=$('#packSimulator');if(f){f.elements.fromCity.value='';f.elements.toCity.value=''}renderPacks()}
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-clear-search]');if(!b)return;e.preventDefault();const k=b.dataset.clearSearch;clearServiceSearch(k);document.querySelector(k==='flight'?'#flights .service-results':'#packs .service-results')?.scrollIntoView({behavior:'smooth',block:'start'})});
 function renderFlights(){
   const q=nrm($('#flightSearch')?.value),sort=$('.pills[data-filter-group="flights"] .active')?.dataset.sort||'price',direct=$('#flightDirect')?.checked,filt=serviceFilters.flight;
   const rows=state.flights.filter(f=>{
@@ -59,9 +64,14 @@ function renderFlights(){
     return (!q||hay.includes(q))&&fromOk&&toOk&&departOk&&returnOk&&(!direct||!f.flight?.stops);
   });
   rows.sort((a,b)=>sort==='fast'?(a.flight?.durationMin||99999)-(b.flight?.durationMin||99999):sort==='early'?(day10(a.start_date)+(a.flight?.departTime||'')).localeCompare(day10(b.start_date)+(b.flight?.departTime||'')):Number(a.price)-Number(b.price));
-  if($('#flightGrid'))$('#flightGrid').innerHTML=rows.map(flightCard).join('');
-  if($('#flightEmpty'))$('#flightEmpty').style.display=rows.length?'none':'grid';
-  if($('#flightResultCount'))$('#flightResultCount').textContent=`${rows.length} vol${rows.length>1?'s':''}`;
+  const active=Boolean(filt.fromCity||filt.toCity||filt.departDate||filt.returnDate||q||direct);
+  const alts=!rows.length&&state.flights.length?[...state.flights].sort((a,b)=>Number(a.price)-Number(b.price)).slice(0,6):[];
+  if($('#flightGrid'))$('#flightGrid').innerHTML=rows.length?rows.map(flightCard).join(''):alts.length?`<div class="alt-head"><b>Autres vols disponibles</b><span>Nos offres les moins chères du moment.</span></div>`+alts.map(flightCard).join(''):'';
+  const emp=$('#flightEmpty');
+  if(emp){emp.style.display=rows.length?'none':'grid';const p=emp.querySelector('p'),h=emp.querySelector('h3'),b=emp.querySelector('[data-clear-search]');
+    if(!state.flights.length){if(h)h.textContent='Aucun vol publié pour le moment';if(p)p.textContent='De nouvelles offres arrivent régulièrement : revenez bientôt.';if(b)b.hidden=true}
+    else{if(h)h.textContent='Aucun vol ne correspond à votre recherche';if(p)p.textContent=`${filt.fromCity||filt.toCity?`Pas de vol ${filt.fromCity||'…'} → ${filt.toCity||'…'} pour ces critères. `:''}Modifiez votre trajet ou vos dates, ou affichez tous les vols.`;if(b)b.hidden=!active}}
+  if($('#flightResultCount'))$('#flightResultCount').innerHTML=`${rows.length} vol${rows.length>1?'s':''}${active&&rows.length?' · <button type="button" class="clear-chip" data-clear-search="flight">Effacer la recherche</button>':''}`;
   bindLinks($('#flightGrid')||document);
 }
 let packTab='all';
@@ -98,10 +108,15 @@ function renderPacks(){
     return fromOk&&toOk&&startOk&&endOk;
   });
   renderPackTabs(state.packs);
-  if($('#packGrid'))$('#packGrid').innerHTML=rows.map(packCard).join('');
-  if($('#packEmpty'))$('#packEmpty').style.display=rows.length?'none':'grid';
-  if($('#packResultCount'))$('#packResultCount').textContent=rows.length+' offre'+(rows.length>1?'s':'');
-  if($('#packSearchSummary'))$('#packSearchSummary').textContent=rows.length?'Packs correspondant à votre recherche':'Aucun pack publié';
+  const active=Boolean(filt.fromCity||filt.toCity||filt.startDate||filt.endDate||packTab!=='all');
+  const alts=!rows.length&&state.packs.length?state.packs.slice(0,6):[];
+  if($('#packGrid'))$('#packGrid').innerHTML=rows.length?rows.map(packCard).join(''):alts.length?`<div class="alt-head"><b>Autres séjours disponibles</b><span>Des escapades prêtes à partir.</span></div>`+alts.map(packCard).join(''):'';
+  const emp=$('#packEmpty');
+  if(emp){emp.style.display=rows.length?'none':'grid';const p=emp.querySelector('p'),h=emp.querySelector('h3'),b=emp.querySelector('[data-clear-search]');
+    if(!state.packs.length){if(h)h.textContent='Aucun pack publié pour le moment';if(p)p.textContent='De nouveaux séjours arrivent bientôt : revenez nous voir.';if(b)b.hidden=true}
+    else{if(h)h.textContent='Aucun séjour ne correspond à votre recherche';if(p)p.textContent='Essayez une autre destination ou d’autres dates, ou affichez tous les séjours.';if(b)b.hidden=!active}}
+  if($('#packResultCount'))$('#packResultCount').innerHTML=rows.length+' offre'+(rows.length>1?'s':'')+(active&&rows.length?' · <button type="button" class="clear-chip" data-clear-search="pack">Effacer la recherche</button>':'');
+  if($('#packSearchSummary'))$('#packSearchSummary').textContent=!state.packs.length?'Aucun pack publié':rows.length?'Packs correspondant à votre recherche':'Aucun séjour pour cette recherche';
   bindLinks($('#packGrid')||document);
 }
 function bindClientControls(){

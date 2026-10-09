@@ -3789,3 +3789,51 @@ html.fx .page.active{animation:fxPage .5s ease backwards}
 .btn .fx-scene .fx-veh{position:absolute;left:18px;top:2px;width:46px;height:auto;margin:0;stroke:none;vertical-align:baseline}
 .btn .fx-scene .fx-fly{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;vertical-align:baseline}
 .btn .fx-scene .fx-hop{position:absolute;width:24px;height:24px;margin:0 0 0 -12px;vertical-align:baseline}
+
+/* ============ Série 13 : cartes de recherche translucides, aucun résultat, avion ============ */
+
+/* Les cartes de recherche laissent voir l'image ou la vidéo ; elles redeviennent pleines au survol */
+.flight-search-panel,.car-configurator,.weekend-planner{transition:background-color .4s ease,border-color .4s ease,box-shadow .4s ease,backdrop-filter .4s ease}
+@media (hover:hover) and (min-width:1121px){
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within){
+    background:rgba(7,32,26,.30)!important;border-color:rgba(255,255,255,.34)!important;box-shadow:0 24px 60px -34px rgba(0,0,0,.55)!important;
+    -webkit-backdrop-filter:blur(5px) saturate(1.15);backdrop-filter:blur(5px) saturate(1.15);color-scheme:dark;
+  }
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within) :is(span,strong,b,small,input,select,.car-config-badge,.weekend-step,.flight-form-foot){color:#fff!important}
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within) :is(.flight-input-line,.flight-meta-row>label,.car-route-box,.car-config-grid>label,.weekend-fields>label,.flight-swap,.flight-trip-toggle){background:rgba(255,255,255,.12)!important;border-color:rgba(255,255,255,.34)!important}
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within) .flight-trip-toggle input:checked+span{background:rgba(255,255,255,.92)!important;color:#0b7358!important}
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within) ::placeholder{color:rgba(255,255,255,.72)!important;opacity:1}
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within) .flight-form-foot svg{color:#fff!important}
+}
+
+/* Champ à compléter */
+.fx-bad{border-color:#e0584a!important;box-shadow:0 0 0 3px rgba(224,88,74,.22)!important;animation:fxShake .42s ease}
+@keyframes fxShake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+
+/* Aucun résultat : de quoi repartir */
+.service-empty .empty-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin-top:14px}
+.service-empty .empty-actions[hidden],.service-empty .empty-actions:empty{display:none}
+.empty-cities{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;width:100%;margin-top:6px}
+.empty-cities>span{font-size:13px;color:#6b7a72}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid #cfc9bb;border-radius:999px;background:#fff;color:#0f3b2e;font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:.18s}
+.chip small{padding:1px 7px;border-radius:999px;background:#e3f1ea;font-size:11.5px}
+.chip:hover{background:#0f3b2e;border-color:#0f3b2e;color:#fff}
+.chip:hover small{background:rgba(255,255,255,.2)}
+.alt-head{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:22px 0 4px}
+.alt-head b{font-family:"Cormorant Garamond",Georgia,serif;font-size:30px;font-weight:600;color:#0f3b2e}
+.alt-head span{color:#6b7a72;font-size:14px}
+.clear-chip{margin-left:6px;padding:4px 12px;border:1px solid #cfc9bb;border-radius:999px;background:#fff;color:#0f3b2e;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.clear-chip:hover{background:#0f3b2e;border-color:#0f3b2e;color:#fff}
+
+/* Avion en vol dans le bouton de recherche */
+.fx-scene.fx-plane{width:132px;height:34px}
+.btn .fx-scene .fx-jet{position:absolute;left:62px;top:6px;width:54px;height:auto;margin:0;stroke:none;color:currentColor;overflow:visible;animation:fxJet 1.2s ease-in-out infinite alternate}
+.fx-trail{position:absolute;left:10px;top:16px;width:56px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,currentColor);opacity:.75;animation:fxTrail 1.2s ease-in-out infinite alternate}
+.fx-cloud.c1{top:4px;width:22px}.fx-cloud.c2{top:24px;width:30px}.fx-cloud.c3{top:12px;width:14px}.fx-cloud.c4{top:29px;width:18px;animation-delay:.55s}
+.fx-scene.fx-plane .fx-cloud{height:4px;opacity:0;animation:fxCloud2 1.3s linear infinite}
+.fx-scene.fx-plane .fx-cloud.c2{animation-delay:.45s}.fx-scene.fx-plane .fx-cloud.c3{animation-delay:.8s}
+@keyframes fxJet{from{transform:translateY(-2px) rotate(-2.5deg)}to{transform:translateY(2px) rotate(1.5deg)}}
+@keyframes fxTrail{from{transform:translateY(-2px) scaleX(.85)}to{transform:translateY(2px) scaleX(1.1)}}
+@keyframes fxCloud2{from{transform:translateX(150px);opacity:0}15%{opacity:.7}85%{opacity:.6}to{transform:translateX(-40px);opacity:0}}
+@media(prefers-reduced-motion:reduce){.fx-jet,.fx-trail{animation:none}}
+.service-empty{margin-bottom:8px}

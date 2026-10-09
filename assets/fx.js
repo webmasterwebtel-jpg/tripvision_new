@@ -142,9 +142,10 @@
 
   /* ---------- Chargement sur les boutons ---------- */
   const CAR = '<svg class="fx-veh fx-car" viewBox="0 0 48 26"><g class="fx-bob"><path d="M3 18v-4.4c0-1 .6-1.8 1.6-2l6.2-1.6 4.6-5.3c.5-.6 1.2-.9 2-.9h11.2c.8 0 1.5.3 2 .9l4.2 5 5.6 1.2c1 .2 1.6 1 1.6 2V18c0 .8-.6 1.4-1.4 1.4H4.4C3.6 19.4 3 18.8 3 18Z" fill="currentColor"/><path d="M17.4 7.3h5v4.5h-9zM25 7.3h4.4l3.4 4.5H25z" fill="#000" fill-opacity=".34"/></g><g class="fx-wheel" style="transform-origin:13px 20.4px"><circle cx="13" cy="20.4" r="4.3" fill="#0d1f19" stroke="currentColor" stroke-width="1.3"/><path d="M13 17.4v6M10 20.4h6" stroke="currentColor" stroke-width="1"/></g><g class="fx-wheel" style="transform-origin:35.4px 20.4px"><circle cx="35.4" cy="20.4" r="4.3" fill="#0d1f19" stroke="currentColor" stroke-width="1.3"/><path d="M35.4 17.4v6M32.4 20.4h6" stroke="currentColor" stroke-width="1"/></g></svg>';
+  const JET = '<svg class="fx-jet" viewBox="0 0 64 28"><path d="M29 12.6 21 3.6h5.2L43 11.4z" fill="currentColor" fill-opacity=".62"/><path d="M6.5 14.2c0-1.6 1.2-2.7 2.9-2.9L46 8.9c6.6-.4 13.2 1.4 16 4.1.6.6.6 1.3 0 1.9-2.8 2.7-9.4 4.5-16 4.1L9.4 17c-1.7-.2-2.9-1.2-2.9-2.8z" fill="currentColor"/><path d="M8 12.2 2.2 2.8h5.6l8.6 8.8z" fill="currentColor"/><path d="M10 15.4 5 20.4h4.2l6.2-3.6z" fill="currentColor" fill-opacity=".85"/><path d="M29 15.8 16.5 26h6.2L45 16.8z" fill="currentColor"/><rect x="29.5" y="19.2" width="9" height="4.2" rx="2.1" fill="currentColor" fill-opacity=".9"/><path d="M53.5 11.2c2.4.1 5.4 1.1 7 2.4l-6.8.5z" fill="#000" fill-opacity=".38"/><g fill="#000" fill-opacity=".3"><circle cx="24" cy="13.4" r=".95"/><circle cx="28" cy="13.4" r=".95"/><circle cx="32" cy="13.4" r=".95"/><circle cx="36" cy="13.4" r=".95"/><circle cx="40" cy="13.4" r=".95"/><circle cx="44" cy="13.4" r=".95"/><circle cx="48" cy="13.4" r=".95"/></g></svg>';
   const SCENES = {
     car: `<span class="fx-lines"><i></i><i></i><i></i></span>${CAR}<span class="fx-ground"></span>`,
-    plane: '<span class="fx-cloud c1"></span><span class="fx-cloud c2"></span><span class="fx-cloud c3"></span><svg class="tv-icon fx-fly" aria-hidden="true"><use href="#i-plane"></use></svg>',
+    plane: '<span class="fx-cloud c1"></span><span class="fx-cloud c2"></span><span class="fx-cloud c3"></span><span class="fx-cloud c4"></span><span class="fx-trail"></span>' + JET,
     bag: '<svg class="tv-icon fx-hop" aria-hidden="true"><use href="#i-suitcase"></use></svg><span class="fx-ground"></span>',
   };
   function busy(btn, kind, text) {
@@ -156,12 +157,53 @@
     btn.innerHTML = `<span class="fx-scene fx-${kind}" aria-hidden="true">${SCENES[kind] || SCENES.car}</span><span class="fx-txt">${text}</span>`;
     return () => { btn.classList.remove('fx-busy'); btn.disabled = false; btn.innerHTML = html; btn.style.minWidth = ''; };
   }
+  /* Une recherche ne part que si les lieux et les dates sont choisis. */
+  const val = (f, n) => String(f.elements[n]?.value || '').trim();
+  const plain = (v) => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s*\([a-z]{3}\)\s*$/i, '').trim().toLowerCase();
+  const RULES = {
+    flightSimulator(f) {
+      if (!val(f, 'fromCity')) return ['Choisissez votre ville de départ.', 'fromCity'];
+      if (!val(f, 'toCity')) return ['Choisissez votre destination.', 'toCity'];
+      if (plain(val(f, 'fromCity')) === plain(val(f, 'toCity'))) return ['Le départ et la destination doivent être différents.', 'toCity'];
+      if (!val(f, 'departDate')) return ['Choisissez votre date de départ.', 'departDate'];
+      const oneway = f.elements.tripType?.value === 'oneway';
+      if (!oneway && !val(f, 'returnDate')) return ['Choisissez votre date de retour.', 'returnDate'];
+      if (!oneway && val(f, 'returnDate') < val(f, 'departDate')) return ['La date de retour doit être postérieure à la date de départ.', 'returnDate'];
+      return null;
+    },
+    packSimulator(f) {
+      if (!val(f, 'fromCity')) return ['Choisissez votre ville de départ.', 'fromCity'];
+      if (!val(f, 'toCity')) return ['Choisissez votre destination.', 'toCity'];
+      if (plain(val(f, 'fromCity')) === plain(val(f, 'toCity'))) return ['Le départ et la destination doivent être différents.', 'toCity'];
+      if (!val(f, 'startDate')) return ['Choisissez votre date aller.', 'startDate'];
+      if (!val(f, 'endDate')) return ['Choisissez votre date retour.', 'endDate'];
+      if (val(f, 'endDate') < val(f, 'startDate')) return ['La date de retour doit être postérieure à la date aller.', 'endDate'];
+      return null;
+    },
+    carSearchForm(f) {
+      if (!val(f, 'pickup')) return ['Choisissez le lieu de prise en charge.', 'pickup'];
+      if (!val(f, 'startDate')) return ['Choisissez votre date de départ.', 'startDate'];
+      if (!val(f, 'endDate')) return ['Choisissez votre date de retour.', 'endDate'];
+      if (`${val(f, 'endDate')}T${val(f, 'endTime') || '00:00'}` <= `${val(f, 'startDate')}T${val(f, 'startTime') || '00:00'}`) return ['Le retour doit être après le départ.', 'endDate'];
+      return null;
+    },
+  };
+  function flag(f, name, msg) {
+    const el = f.elements[name];
+    const box = el?.closest?.('label') || el?.parentElement;
+    box?.classList.add('fx-bad');
+    setTimeout(() => box?.classList.remove('fx-bad'), 2600);
+    try { el?.focus(); } catch { /* rien */ }
+    if (typeof toast === 'function') toast(msg, 'error', 'Complétez votre recherche');
+  }
   const FORMS = { carSearchForm: ['car', 'Recherche des véhicules…'], flightSimulator: ['plane', 'Recherche des vols…'], packSimulator: ['bag', 'Recherche des séjours…'] };
   document.addEventListener('submit', (e) => {
     const f = e.target;
     const cfg = f && FORMS[f.id];
     if (!cfg) return;
     if (f.dataset.fxGo) { delete f.dataset.fxGo; return; }
+    const bad = RULES[f.id]?.(f);
+    if (bad) { e.preventDefault(); e.stopImmediatePropagation(); flag(f, bad[1], bad[0]); return; }
     if (reduce) return;
     e.preventDefault();
     e.stopImmediatePropagation();
@@ -176,6 +218,6 @@
   }, true);
 
   window.TVFX = { busy, countTo, mountHero };
-  const init = () => HEROES.forEach(mountHero);
+  const init = () => { Object.keys(FORMS).forEach((id) => { const f = document.getElementById(id); if (f) f.noValidate = true; }); HEROES.forEach(mountHero); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

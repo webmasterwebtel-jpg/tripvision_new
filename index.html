@@ -7,7 +7,7 @@
   <meta name="description" content="TripVision sélectionne des bons plans vols, locations de voiture et packs week-end depuis la France." />
   <link rel="stylesheet" href="styles.css?v=20260927-admin-1" />
   <script src="assets/boot.js"></script>
-  <link rel="stylesheet" href="premium.css?v=20261014-v36" />
+  <link rel="stylesheet" href="premium.css?v=20261014-v37" />
 </head>
 <body>
   <svg class="tv-icon-sprite" aria-hidden="true" focusable="false">
@@ -191,8 +191,8 @@
             <div class="flight-sortbar"><div class="service-filter-pills pills" data-filter-group="flights"><button class="pill active" data-sort="price" type="button">Le moins cher</button><button class="pill" data-sort="fast" type="button">Le plus rapide</button><button class="pill" data-sort="early" type="button">Départ le plus tôt</button></div><label class="flight-direct"><input type="checkbox" id="flightDirect"> Vols directs</label></div>
           </div>
           <div class="service-search-inline"><span><svg class="tv-icon" aria-hidden="true"><use href="#i-search"></use></svg></span><input id="flightSearch" placeholder="Filtrer par destination, compagnie ou ville de départ..." /></div>
+          <div class="service-empty" id="flightEmpty"><div class="service-empty-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-plane"></use></svg></div><h3>Aucun vol ne correspond à votre recherche</h3><p>Modifiez votre trajet ou vos dates pour découvrir d’autres options.</p><div class="empty-actions"><button class="btn" type="button" data-clear-search="flight">Afficher tous les vols</button></div></div>
           <div class="grid service-grid flight-list" id="flightGrid"></div>
-          <div class="service-empty" id="flightEmpty"><div class="service-empty-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-plane"></use></svg></div><h3>Aucun vol ne correspond pour le moment</h3><p>Modifiez votre trajet ou vos dates pour découvrir d’autres options.</p></div>
         </div>
       </section>
     </section>
@@ -279,8 +279,8 @@
             <aside class="rent-filters" id="rentFilters" aria-label="Filtres"></aside>
             <div class="rent-results">
               <div class="rent-toolbar"><button type="button" class="btn small rent-filter-toggle" data-rf-toggle>Filtres</button><label>Trier par <select id="carSort"><option value="price">Prix croissant</option><option value="priceDesc">Prix décroissant</option><option value="seats">Nombre de places</option><option value="cancel">Annulation gratuite d’abord</option></select></label></div>
+              <div class="service-empty" id="carEmpty"><div class="service-empty-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-car"></use></svg></div><h3>Aucun véhicule disponible</h3><p>Aucun véhicule validé ne correspond à cette recherche. Essayez une autre ville, d’autres dates ou une autre catégorie.</p><div class="empty-actions" id="carEmptyActions"></div></div>
               <div class="car-grid service-car-grid rent-list" id="carGrid"></div>
-              <div class="service-empty" id="carEmpty"><div class="service-empty-icon">⌁</div><h3>Aucun véhicule disponible</h3><p>Aucun véhicule validé ne correspond encore à cette recherche. Essayez une autre ville, d’autres dates ou une autre catégorie.</p></div>
             </div>
           </div>
         </div>
@@ -342,8 +342,8 @@
         <div class="wrap">
           <div class="service-results-head"><div><div class="eyebrow">Sélection</div><h2>Packs disponibles</h2></div><div class="result-chip"><strong id="packResultCount">0 offre</strong><span id="packSearchSummary">Aucun pack publié</span></div></div>
           <div class="pack-tabs" id="packTabs" role="group" aria-label="Filtrer les packs"></div>
+          <div class="service-empty" id="packEmpty"><div class="service-empty-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-suitcase"></use></svg></div><h3>Aucun séjour ne correspond à votre recherche</h3><p>Essayez une autre destination ou d’autres dates.</p><div class="empty-actions"><button class="btn" type="button" data-clear-search="pack">Afficher tous les séjours</button></div></div>
           <div class="pack-grid" id="packGrid"></div>
-          <div class="service-empty" id="packEmpty"><div class="service-empty-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-suitcase"></use></svg></div><h3>Aucun pack week-end disponible</h3><p>Aucun séjour ne correspond encore à vos critères. Essayez une autre destination ou modifiez vos dates pour découvrir plus d’options.</p></div>
         </div>
       </section>
     </section>
@@ -510,9 +510,9 @@
   <script src="assets/spin.js?v=5"></script>
   <script src="assets/guest-auth.js?v=2"></script>
   <script src="assets/destinations.js?v=2"></script>
-  <script src="assets/fx.js?v=2"></script>
+  <script src="assets/fx.js?v=3"></script>
   <script src="assets/pages.js?v=2"></script>
-  <script src="assets/cars.js?v=33"></script>
-  <script src="script.js?v=20261013-v35"></script>
+  <script src="assets/cars.js?v=34"></script>
+  <script src="script.js?v=20261013-v36"></script>
 </body>
 </html>

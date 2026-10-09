@@ -282,13 +282,44 @@
     if (!ready) { renderCatIntro(); return; }
     renderFilters(); paintCars();
   }
+  /* Aucun résultat : on propose de quoi repartir (filtres, nouvelle recherche, villes où des voitures sont publiées). */
+  let cityList = null;
+  async function paintEmptyActions() {
+    const box = document.getElementById('carEmptyActions');
+    if (!box) return;
+    const filtersOn = F.cats.size || F.gear || F.seats || F.freeCancel || F.unlimited || F.deposit || F.lessors.size || F.priceTouched;
+    const draw = () => {
+      const cities = (cityList || []).slice(0, 6);
+      box.innerHTML = `${filtersOn ? '<button type="button" class="btn ghost" data-rf-reset>Réinitialiser les filtres</button>' : ''}<button type="button" class="btn" data-car-newsearch>Modifier ma recherche</button>${cities.length ? `<div class="empty-cities"><span>Voitures disponibles à :</span>${cities.map(([c, n]) => `<button type="button" class="chip" data-car-research="${E(c)}">${E(c)} <small>${n}</small></button>`).join('')}</div>` : ''}`;
+    };
+    draw();
+    if (cityList === null) {
+      try {
+        const all = await api('/public/vehicles');
+        const m = new Map();
+        (Array.isArray(all) ? all : []).forEach((v) => { if (v.city) m.set(v.city, (m.get(v.city) || 0) + 1); });
+        cityList = [...m.entries()].sort((a, b) => b[1] - a[1]);
+      } catch { cityList = []; }
+      draw();
+    }
+  }
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-car-newsearch]')) { resetCars(); document.getElementById('carSearchForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    const c = e.target.closest('[data-car-research]');
+    if (!c) return;
+    const f = document.getElementById('carSearchForm');
+    if (!f) return;
+    f.elements.pickup.value = c.dataset.carResearch;
+    if (f.elements.category) f.elements.category.value = 'all';
+    f.requestSubmit();
+  });
   function paintCars() {
     renderTiles();
     const rows = filtered(), d = searchDays();
     const grid = document.getElementById('carGrid');
     if (grid) grid.innerHTML = rows.map(card).join('');
     const empty = document.getElementById('carEmpty');
-    if (empty) empty.style.display = rows.length ? 'none' : 'grid';
+    if (empty) { empty.style.display = rows.length ? 'none' : 'grid'; if (!rows.length) paintEmptyActions(); }
     const n = document.getElementById('carResultCount');
     if (n) n.textContent = `${rows.length} véhicule${rows.length > 1 ? 's' : ''}`;
     const sum = document.getElementById('carSearchSummary');
