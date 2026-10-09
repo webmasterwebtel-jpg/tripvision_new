@@ -739,6 +739,7 @@ function partnerActions(p) {
   return [
     can('partners.manage') && p.status !== 'approved' && actionBtn('partner-approve', p.id, 'Valider', 'primary'),
     can('partners.manage') && p.status !== 'inactive' && actionBtn('partner-suspend', p.id, 'Suspendre', 'danger'),
+    can('partners.manage') && actionBtn('partner-reset', p.id, 'Réinit. mot de passe'),
     can('partners.delete') && actionBtn('partner-delete', p.id, 'Supprimer', 'danger'),
   ].filter(Boolean).join('');
 }
@@ -1421,6 +1422,11 @@ const ACT = {
   'client-block': (id) => confirmCall({ eyebrow: 'Client', title: `Bloquer ${esc(find('clients', id).name)} ?`, message: 'Le client sera déconnecté et ne pourra plus se connecter ni réserver avec ce compte.', confirmLabel: 'Bloquer le compte', tone: 'danger', loading: 'Blocage en cours…', success: 'Compte bloqué', url: `/admin/clients/${id}/status`, body: { status: 'inactive' } }),
   'client-unblock': (id) => confirmCall({ eyebrow: 'Client', title: `Débloquer ${esc(find('clients', id).name)} ?`, message: 'Le client pourra de nouveau se connecter.', confirmLabel: 'Débloquer', loading: 'Déblocage en cours…', success: 'Compte débloqué', url: `/admin/clients/${id}/status`, body: { status: 'active' } }),
   'client-delete': (id) => confirmCall({ eyebrow: 'Suppression', title: `Supprimer ${esc(find('clients', id).name)} ?`, message: 'Le compte sera supprimé et l’accès retiré immédiatement. Ses réservations sont conservées.', confirmLabel: 'Supprimer définitivement', tone: 'danger', loading: 'Suppression en cours…', success: 'Compte supprimé', method: 'DELETE', url: `/admin/clients/${id}` }),
+  'partner-reset': (id) => {
+    const p = find('partners', id);
+    openModal({ eyebrow: 'Partenaire', title: `Réinitialiser le mot de passe de ${p.trade_name || p.name || 'ce partenaire'} ?`, confirmLabel: 'Envoyer le lien', loadingText: 'Envoi du lien…', bodyHtml: '<p class="modal-text">L’ancien mot de passe cessera de fonctionner. Un e-mail contenant un lien pour choisir un nouveau mot de passe sera envoyé au partenaire (valable 48 h).</p>',
+      run: async () => ({ title: 'Réinitialisation lancée', html: credentialsHtml(await api(`/admin/partners/${id}/reset-password`, { method: 'POST' }), p.trade_name || p.name || 'le partenaire') }) });
+  },
   'client-reset': (id) => {
     const c = find('clients', id);
     openModal({ eyebrow: 'Client', title: `Réinitialiser le mot de passe de ${c.name} ?`, confirmLabel: 'Envoyer le lien', loadingText: 'Envoi du lien…', bodyHtml: '<p class="modal-text">L’ancien mot de passe cessera de fonctionner. Un e-mail contenant un lien pour choisir un nouveau mot de passe sera envoyé au client (valable 48 heures).</p>',

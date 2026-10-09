@@ -49,6 +49,7 @@
       CATS = Array.isArray(l) ? l : [];
       const sel = document.querySelector('#carSearchForm select[name=category]');
       if (sel && CATS.length) sel.innerHTML = '<option value="all">Toutes</option>' + CATS.map((c) => `<option>${E(c.name)}</option>`).join('');
+      renderCatIntro();
       renderCars();
     }).catch(() => {});
   });
@@ -75,6 +76,25 @@
   setInterval(checkIdle, 30000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) checkIdle(); });
 
+  /* ---------- Catégories de véhicules, en page d'accueil des voitures ---------- */
+  const CAT_DESC = [[/monospace|minibus/i, 'Familles · 7 places et plus'], [/^mini \(|^mini$/i, 'Citadines · 2 à 4 places'], [/conom/i, 'Petit budget, trajets courts'], [/compact/i, 'Polyvalentes · 5 places'], [/interm/i, 'Confort et grand coffre'], [/routi/i, 'Longs trajets, confort'], [/suv|break/i, 'Espace et position haute'], [/utilit|van/i, 'Charges et déménagement']];
+  function renderCatIntro() {
+    const box = document.getElementById('carCatIntro');
+    if (!box) return;
+    const list = CATS.length ? CATS : [];
+    box.parentElement.hidden = !list.length;
+    box.innerHTML = list.map((c) => {
+      const desc = CAT_DESC.find(([re]) => re.test(c.name))?.[1] || '';
+      return `<button type="button" class="dest-card cat-intro-card" data-cat-pick="${E(c.name)}"><img src="${E(c.image || '')}" alt="" loading="lazy" decoding="async"><span class="dest-info"><b>${E(c.name)}</b><small>${E(desc)}</small></span><i class="dest-go">→</i></button>`;
+    }).join('');
+  }
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-cat-pick]');
+    if (!t) return;
+    const f = document.getElementById('carSearchForm');
+    if (f?.elements.category) f.elements.category.value = t.dataset.catPick;
+    f?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
   let fetchTimer = 0;
   // Les voitures ne s'affichent qu'une fois la ville et les dates choisies puis la recherche lancée.
   let searched = false;
@@ -259,7 +279,7 @@
     document.querySelectorAll('#cars .service-results-head, .car-results-premium .rent-layout, .car-results-premium .service-info-strip, #carTiles').forEach((el) => { el.hidden = !ready; el.style.display = ready ? '' : 'none'; });
     const prompt = document.getElementById('carPrompt');
     if (prompt) prompt.style.display = ready ? 'none' : 'block';
-    if (!ready) return;
+    if (!ready) { renderCatIntro(); return; }
     renderFilters(); paintCars();
   }
   function paintCars() {

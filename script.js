@@ -63,16 +63,41 @@ function renderFlights(){
   if($('#flightResultCount'))$('#flightResultCount').textContent=`${rows.length} vol${rows.length>1?'s':''}`;
   bindLinks($('#flightGrid')||document);
 }
+let packTab='all';
+const packBoardAll=p=>/compris|all.?inclusive/i.test(p.hotel_board||'');
+function packCard(o){
+  const nights=Number(o.hotel_nights)||0,old=o.old_price&&Number(o.old_price)>Number(o.price),pct=old?Math.round((1-Number(o.price)/Number(o.old_price))*100):0;
+  const title=o.title||`${o.from_city||''} → ${o.to_city||''}`;
+  const stars=o.hotel_stars?'★'.repeat(Number(o.hotel_stars)):'';
+  return `<article class="pack-card" data-offer-id="${o.id}"><div class="pack-media">${TVGallery.html(offerImages(o),title)}<span class="pack-tag">${escapeHtml(o.badge||'Vol + hôtel')}</span>${old&&pct>0?`<span class="pack-promo">−${pct}%</span>`:''}</div>
+  <div class="pack-body"><div class="pack-dest"><b>${escapeHtml(o.to_city||title)}</b><small>${escapeHtml(o.country||'')}</small></div>
+  ${o.hotel_name?`<h3>${escapeHtml(o.hotel_name)} <span class="pack-stars">${stars}</span></h3>`:`<h3>${escapeHtml(title)}</h3>`}
+  <ul class="pack-facts">${o.from_city?`<li><i>✈</i>Vols de ${escapeHtml(o.from_city)}</li>`:''}${o.start_date?`<li><i>📅</i>Départ le ${fmtDayFr(o.start_date)}${o.end_date?' · retour le '+fmtDayFr(o.end_date):''}</li>`:''}${nights?`<li><i>🌙</i>${nights+1} jours / ${nights} nuit${nights>1?'s':''}</li>`:''}${o.hotel_board?`<li><i>🍽</i>${escapeHtml(o.hotel_board)}</li>`:''}</ul>
+  ${o.description?`<p class="pack-desc">${escapeHtml(o.description)}</p>`:''}</div>
+  <div class="pack-buy"><div><small>par personne, dès</small>${old?`<s>${money(o.old_price)}</s>`:''}<strong>${money(o.price)}</strong></div><button class="btn" type="button" data-offer-book="${o.id}">Voir l’offre →</button></div></article>`;
+}
+function renderPackTabs(all){
+  const box=$('#packTabs');if(!box)return;
+  const countries=[...new Set(all.map(p=>p.country).filter(Boolean))].sort();
+  const tabs=[['all','Toutes les offres',all.length],['promo','Bons plans',all.filter(p=>p.old_price&&Number(p.old_price)>Number(p.price)).length],['incl','Tout compris',all.filter(packBoardAll).length],['short','Week-ends (≤ 3 nuits)',all.filter(p=>Number(p.hotel_nights)>0&&Number(p.hotel_nights)<=3).length],...countries.map(c=>['c:'+c,c,all.filter(p=>p.country===c).length])].filter(([k,,n])=>k==='all'||n>0);
+  box.innerHTML=tabs.map(([k,l,n])=>`<button type="button" class="pack-tab ${packTab===k?'on':''}" data-pack-tab="${escapeHtml(k)}">${escapeHtml(l)} <small>${n}</small></button>`).join('');
+}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-pack-tab]');if(!t)return;packTab=t.dataset.packTab;renderPacks()});
 function renderPacks(){
   const filt=serviceFilters.pack;
   const rows=state.packs.filter(p=>{
+    if(packTab==='promo'&&!(p.old_price&&Number(p.old_price)>Number(p.price)))return false;
+    if(packTab==='incl'&&!packBoardAll(p))return false;
+    if(packTab==='short'&&!(Number(p.hotel_nights)>0&&Number(p.hotel_nights)<=3))return false;
+    if(packTab.startsWith('c:')&&p.country!==packTab.slice(2))return false;
     const fromOk=!filt.fromCity||nrm(p.from_city).includes(nrm(filt.fromCity));
     const toOk=!filt.toCity||nrm(p.to_city).includes(nrm(filt.toCity));
     const startOk=!filt.startDate||!p.start_date||day10(p.start_date)>=filt.startDate;
     const endOk=!filt.endDate||!p.end_date||day10(p.end_date)<=filt.endDate;
     return fromOk&&toOk&&startOk&&endOk;
   });
-  if($('#packGrid'))$('#packGrid').innerHTML=rows.map(cardOffer).join('');
+  renderPackTabs(state.packs);
+  if($('#packGrid'))$('#packGrid').innerHTML=rows.map(packCard).join('');
   if($('#packEmpty'))$('#packEmpty').style.display=rows.length?'none':'grid';
   if($('#packResultCount'))$('#packResultCount').textContent=rows.length+' offre'+(rows.length>1?'s':'');
   if($('#packSearchSummary'))$('#packSearchSummary').textContent=rows.length?'Packs correspondant à votre recherche':'Aucun pack publié';
@@ -84,6 +109,8 @@ function bindClientControls(){
     Object.values(map).forEach(sel=>$(sel)?.classList.remove('active'));
     $(map[view]||map.signin)?.classList.add('active');
   };
+  // « Mot de passe oublié ? » du formulaire partenaire : même formulaire de réinitialisation par e-mail.
+  $('#partnerForgot')?.addEventListener('click',()=>{const em=$('#partnerLoginForm')?.email?.value?.trim();page('login');location.hash='login';showAuthView('forgot');const f=$('#forgotPasswordForm');if(f?.email&&em)f.email.value=em});
   $$('[data-auth-view]').forEach(btn=>btn.addEventListener('click',()=>showAuthView(btn.dataset.authView)));
   $$('.password-toggle').forEach(btn=>btn.addEventListener('click',()=>{const input=btn.parentElement?.querySelector('input');if(!input)return;const reveal=input.type==='password';input.type=reveal?'text':'password';btn.textContent=reveal?'Masquer':'Afficher';btn.setAttribute('aria-label',reveal?'Masquer le mot de passe':'Afficher le mot de passe')}));
   $('#forgotPasswordForm')?.addEventListener('submit',async e=>{e.preventDefault();const form=e.target,box=$('#forgotPasswordStatus'),btn=form.querySelector('button[type="submit"]'),label=btn.textContent;btn.disabled=true;btn.textContent='Envoi…';try{await api('/auth/forgot-password',{method:'POST',body:JSON.stringify({email:form.email.value.trim()})});if(box){box.hidden=false;box.className='auth-status info';box.textContent='Si ce compte existe, un e-mail contenant un lien de réinitialisation vient d’être envoyé. Pensez à vérifier vos courriers indésirables.'}form.reset()}catch(err){if(box){box.hidden=false;box.className='auth-status error';box.textContent='Impossible d’envoyer la demande pour le moment. Réessayez dans quelques instants.'}}btn.disabled=false;btn.textContent=label});
@@ -217,18 +244,7 @@ document.addEventListener('click', e => {
     form.requestSubmit();
     $(f ? '.flight-results-premium' : '.weekend-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-  if (e.target.closest('#creditsBtn')) openCredits();
 });
-async function openCredits() {
-  let list = {};
-  try { list = await (await fetch('/assets/dest/credits.json')).json(); } catch { /* indisponible */ }
-  const rows = Object.entries(list).map(([slug, c]) => `<li><b>${escapeHtml(slug.replace('_', ' '))}</b> : « ${escapeHtml(String(c.title).replace(/\.[a-z]+$/i, ''))} », ${escapeHtml(c.artist || 'auteur indiqué sur la page')} — <a href="${escapeHtml(c.url)}" target="_blank" rel="noopener">${escapeHtml(c.license)}</a></li>`).join('');
-  const box = document.createElement('div');
-  box.className = 'modal open';
-  box.innerHTML = `<div class="modal-card credits-card"><button class="modal-close" type="button" aria-label="Fermer">${icon('i-x')}</button><h2>Crédits photos</h2><p class="muted">Photographies issues de Wikimedia Commons, utilisées sous leurs licences respectives (cliquez sur la licence pour voir l’œuvre et son auteur).</p><ul class="credits-list">${rows}</ul></div>`;
-  box.addEventListener('click', ev => { if (ev.target === box || ev.target.closest('.modal-close')) box.remove(); });
-  document.body.appendChild(box);
-}
 
 
 /* ---------- Pas de date passée pour une réservation ---------- */

@@ -1638,6 +1638,18 @@ app.patch('/api/admin/clients/:id/status', auth(...BACKOFFICE_ROLES), can('accou
   res.json({ ok: true });
 }));
 
+// Réinitialisation du mot de passe d'un partenaire : un lien est envoyé par e-mail (l'ancien mot de passe cesse de fonctionner).
+app.post('/api/admin/partners/:id/reset-password', auth(...BACKOFFICE_ROLES), can('partners.manage'), h(async (req, res) => {
+  const { rows } = await query(
+    `SELECT u.* FROM partners p JOIN users u ON u.id = p.user_id WHERE p.id = $1 AND p.deleted_at IS NULL AND u.deleted_at IS NULL`, [req.params.id]);
+  const user = rows[0];
+  if (!user) return res.status(404).json({ error: 'NOT_FOUND' });
+  await query('UPDATE users SET password_hash = $1, must_change_password = true, reset_requested_at = NULL, updated_at = now() WHERE id = $2', [await unusablePasswordHash(), user.id]);
+  const access = await sendAccessLink(user, 'reset', { hours: 48 });
+  await audit(req.user.id, 'reset_partner_password', 'user', user.id, clientIp(req));
+  res.json({ loginEmail: user.email, ...access });
+}));
+
 app.post('/api/admin/clients/:id/reset-password', auth(...BACKOFFICE_ROLES), can('accounts.edit'), h(async (req, res) => {
   const client = await loadClient(req, res);
   if (!client) return;

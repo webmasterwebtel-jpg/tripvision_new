@@ -7,7 +7,7 @@
   <meta name="description" content="TripVision sélectionne des bons plans vols, locations de voiture et packs week-end depuis la France." />
   <link rel="stylesheet" href="styles.css?v=20260927-admin-1" />
   <script src="assets/boot.js"></script>
-  <link rel="stylesheet" href="premium.css?v=20261014-v31" />
+  <link rel="stylesheet" href="premium.css?v=20261014-v32" />
 </head>
 <body>
   <svg class="tv-icon-sprite" aria-hidden="true" focusable="false">
@@ -243,7 +243,7 @@
               <div><b>2</b><h3>Indiquez vos dates</h3><p>Jour et heure de départ et de retour : le prix s’ajuste à votre durée exacte.</p></div>
               <div><b>3</b><h3>Comparez et réservez</h3><p>Réglez en ligne une petite commission, le reste se paie au loueur au retrait.</p></div>
             </div>
-            <div class="car-intro-cities-photo"><span class="eyebrow">Villes populaires</span><div class="dest-grid"><button type="button" class="dest-card" data-car-city="Paris"><img src="assets/dest/paris.jpg" alt="Paris" loading="lazy" decoding="async"><span class="dest-info"><b>Paris</b><small>Île-de-France</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-car-city="Marseille"><img src="assets/dest/marseille.jpg" alt="Marseille" loading="lazy" decoding="async"><span class="dest-info"><b>Marseille</b><small>Provence</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-car-city="Nice"><img src="assets/dest/nice.jpg" alt="Nice" loading="lazy" decoding="async"><span class="dest-info"><b>Nice</b><small>Côte d’Azur</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-car-city="Lyon"><img src="assets/dest/lyon.jpg" alt="Lyon" loading="lazy" decoding="async"><span class="dest-info"><b>Lyon</b><small>Auvergne-Rhône-Alpes</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-car-city="Bordeaux"><img src="assets/dest/bordeaux.jpg" alt="Bordeaux" loading="lazy" decoding="async"><span class="dest-info"><b>Bordeaux</b><small>Nouvelle-Aquitaine</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-car-city="Toulouse"><img src="assets/dest/toulouse.jpg" alt="Toulouse" loading="lazy" decoding="async"><span class="dest-info"><b>Toulouse</b><small>Occitanie</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-car-city="Lille"><img src="assets/dest/lille.jpg" alt="Lille" loading="lazy" decoding="async"><span class="dest-info"><b>Lille</b><small>Hauts-de-France</small></span><i class="dest-go">→</i></button><button type="button" class="dest-card" data-car-city="Nantes"><img src="assets/dest/nantes.jpg" alt="Nantes" loading="lazy" decoding="async"><span class="dest-info"><b>Nantes</b><small>Pays de la Loire</small></span><i class="dest-go">→</i></button></div></div>
+            <div class="car-intro-cats"><span class="eyebrow">Nos catégories de véhicules</span><div class="dest-grid" id="carCatIntro"></div></div>
             <div class="car-intro-perks">
               <div><svg class="tv-icon" aria-hidden="true"><use href="#i-shield-check"></use></svg><strong>Loueurs vérifiés</strong><p>Chaque annonce est fournie et validée par des loueurs professionnels.</p></div>
               <div><svg class="tv-icon" aria-hidden="true"><use href="#i-shield-check"></use></svg><strong>Prix clair</strong><p>Total, part payée en ligne et solde à l’agence affichés avant de payer.</p></div>
@@ -296,6 +296,17 @@
         </div>
       </section>
 
+      <section class="trust-band">
+        <div class="wrap">
+          <div class="trust-grid">
+            <div><svg class="tv-icon" aria-hidden="true"><use href="#i-shield-check"></use></svg><strong>Réservation sécurisée</strong><p>Vos données restent protégées de bout en bout.</p></div>
+            <div><svg class="tv-icon" aria-hidden="true"><use href="#i-check"></use></svg><strong>Prix transparents</strong><p>Le prix par personne affiché, sans mauvaise surprise.</p></div>
+            <div><svg class="tv-icon" aria-hidden="true"><use href="#i-suitcase"></use></svg><strong>Vol + hôtel prêts à partir</strong><p>Des séjours composés pour vous, avec les nuits et la formule indiquées.</p></div>
+            <div><svg class="tv-icon" aria-hidden="true"><use href="#i-plane"></use></svg><strong>Assistance TripVision</strong><p>Une équipe joignable avant et pendant votre voyage.</p></div>
+          </div>
+        </div>
+      </section>
+
       <section class="dest-band">
         <div class="wrap">
           <div class="dest-head"><span class="eyebrow">Escapades</span><h2>Où partir <em>ce week-end ?</em></h2><p>Choisissez une destination pour découvrir les séjours proposés.</p></div>
@@ -306,7 +317,8 @@
       <section class="service-results weekend-results">
         <div class="wrap">
           <div class="service-results-head"><div><div class="eyebrow">Sélection</div><h2>Packs disponibles</h2></div><div class="result-chip"><strong id="packResultCount">0 offre</strong><span id="packSearchSummary">Aucun pack publié</span></div></div>
-          <div class="grid service-grid" id="packGrid"></div>
+          <div class="pack-tabs" id="packTabs" role="group" aria-label="Filtrer les packs"></div>
+          <div class="pack-grid" id="packGrid"></div>
           <div class="service-empty" id="packEmpty"><div class="service-empty-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-suitcase"></use></svg></div><h3>Aucun pack week-end disponible</h3><p>Aucun séjour ne correspond encore à vos critères. Essayez une autre destination ou modifiez vos dates pour découvrir plus d’options.</p></div>
         </div>
       </section>
@@ -389,6 +401,7 @@
               <input name="email" placeholder="Email professionnel" type="email" autocomplete="username" required />
               <input name="password" placeholder="Mot de passe" type="password" autocomplete="current-password" required />
               <button class="btn" type="submit">Accéder au portail</button>
+              <button class="partner-forgot" id="partnerForgot" type="button">Mot de passe oublié ?</button>
               <button class="partner-request-toggle" id="openPartnerApplication" type="button">Demander un accès →</button>
             </form>
           </div>
@@ -466,13 +479,13 @@
   <div class="modal" id="offerModal"><div class="modal-card offer-modal"><button class="modal-close" id="closeOfferModal" type="button" aria-label="Fermer"><svg class="tv-icon" aria-hidden="true"><use href="#i-x"></use></svg></button><h2 id="offerModalTitle">Réserver</h2><p class="muted" id="offerName"></p><div class="offer-summary" id="offerSummary"></div><form class="form" id="offerRequestForm"><p class="offer-account" id="offerAccountNote" hidden>Un compte TripVision est nécessaire pour réserver un pack : il vous sera proposé à l’envoi.</p><div class="offer-contact" id="offerContact"><input name="email" type="email" placeholder="Votre e-mail" autocomplete="email" required /><input name="name" placeholder="Nom (facultatif)" autocomplete="name" /><input name="phone" type="tel" placeholder="Téléphone (facultatif)" autocomplete="tel" /></div><fieldset class="offer-trip" id="offerTripChoice" hidden><legend>Type de billet</legend><label><input type="radio" name="tripType" value="roundtrip" checked><span>Aller-retour</span><b id="priceRT"></b></label><label><input type="radio" name="tripType" value="oneway"><span>Aller simple</span><b id="priceOW"></b></label></fieldset><label class="offer-trav"><span>Voyageurs</span><select name="travelers"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select></label><div class="offer-total" id="offerRequestTotal"></div><textarea name="message" placeholder="Une précision ? (facultatif)"></textarea><label class="offer-optin" id="offerOptin"><input type="checkbox" name="marketing"> Je souhaite recevoir les offres et bons plans TripVision par e-mail (désinscription à tout moment).</label><button class="btn" type="submit">Envoyer ma demande</button><p class="muted offer-note">Aucun paiement maintenant : nous confirmons la disponibilité et le prix par e-mail.</p></form></div></div>
     <div class="modal" id="carDetailModal"><div class="modal-card car-detail-card"><button class="modal-close" id="closeCarDetail" type="button" aria-label="Fermer"><svg class="tv-icon" aria-hidden="true"><use href="#i-x"></use></svg></button><div class="cd-body"></div></div></div>
 
-  <footer class="footer"><div class="wrap footer-grid footer-grid-final"><div class="footer-brand-block"><a class="brand brand-premium brand-logo" href="#home" data-page-link="home" aria-label="TripVision — Voyager autrement"><img src="/assets/tripvision-logo-original.png?v=20260920-1" alt="TripVision — Voyager autrement" width="2048" height="682" decoding="async"></a></div><div><h4>Voyager</h4><a href="#flights" data-page-link="flights">Vols</a><a href="#cars" data-page-link="cars">Voitures</a><a href="#packs" data-page-link="packs">Week-ends</a></div><div><h4>Informations</h4><a href="#contact" data-page-link="contact">Contact</a><a href="mailto:info@tripvision.fr">info@tripvision.fr</a><a href="#login" data-page-link="login">Mon Espace Client</a><a href="#partner" data-page-link="partner">Espace partenaire</a></div></div><div class="wrap bottom footer-bottom-final"><span>© 2026 TripVision. Tous droits réservés.</span> <button type="button" class="credits-link" id="creditsBtn">Crédits photos</button></div></footer>
+  <footer class="footer"><div class="wrap footer-grid footer-grid-final"><div class="footer-brand-block"><a class="brand brand-premium brand-logo" href="#home" data-page-link="home" aria-label="TripVision — Voyager autrement"><img src="/assets/tripvision-logo-original.png?v=20260920-1" alt="TripVision — Voyager autrement" width="2048" height="682" decoding="async"></a></div><div><h4>Voyager</h4><a href="#flights" data-page-link="flights">Vols</a><a href="#cars" data-page-link="cars">Voitures</a><a href="#packs" data-page-link="packs">Week-ends</a></div><div><h4>Informations</h4><a href="#contact" data-page-link="contact">Contact</a><a href="mailto:info@tripvision.fr">info@tripvision.fr</a><a href="#login" data-page-link="login">Mon Espace Client</a><a href="#partner" data-page-link="partner">Espace partenaire</a></div></div><div class="wrap bottom footer-bottom-final"><span>© 2026 TripVision. Tous droits réservés.</span></div></footer>
   <script src="assets/pw-rules.js?v=1"></script>
   <script src="assets/geo-picker.js?v=5"></script>
   <script src="assets/gallery.js?v=5"></script>
   <script src="assets/spin.js?v=5"></script>
   <script src="assets/guest-auth.js?v=2"></script>
-  <script src="assets/cars.js?v=31"></script>
-  <script src="script.js?v=20261013-v29"></script>
+  <script src="assets/cars.js?v=33"></script>
+  <script src="script.js?v=20261013-v32"></script>
 </body>
 </html>
