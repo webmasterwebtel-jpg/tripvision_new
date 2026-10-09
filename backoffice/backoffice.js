@@ -916,7 +916,7 @@ const RENDERERS = {
   },
 
   async bookings() {
-    const [{ bookings, offerRequests }, st, leadsData] = await Promise.all([api('/admin/dashboard'), api('/admin/booking-stats').catch(() => null), can('mailing.export') ? api('/admin/flight-leads').catch(() => null) : Promise.resolve(null)]);
+    const [{ bookings, offerRequests }, st] = await Promise.all([api('/admin/dashboard'), api('/admin/booking-stats').catch(() => null)]);
     DATA.bookings = bookings;
     DATA.requests = offerRequests || [];
     const rows = bookings.map(b => `<tr class="clickable"${fa({ status: b.status })} data-detail="booking" data-id="${esc(b.id)}">
@@ -933,13 +933,11 @@ const RENDERERS = {
       <td class="num">${r.travelers} · ${money(r.total)}</td>
       <td>${badge(r.status === 'cancelled' ? 'inactive' : r.status)}${r.payment_status === 'paid' ? ` <span class="badge ok">Payé ${esc(money(r.paid_amount))}</span>` : r.payment_status === 'refunded' ? ' <span class="badge off">Remboursé</span>' : ''}</td>
       <td class="actions"><span class="row-actions">${requestActions(r)}</span></td></tr>`).join('');
-    const leadRows = (leadsData?.leads || []).map(l => `<tr data-f-consent="${l.consent ? 'yes' : 'no'}"><td class="num">${fmtDate(l.created_at)}</td><td><strong>${esc(l.email)}</strong></td><td>${esc(l.route)}</td><td>${esc(l.airline || '—')}</td><td>${l.consent ? '<span class="badge ok">Oui</span>' : '<span class="badge plain">Non</span>'}</td></tr>`).join('');
     return pageHead('Opérations', 'Suivi <em>des réservations</em>', 'Cliquez sur une réservation pour voir tous les détails.')
       + (st ? `<section class="card"><div class="card-head"><div><h3>Réservations enregistrées</h3><p>Nombre de réservations faites sur la période, tous services confondus.</p></div></div>${statsCards(st)}</section>` : '')
       + `<div class="info-strip">${icon('alert')}<p>TripVision garde la <b>trace</b> de chaque réservation. Une réservation faite auprès d’un loueur ou d’une compagnie ne s’annule pas depuis le back-office : c’est au loueur ou à la compagnie de le faire.</p></div>`
       + tableCard({ id: 'tblRequests', title: 'Demandes vols & packs', count: plural(DATA.requests.length, 'demande', 'demandes'), head: ['Référence', 'Client', 'Offre', 'Voyageurs · Total', 'Statut', ''], rows: reqRows, empty: 'Aucune demande de vol ou de pack', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['pending', 'En attente'], ['confirmed', 'Confirmée'], ['cancelled', 'Annulée par la compagnie ou le loueur']] }, { key: 'type', label: 'Type', options: [['flight', 'Vols'], ['pack', 'Packs']] }] })
-      + tableCard({ id: 'tblBookings', title: 'Réservations', count: plural(bookings.length, 'réservation', 'réservations'), head: ['Référence', 'Client', 'Véhicule', 'Dates', 'Statut', ''], rows, empty: 'Aucune réservation', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['pending', 'En attente'], ['confirmed', 'Confirmée'], ['inactive', 'Annulée par le loueur']] }] })
-      + (leadsData ? tableCard({ id: 'tblLeads', title: 'Clics vers les compagnies', count: `${plural(leadsData.stats.week, 'e-mail', 'e-mails')} ces 7 jours · ${plural(leadsData.stats.total, 'au total', 'au total')}`, head: ['Date', 'E-mail laissé', 'Trajet', 'Compagnie', 'Accord offres'], rows: leadRows, empty: 'Aucun clic pour le moment', cols: 5, filters: [{ key: 'consent', label: 'Accord offres', options: [['yes', 'Oui'], ['no', 'Non']] }] }) : '');
+      + tableCard({ id: 'tblBookings', title: 'Réservations', count: plural(bookings.length, 'réservation', 'réservations'), head: ['Référence', 'Client', 'Véhicule', 'Dates', 'Statut', ''], rows, empty: 'Aucune réservation', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['pending', 'En attente'], ['confirmed', 'Confirmée'], ['inactive', 'Annulée par le loueur']] }] });
   },
 
   async notifications() {
@@ -1133,9 +1131,10 @@ const RENDERERS = {
   },
 
   async mailing() {
-    const { contacts, stats } = await api('/admin/mailing');
+    const [{ contacts, stats }, leadsData] = await Promise.all([api('/admin/mailing'), api('/admin/flight-leads').catch(() => null)]);
     DATA.mailing = contacts;
-    const SRC = { vol: 'Vol' };
+    const leadRows = (leadsData?.leads || []).map(l => `<tr data-f-consent="${l.consent ? 'yes' : 'no'}"><td class="num">${fmtDate(l.created_at)}</td><td><strong>${esc(l.email)}</strong></td><td>${esc(l.route)}</td><td>${esc(l.airline || '—')}</td><td>${l.consent ? '<span class="badge ok">Oui</span>' : '<span class="badge plain">Non</span>'}</td></tr>`).join('');
+    const SRC = { vol: 'Vol (réservation ou clic compagnie)' };
     const rows = contacts.map(c => {
       const state = c.unsubscribed_at ? 'unsub' : c.consent ? 'yes' : 'no';
       return `<tr${fa({ state })}>
@@ -1149,13 +1148,14 @@ const RENDERERS = {
         <label>Consentement<select id="mlConsent"><option value="all">Tous les contacts</option><option value="yes">Avec accord marketing uniquement</option><option value="no">Sans accord</option></select></label>
         <div class="form-actions" style="display:flex;gap:10px"><button class="btn primary" type="button" data-action="mailing-export" data-id="xlsx">Télécharger Excel (.xlsx)</button><button class="btn" type="button" data-action="mailing-export" data-id="csv">Télécharger CSV</button></div>
       </div></section>`;
-    return pageHead('Gouvernance', '<em>Mailing</em>', 'Adresses e-mail des personnes qui réservent un vol. Une adresse déjà connue est reconnue à son retour.')
+    return pageHead('Gouvernance', '<em>Mailing</em>', 'Adresses e-mail des personnes qui réservent un vol ou qui laissent leur e-mail avant d’ouvrir le site d’une compagnie. Une adresse déjà connue est reconnue à son retour.')
       + `<div class="kpis">
         <div class="kpi"><div class="kpi-icon">${icon('mailing')}</div><div><strong>${stats.total}</strong><span>Contacts</span></div></div>
         <div class="kpi"><div class="kpi-icon">${icon('clients')}</div><div><strong>${stats.consent}</strong><span>Avec accord marketing</span></div></div>
         <div class="kpi"><div class="kpi-icon">${icon('alert')}</div><div><strong>${stats.unsubscribed}</strong><span>Désinscrits</span></div></div></div>`
       + exportCard
-      + tableCard({ id: 'tblMailing', title: 'Contacts', count: plural(contacts.length, 'contact', 'contacts'), head: ['Contact', 'Origine', 'Consentement', 'Demandes', 'Premier contact', 'Dernière activité'], rows, empty: 'Aucun contact pour le moment', cols: 6, filters: [{ key: 'state', label: 'Consentement', options: [['yes', 'Accord marketing'], ['no', 'Sans accord'], ['unsub', 'Désinscrits']] }] });
+      + tableCard({ id: 'tblMailing', title: 'Contacts', count: plural(contacts.length, 'contact', 'contacts'), head: ['Contact', 'Origine', 'Consentement', 'Demandes', 'Premier contact', 'Dernière activité'], rows, empty: 'Aucun contact pour le moment', cols: 6, filters: [{ key: 'state', label: 'Consentement', options: [['yes', 'Accord marketing'], ['no', 'Sans accord'], ['unsub', 'Désinscrits']] }] })
+      + (leadsData ? tableCard({ id: 'tblLeads', title: 'E-mails laissés avant une compagnie', count: `${plural(leadsData.stats.week, 'e-mail', 'e-mails')} ces 7 jours · ${leadsData.stats.total} au total`, head: ['Date', 'E-mail', 'Trajet', 'Compagnie', 'Accord offres'], rows: leadRows, empty: 'Aucun e-mail laissé pour le moment', cols: 5, filters: [{ key: 'consent', label: 'Accord offres', options: [['yes', 'Oui'], ['no', 'Non']] }] }) : '');
   },
 
   async audit() {
