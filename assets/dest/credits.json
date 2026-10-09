@@ -12,16 +12,16 @@
   "url": "https://commons.wikimedia.org/wiki/File:Plateau_Abidjan_de_nuit.jpg"
  },
  "douala": {
-  "title": "Douala skyline.jpg",
-  "artist": "Bmnda",
-  "license": "CC0",
-  "url": "https://commons.wikimedia.org/wiki/File:Douala_skyline.jpg"
+  "title": "Cathédrale Saint-Pierre-et-Saint-Paul.JPG",
+  "artist": "Alessandro Aceri",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Cath%C3%A9drale_Saint-Pierre-et-Saint-Paul.JPG"
  },
  "casablanca": {
-  "title": "The Open Area of Hassan II Mosque - Casablanca Morocco.jpg",
-  "artist": "Ayman.mesa25",
-  "license": "CC BY-SA 4.0",
-  "url": "https://commons.wikimedia.org/wiki/File:The_Open_Area_of_Hassan_II_Mosque_-_Casablanca_Morocco.jpg"
+  "title": "Sunshine on mosque Hassan II in Casablanca, Morocco - Flickr - Milamber's portfolio.jpg",
+  "artist": "Milamber's portfolio",
+  "license": "CC BY 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Sunshine_on_mosque_Hassan_II_in_Casablanca,_Morocco_-_Flickr_-_Milamber%27s_portfolio.jpg"
  },
  "libreville": {
   "title": "Libreville immeubles.jpg",
@@ -114,10 +114,10 @@
   "url": "https://commons.wikimedia.org/wiki/File:Amsterdam_Canals_-_July_2006.jpg"
  },
  "santorin": {
-  "title": "Highspeed 6 - Hellenic Seaways - Santorini - Greece - 02.jpg",
-  "artist": "Norbert Nagel",
-  "license": "CC BY-SA 3.0",
-  "url": "https://commons.wikimedia.org/wiki/File:Highspeed_6_-_Hellenic_Seaways_-_Santorini_-_Greece_-_02.jpg"
+  "title": "Sunset in Santorini1.jpg",
+  "artist": "kuhnmi",
+  "license": "CC BY 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Sunset_in_Santorini1.jpg"
  },
  "hero_flights": {
   "title": "Embraer 190 - Wing and winglet at sunset.jpg",
@@ -132,15 +132,51 @@
   "url": "https://commons.wikimedia.org/wiki/File:Brazzaville_-_Basilique_Sainte-Anne-du-Congo.jpg"
  },
  "alger": {
-  "title": "Alger Casbah 03.jpg",
-  "artist": "Paebi",
+  "title": "Basilique Notre dame d'afrique à Alger.jpg",
+  "artist": "Habib kaki",
   "license": "CC BY-SA 4.0",
-  "url": "https://commons.wikimedia.org/wiki/File:Alger_Casbah_03.jpg"
+  "url": "https://commons.wikimedia.org/wiki/File:Basilique_Notre_dame_d%27afrique_%C3%A0_Alger.jpg"
  },
  "cotonou": {
-  "title": "Cotonouskyline.jpg",
-  "artist": "MVN",
+  "title": "Cotonou Centre ville.jpg",
+  "artist": "Darios Djossè seyram ADOME",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Cotonou_Centre_ville.jpg"
+ },
+ "istanbul": {
+  "title": "Blue Mosque Courtyard Dusk Wikimedia Commons.jpg",
+  "artist": "Benh LIEU SONG (Flickr)",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Blue_Mosque_Courtyard_Dusk_Wikimedia_Commons.jpg"
+ },
+ "londres": {
+  "title": "Tower Bridge from Shad Thames.jpg",
+  "artist": "Colin",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Tower_Bridge_from_Shad_Thames.jpg"
+ },
+ "prague": {
+  "title": "Tyn Church, Old Town Square 1 (27993395393).jpg",
+  "artist": "Ronnie Macdonald from Chelmsford and Largs, United Kingdom",
   "license": "CC BY 2.0",
-  "url": "https://commons.wikimedia.org/wiki/File:Cotonouskyline.jpg"
+  "url": "https://commons.wikimedia.org/wiki/File:Tyn_Church,_Old_Town_Square_1_(27993395393).jpg"
+ },
+ "athenes": {
+  "title": "Sunset in Athens 2026.jpg",
+  "artist": "Aaaatu",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Sunset_in_Athens_2026.jpg"
+ },
+ "venise": {
+  "title": "Canal Grande from Rialto bridge SW.jpg",
+  "artist": "This Photo was taken by Wolfgang Moroder.  \n\nFeel free to use my photos, but please mention me as the author and send me a  message. \n\n\n\nThis image is not in the public domain. Please respect the copyright protection. It may only be used according to the rules mentioned here. This specifically excludes use in social media, if applicable terms of the licenses listed here not appropriate.\n\n\n\nPlease do not upload an updated image here without consultation with the Author. The author would like to make corrections only at his own source. This ensures that the changes are preserved.Please if you think that any changes should be required, please inform the author.Otherwise you can upload a new image with a new name. Please use one of the templates derivative or extract.",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Canal_Grande_from_Rialto_bridge_SW.jpg"
+ },
+ "porto": {
+  "title": "A vibrant panorama of Porto, Portugal, showcasing the Douro River, historic Ribeira district, and the Dom Luís I Bridge. (55247151390).jpg",
+  "artist": "Michael Gaylard from Horsham, UK",
+  "license": "CC BY 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:A_vibrant_panorama_of_Porto,_Portugal,_showcasing_the_Douro_River,_historic_Ribeira_district,_and_the_Dom_Lu%C3%ADs_I_Bridge._(55247151390).jpg"
  }
 }

@@ -7,7 +7,8 @@
   const matches = (o, d) => { const n = norm(d.name); return norm(o.to_city).includes(n) || norm(o.from_city).includes(n); };
   const eur = (n) => `${Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €`;
   const day = (d) => (d ? new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
-  const ICON = { cal: '📅', globe: '🗣', money: '💶', plane: '✈', sun: '☀' };
+  const I = (n) => `<svg class="tv-icon" aria-hidden="true"><use href="#i-${n}"></use></svg>`;
+  const ICON = { cal: I('calendar'), globe: I('globe'), money: I('wallet'), plane: I('plane'), sun: I('sun') };
   const loaded = () => typeof state !== 'undefined' && (state.flights.length || state.packs.length || state.vehicles.length || window.__tvLoaded);
 
   /* ---------- Guide d'une destination ---------- */
@@ -84,37 +85,166 @@
         <div class="pd-grid">
           <div class="pd-main">
             <header class="pd-head">
-              <span class="pd-badge">${E(o.badge || 'Vol + hôtel')}</span>${old && pct > 0 ? `<span class="pd-promo">−${pct}%</span>` : ''}
+              <div class="pd-tags"><span class="pd-badge">${E(o.badge || 'Vol + hôtel')}</span>${old && pct > 0 ? `<span class="pd-promo">−${pct}%</span>` : ''}</div>
               <h1>${E(title)} <span class="pack-stars">${stars}</span></h1>
-              <p class="pd-loc">📍 ${E([o.to_city, o.country].filter(Boolean).join(', '))}</p>
+              <p class="pd-loc">${I('pin')} ${E([o.to_city, o.country].filter(Boolean).join(', '))}</p>
             </header>
             <div class="pd-gallery">${TVGallery.html(images, title)}</div>
-            <section class="pd-block"><h2>Le séjour en un coup d’œil</h2>
-              <ul class="pd-glance">${o.start_date ? `<li><span>📅</span><div><b>Départ</b>${E(day(o.start_date))}</div></li>` : ''}${o.end_date ? `<li><span>📅</span><div><b>Retour</b>${E(day(o.end_date))}</div></li>` : ''}${nights ? `<li><span>🌙</span><div><b>Durée</b>${nights + 1} jours / ${nights} nuit${nights > 1 ? 's' : ''}</div></li>` : ''}${o.from_city ? `<li><span>✈</span><div><b>Départ de</b>${E(o.from_city)}</div></li>` : ''}${o.hotel_board ? `<li><span>🍽</span><div><b>Formule</b>${E(o.hotel_board)}</div></li>` : ''}${o.hotel_stars ? `<li><span>★</span><div><b>Hôtel</b>${o.hotel_stars} étoile${Number(o.hotel_stars) > 1 ? 's' : ''}</div></li>` : ''}</ul>
+            <ul class="pd-glance">${o.start_date ? `<li><span>${I('calendar')}</span><div><b>Départ</b>${E(day(o.start_date))}</div></li>` : ''}${o.end_date ? `<li><span>${I('calendar')}</span><div><b>Retour</b>${E(day(o.end_date))}</div></li>` : ''}${nights ? `<li><span>${I('moon')}</span><div><b>Durée</b>${nights + 1} jours / ${nights} nuit${nights > 1 ? 's' : ''}</div></li>` : ''}${o.from_city ? `<li><span>${I('plane')}</span><div><b>Départ de</b>${E(o.from_city)}</div></li>` : ''}${o.hotel_board ? `<li><span>${I('utensils')}</span><div><b>Formule</b>${E(o.hotel_board)}</div></li>` : ''}${o.hotel_stars ? `<li><span>${I('star')}</span><div><b>Hôtel</b>${o.hotel_stars} étoile${Number(o.hotel_stars) > 1 ? 's' : ''}</div></li>` : ''}</ul>
+            <section class="pd-block pd-card pd-cols${o.description ? ' two' : ''}">
+              ${o.description ? `<div><h2>À propos de ce séjour</h2><p class="pd-desc">${E(o.description)}</p></div>` : ''}
+              <div><h2>Ce voyage comprend</h2><ul class="pd-incl">${incl.map((t) => `<li>${E(t)}</li>`).join('')}</ul>
+              <p class="pd-note">Excursions, transferts et repas hors formule non inclus. Le détail vous est confirmé avant tout engagement.</p></div>
             </section>
-            ${o.description ? `<section class="pd-block"><h2>À propos de ce séjour</h2><p class="pd-desc">${E(o.description)}</p></section>` : ''}
-            <section class="pd-block"><h2>Ce voyage comprend</h2><ul class="pd-incl">${incl.map((t) => `<li>${E(t)}</li>`).join('')}</ul>
-              <p class="pd-note">Les services non listés (excursions, transferts, repas hors formule…) ne sont pas inclus. Le détail et les conditions vous sont confirmés par TripVision avant tout engagement.</p></section>
-            ${dest ? `<section class="pd-block pd-guide" style="background-image:linear-gradient(90deg,rgba(6,24,19,.88),rgba(6,24,19,.35)),url('${img(dest.slug)}')"><div><span class="eyebrow">La destination</span><h2>${E(dest.name)}, ${E(dest.country)}</h2><p>${E(dest.intro[0])}</p><a class="btn gold" href="#destination/${dest.slug}" data-page-link="destination/${dest.slug}">Découvrir ${E(dest.name)} →</a></div></section>` : ''}
-            <section class="pd-block"><h2>Pourquoi réserver avec TripVision</h2>
-              <div class="pd-why"><div><b>Prix clair</b><p>Le prix par personne est affiché, sans frais cachés.</p></div><div><b>Accompagnement</b><p>Une équipe vous répond avant, pendant et après le séjour.</p></div><div><b>Compte client</b><p>Suivez votre réservation et téléchargez-la en PDF depuis votre espace.</p></div></div></section>
+            ${dest ? `<section class="pd-block pd-guide" style="background-image:linear-gradient(90deg,rgba(6,24,19,.88),rgba(6,24,19,.3)),url('${img(dest.slug)}')"><div><span class="eyebrow">La destination</span><h2>${E(dest.name)}, ${E(dest.country)}</h2><p>${E(dest.intro[0])}</p><a class="btn gold" href="#destination/${dest.slug}" data-page-link="destination/${dest.slug}">Découvrir ${E(dest.name)} →</a></div></section>` : ''}
           </div>
           <aside class="pd-book" id="pdBook"><div class="pd-box">
             <small>par personne, dès</small>${old ? `<s>${eur(o.old_price)}</s>` : ''}<strong>${eur(o.price)}</strong>
             <div class="pd-rows">${o.start_date ? `<div><span>Dates</span><b>${E(day(o.start_date))}${o.end_date ? ' → ' + E(day(o.end_date)) : ''}</b></div>` : ''}${nights ? `<div><span>Durée</span><b>${nights + 1} jours / ${nights} nuits</b></div>` : ''}${o.hotel_board ? `<div><span>Formule</span><b>${E(o.hotel_board)}</b></div>` : ''}</div>
-            <label class="pd-trav">Voyageurs<select id="pdTrav">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<option value="${n}" ${n === 2 ? 'selected' : ''}>${n} voyageur${n > 1 ? 's' : ''}</option>`).join('')}</select></label>
-            <div class="pd-total"><span>Total estimé</span><b id="pdTotal" data-price="${Number(o.price)}">${eur(Number(o.price) * 2)}</b></div>
+            <label class="pd-trav">Voyageurs<select id="pdTrav">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<option value="${n}" ${n === (window.__pdTrav || 2) ? 'selected' : ''}>${n} voyageur${n > 1 ? 's' : ''}</option>`).join('')}</select></label>
+            <div class="pd-total"><span>Total estimé</span><b id="pdTotal" data-price="${Number(o.price)}">${eur(Number(o.price) * (window.__pdTrav || 2))}</b></div>
             <button class="btn pd-cta" type="button" data-offer-book="${o.id}">Réserver ce séjour</button>
-            <p class="pd-fine">Un compte TripVision est nécessaire. Aucun paiement n’est demandé à cette étape : la disponibilité et le prix vous sont confirmés ensuite.</p>
-          </div></aside>
+            <p class="pd-fine">${I('lock')} Aucun paiement à cette étape : disponibilité et prix vous sont confirmés ensuite.</p>
+          </div>
+          <div class="pd-why"><div>${I('wallet')}<b>Prix clair</b><p>Prix par personne, sans frais cachés.</p></div><div>${I('headphones')}<b>Accompagnement</b><p>Une équipe avant, pendant et après le séjour.</p></div><div>${I('booking')}<b>Compte client</b><p>Suivi et PDF de votre réservation.</p></div></div></aside>
         </div>
-        <section class="pd-more"><h2>D’autres séjours <em>qui pourraient vous plaire</em></h2>
-          <div class="pack-grid">${state.packs.filter((x) => String(x.id) !== String(o.id)).slice(0, 3).map((x) => packCard(x)).join('') || '<p class="muted">D’autres séjours arrivent bientôt.</p>'}</div></section>
+        ${state.packs.some((x) => String(x.id) !== String(o.id)) ? `<section class="pd-more"><h2>D’autres séjours <em>qui pourraient vous plaire</em></h2>
+          <div class="pack-grid">${state.packs.filter((x) => String(x.id) !== String(o.id)).slice(0, 3).map((x) => packCard(x)).join('')}</div></section>` : ''}
       </div>`;
     if (typeof bindLinks === 'function') bindLinks(root);
   }
+
+  /* ---------- Page de réservation d'un pack ---------- */
+  function packReserve(id, soft) {
+    const root = document.getElementById('prRoot');
+    if (!root) return;
+    if (soft && root.dataset.id === String(id) && root.querySelector('#prForm, .pr-done')) return;
+    const o = typeof state !== 'undefined' ? state.packs.find((x) => String(x.id) === String(id)) : null;
+    if (!o) {
+      root.dataset.id = '';
+      root.innerHTML = loaded()
+        ? '<div class="wrap dp-missing"><h1>Offre indisponible</h1><p>Ce séjour n’est plus disponible ou n’est pas encore publié.</p><a class="btn" href="#packs" data-page-link="packs">Voir les week-ends</a></div>'
+        : '<div class="wrap dp-missing"><span class="spinner-lg"></span><p>Chargement de l’offre…</p></div>';
+      if (typeof bindLinks === 'function') bindLinks(root);
+      return;
+    }
+    root.dataset.id = String(id);
+    const nights = Number(o.hotel_nights) || 0;
+    const title = o.hotel_name || o.title || `${o.from_city || ''} → ${o.to_city || ''}`;
+    const stars = o.hotel_stars ? '★'.repeat(Number(o.hotel_stars)) : '';
+    const photo = (typeof offerImages === 'function' ? offerImages(o)[0] : o.image) || '';
+    const unit = Number(o.price) || 0;
+    const start = Math.min(9, Math.max(1, Number(window.__pdTrav) || (typeof serviceFilters !== 'undefined' ? Number(serviceFilters.pack?.travelers) : 0) || 2));
+    document.title = `Réserver ${title} | TripVision`;
+    root.innerHTML = `
+      <div class="wrap pr">
+        <nav class="dp-crumb dark" aria-label="Fil d’Ariane"><a href="#home" data-page-link="home">Accueil</a><i>›</i><a href="#packs" data-page-link="packs">Week-ends</a><i>›</i><a href="#pack/${E(o.id)}" data-page-link="pack/${E(o.id)}">${E(o.to_city || title)}</a><i>›</i><span>Réservation</span></nav>
+        <ol class="pr-steps" aria-label="Étapes"><li class="done"><b>${I('check')}</b>Séjour choisi</li><li class="on" id="prStep2"><b>2</b>Vos informations</li><li id="prStep3"><b>3</b>Demande envoyée</li></ol>
+        <div class="pr-grid">
+          <div class="pr-main" id="prMain">
+            <form class="pr-form" id="prForm" novalidate>
+              <header><h1>Réserver ce séjour</h1><p>Deux minutes suffisent. <b>Aucun paiement</b> n’est demandé maintenant : nous vérifions la disponibilité et le prix, puis nous vous confirmons la réservation.</p></header>
+              <section class="pr-sec"><h2><b>1</b>Voyageurs</h2>
+                <div class="pr-count"><button type="button" data-step="-1" aria-label="Retirer un voyageur">${I('minus')}</button><output id="prN" aria-live="polite">${start}</output><button type="button" data-step="1" aria-label="Ajouter un voyageur">${I('plus')}</button><span id="prNLabel">voyageur${start > 1 ? 's' : ''} · 9 maximum</span></div>
+              </section>
+              <section class="pr-sec"><h2><b>2</b>Vos coordonnées</h2>
+                <div class="pr-acct" id="prAcct"></div>
+                <div class="pr-fields">
+                  <label><span>Nom complet <i class="req">*</i></span><input name="name" autocomplete="name" maxlength="100" required placeholder="Prénom et nom"></label>
+                  <label><span>Téléphone <i class="req">*</i></span><input name="phone" type="tel" autocomplete="tel" maxlength="40" required placeholder="+33 6 12 34 56 78"></label>
+                </div>
+                <label><span>Un message ? <small>(facultatif)</small></span><textarea name="message" rows="3" maxlength="2000" placeholder="Dates flexibles, enfants, besoin particulier…"></textarea></label>
+              </section>
+              <label class="pr-terms"><input type="checkbox" name="terms" required><span>J’accepte que TripVision me recontacte pour confirmer ce séjour (disponibilité et prix). <i class="req">*</i></span></label>
+              <p class="pr-err" id="prErr" role="alert" hidden></p>
+              <button class="btn pr-submit" type="submit">Envoyer ma demande de réservation</button>
+              <p class="pr-fine">${I('lock')} Vos informations ne servent qu’à traiter cette demande.</p>
+            </form>
+          </div>
+          <aside class="pr-sum"><div class="pr-card">
+            <div class="pr-photo">${photo ? `<img src="${E(photo)}" alt="" decoding="async">` : ''}<span>${E(o.badge || 'Vol + hôtel')}</span></div>
+            <div class="pr-body">
+              <h3>${E(title)} <em>${stars}</em></h3>
+              <p class="pr-where">${I('pin')} ${E([o.to_city, o.country].filter(Boolean).join(', '))}</p>
+              <ul class="pr-facts">${o.start_date ? `<li>${I('calendar')}<span>${E(day(o.start_date))}${o.end_date ? ' → ' + E(day(o.end_date)) : ''}</span></li>` : ''}${nights ? `<li>${I('moon')}<span>${nights + 1} jours / ${nights} nuit${nights > 1 ? 's' : ''}</span></li>` : ''}${o.from_city ? `<li>${I('plane')}<span>Vols de ${E(o.from_city)}</span></li>` : ''}${o.hotel_board ? `<li>${I('utensils')}<span>${E(o.hotel_board)}</span></li>` : ''}</ul>
+              <div class="pr-price"><span id="prCalc">${start} × ${eur(unit)}</span><strong id="prTotal">${eur(unit * start)}</strong></div>
+              <small>Total estimé, par voyageur : ${eur(unit)}</small>
+              <a class="pr-edit" href="#pack/${E(o.id)}" data-page-link="pack/${E(o.id)}">← Revoir le séjour</a>
+            </div>
+          </div></aside>
+        </div>
+      </div>`;
+    if (typeof bindLinks === 'function') bindLinks(root);
+    const form = root.querySelector('#prForm'), acct = root.querySelector('#prAcct'), err = root.querySelector('#prErr');
+    let n = start;
+    const paint = () => {
+      root.querySelector('#prN').textContent = n;
+      root.querySelector('#prNLabel').textContent = `voyageur${n > 1 ? 's' : ''} · 9 maximum`;
+      root.querySelector('#prCalc').textContent = `${n} × ${eur(unit)}`;
+      root.querySelector('#prTotal').textContent = eur(unit * n);
+      form.querySelector('[data-step="-1"]').disabled = n <= 1;
+      form.querySelector('[data-step="1"]').disabled = n >= 9;
+    };
+    paint();
+    form.querySelectorAll('[data-step]').forEach((b) => b.addEventListener('click', () => { n = Math.min(9, Math.max(1, n + Number(b.dataset.step))); window.__pdTrav = n; paint(); }));
+    const who = () => window.TVAuth?.session?.user;
+    const drawAcct = () => {
+      const u = who();
+      acct.innerHTML = u
+        ? `<div class="pr-ok">${I('check-circle')}<div><b>Connecté en tant que ${E(u.name || u.email)}</b><small>${E(u.email)}</small></div><button type="button" class="pr-link" data-out>Changer</button></div>`
+        : `<div class="pr-need">${I('user')}<div><b>Un compte TripVision est nécessaire</b><small>Il vous permet de suivre votre demande et de télécharger votre réservation.</small></div><button type="button" class="btn small" data-login>Me connecter ou créer un compte</button></div>`;
+      if (u) { if (!form.elements.name.value) form.elements.name.value = u.name || ''; if (!form.elements.phone.value && u.phone) form.elements.phone.value = u.phone; }
+    };
+    drawAcct();
+    const login = async () => {
+      try { await window.TVAuth.require({ reason: 'Pour réserver un séjour, connectez-vous ou créez votre compte TripVision. Vos informations saisies sont conservées.' }); } catch { return false; }
+      drawAcct(); return true;
+    };
+    acct.addEventListener('click', async (e) => {
+      if (e.target.closest('[data-login]')) await login();
+      if (e.target.closest('[data-out]')) { window.TVAuth.reset(); drawAcct(); }
+    });
+    form.addEventListener('input', () => { err.hidden = true; form.querySelectorAll('.bad').forEach((x) => x.classList.remove('bad')); });
+    const fail = (msg, el) => { err.textContent = msg; err.hidden = false; (el || err).scrollIntoView({ behavior: 'smooth', block: 'center' }); el?.focus?.(); };
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.hidden = true;
+      form.querySelectorAll('.bad').forEach((x) => x.classList.remove('bad'));
+      const f = form.elements;
+      const name = f.name.value.trim(), phone = f.phone.value.trim();
+      if (!name) { f.name.classList.add('bad'); return fail('Indiquez votre nom complet.', f.name); }
+      if (phone.replace(/[^\d]/g, '').length < 6) { f.phone.classList.add('bad'); return fail('Indiquez un numéro de téléphone valide.', f.phone); }
+      if (!f.terms.checked) return fail('Cochez la case pour que nous puissions vous recontacter.', f.terms);
+      const btn = form.querySelector('.pr-submit');
+      const done = window.TVFX?.busy(btn, 'plane', 'Envoi en cours…');
+      try {
+        if (!who() && !(await login())) { done?.(); return; }
+        const s = window.TVAuth.session;
+        const r = await api('/public/offer-requests', { method: 'POST', headers: window.TVAuth.headers(), body: JSON.stringify({ offerId: o.id, name, email: s.user.email, phone, travelers: n, message: f.message.value.trim() || undefined }) });
+        await new Promise((res) => setTimeout(res, 500));
+        root.querySelector('#prStep2').classList.replace('on', 'done');
+        root.querySelector('#prStep2 b').innerHTML = I('check');
+        root.querySelector('#prStep3').classList.add('on');
+        root.querySelector('#prMain').innerHTML = `
+          <div class="pr-done">
+            <span class="pr-done-ic">${I('check')}</span>
+            <h1>${r?.returning ? 'Ravi de vous revoir !' : 'Demande envoyée'}</h1>
+            <p>Merci ${E(name.split(' ')[0])} ! Nous vérifions la disponibilité de <b>${E(title)}</b> pour ${n} voyageur${n > 1 ? 's' : ''} et vous répondons très vite par e-mail à <b>${E(s.user.email)}</b>.</p>
+            <ol class="pr-next"><li><b>1</b><span>Nous vérifions la disponibilité et le prix</span></li><li><b>2</b><span>Vous recevez la confirmation par e-mail</span></li><li><b>3</b><span>Vous suivez votre réservation dans votre espace client</span></li></ol>
+            <div class="pr-done-btns"><a class="btn" href="#packs" data-page-link="packs">Voir d’autres week-ends</a><a class="btn ghost" href="#home" data-page-link="home">Retour à l’accueil</a></div>
+          </div>`;
+        if (typeof bindLinks === 'function') bindLinks(root);
+        scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (ex) {
+        done?.();
+        if (ex?.message === 'CANCELLED') return;
+        fail(ex?.message === 'TOO_MANY_ATTEMPTS' ? 'Trop de demandes pour le moment, réessayez dans quelques minutes.' : ex?.message === 'ACCOUNT_REQUIRED' ? 'Un compte est nécessaire pour réserver un séjour.' : 'Impossible d’envoyer la demande. Vérifiez vos informations et réessayez.');
+      }
+    });
+  }
   document.addEventListener('change', (e) => {
     if (e.target.id !== 'pdTrav') return;
+    window.__pdTrav = Number(e.target.value);
     const t = document.getElementById('pdTotal');
     if (t) t.textContent = eur(Number(t.dataset.price) * Number(e.target.value));
   });
@@ -131,7 +261,8 @@
       let i = 0;
       slideTimer = setInterval(() => {
         if (document.hidden) return;
-        slides[i].classList.remove('on');
+        const gone = slides[i];
+        gone.classList.remove('on'); gone.classList.add('prev'); setTimeout(() => gone.classList.remove('prev'), 2000);
         i = (i + 1) % slides.length;
         slides[i].classList.add('on');
         document.querySelectorAll('#homeHero .hh-dot').forEach((d, k) => d.classList.toggle('on', k === i));
@@ -166,19 +297,20 @@
   function renderHomeStats() {
     const s = document.getElementById('hhStats');
     if (!s || typeof state === 'undefined') return;
-    const n = (id, v) => { const el = s.querySelector(`[data-stat="${id}"]`); if (el) el.textContent = v; };
+    const n = (id, v) => { const el = s.querySelector(`[data-stat="${id}"]`); if (!el) return; if (window.TVFX) window.TVFX.countTo(el, v); else el.textContent = v; };
     n('dest', D().length); n('flights', state.flights.length); n('cars', state.vehicles.length); n('packs', state.packs.length);
   }
 
   /* ---------- Routage ---------- */
-  function route(hash) {
+  function route(hash, soft) {
     const [kind, arg] = String(hash || '').split('/');
     if (kind === 'destination') destination(arg);
     else if (kind === 'pack') packPage(arg);
+    else if (kind === 'pack-reserve') packReserve(arg, soft);
   }
   window.TVPages = {
     route,
-    refresh() { route(location.hash.slice(1)); renderHomeDeals(); renderHomeStats(); },
+    refresh() { route(location.hash.slice(1), true); renderHomeDeals(); renderHomeStats(); },
     init() { initHome(); renderHomeDeals(); renderHomeStats(); },
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => window.TVPages.init()); else window.TVPages.init();

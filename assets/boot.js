@@ -3,6 +3,7 @@
   var id = (location.hash || '').slice(1).split('/')[0];
   if (id === 'client' || id === 'admin' || id === 'admin-login') id = 'login';
   if (id === 'pack') id = 'packdetail';
-  if (['home', 'flights', 'cars', 'reserve', 'packs', 'login', 'partner', 'contact', 'destination', 'packdetail'].indexOf(id) > -1) document.documentElement.setAttribute('data-boot', id);
+  if (id === 'pack-reserve') id = 'packreserve';
+  if (['home', 'flights', 'cars', 'reserve', 'packs', 'login', 'partner', 'contact', 'destination', 'packdetail', 'packreserve'].indexOf(id) > -1) document.documentElement.setAttribute('data-boot', id);
   setTimeout(function () { document.documentElement.removeAttribute('data-boot'); }, 6000);
 })();
