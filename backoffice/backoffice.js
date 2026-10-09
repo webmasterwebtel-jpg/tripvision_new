@@ -28,7 +28,6 @@ const ICONS = {
   close: '<path d="M6 6l12 12M18 6 6 18"/>',
   upload: '<path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
   profile: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
-  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
   clock2: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   shield: '<path d="M12 3 4 6v6c0 4.5 3.2 7.8 8 9 4.8-1.2 8-4.5 8-9V6z"/>',
 };
@@ -53,7 +52,6 @@ const SECTIONS = [
   { id: 'clients', label: 'Clients', group: 'gov', allow: () => can('clients.view') || ACCOUNT_PERMS.some(can) },
   { id: 'mailing', label: 'Mailing', group: 'gov', allow: () => can('mailing.export') },
   { id: 'accounts', label: 'Comptes internes', group: 'gov', allow: () => ACCOUNT_PERMS.some(can) },
-  { id: 'settings', label: 'Réglages', group: 'gov', allow: () => can('settings.manage') },
   { id: 'audit', label: 'Journal d’audit', group: 'gov', allow: () => can('audit.view') },
   { id: 'connections', label: 'Connexions', group: 'tech', allow: () => user?.role === 'it' },
   { id: 'health', label: 'Santé système', group: 'tech', allow: () => user?.role === 'it' },
@@ -62,7 +60,7 @@ const SECTIONS = [
 const ROLE_LABELS = { it: 'IT', admin: 'Agent', manager: 'Manager' };
 const MANAGEABLE = { it: ['it', 'manager', 'admin'], manager: ['manager', 'admin'], admin: [] };
 const PERM_GROUPS = [
-  ['Annonces véhicules', [['vehicles.create', 'Ajouter'], ['vehicles.edit', 'Valider, publier, masquer, programmer'], ['vehicles.delete', 'Supprimer'], ['franchise.manage', 'Fixer le montant de la franchise (toutes les voitures)']]],
+  ['Annonces véhicules', [['vehicles.create', 'Ajouter'], ['vehicles.edit', 'Valider, publier, masquer, programmer'], ['vehicles.delete', 'Supprimer'], ['franchise.manage', 'Fixer la franchise et le prix de sa protection (toutes les voitures)']]],
   ['Offres vols & packs', [['offers.create', 'Créer'], ['offers.edit', 'Activer, désactiver, programmer'], ['offers.delete', 'Supprimer']]],
   ['Réservations', [['bookings.view', 'Voir les réservations et leurs chiffres'], ['bookings.manage', 'Confirmer les réservations (l’annulation reste au loueur)']]],
   ['Messagerie', [['chats.reply', 'Lire et répondre aux clients et partenaires'], ['chats.manage', 'Clôturer, rouvrir, attribuer, gérer les réponses types']]],
@@ -71,7 +69,6 @@ const PERM_GROUPS = [
   ['Mailing', [['mailing.export', 'Consulter et exporter les contacts']]],
   ['Catégories de voitures', [['categories.manage', 'Créer, modifier, ordonner les catégories']]],
   ['Tendances', [['trends.view', 'Voir ce que les visiteurs recherchent et réservent']]],
-  ['Réglages', [['settings.manage', 'Modifier le prix de la protection de la franchise']]],
   ['Comptes internes', [['accounts.create', 'Créer'], ['accounts.edit', 'Modifier, bloquer, réinitialiser'], ['accounts.delete', 'Supprimer']]],
   ['Journal d’audit', [['audit.view', 'Consulter le journal des actions']]],
 ];
@@ -946,7 +943,7 @@ const RENDERERS = {
 
   async vehicles() {
     const [{ vehicles, partners }, fr] = await Promise.all([api('/admin/dashboard'), api('/admin/franchise').catch(() => null)]);
-    if (fr) FR.amount = fr.amount;
+    if (fr) { FR.amount = fr.amount; FR.protection = fr.protectionPerDay; }
     DATA.vehicles = vehicles;
     DATA.partners = partners;
     const rows = vehicles.map(v => `<tr class="clickable"${fa({ status: pubKey(v), category: v.category, owner: v.partner_company })} data-detail="vehicle" data-id="${esc(v.id)}">
@@ -1070,19 +1067,6 @@ const RENDERERS = {
       + bars('Voitures les plus consultées', 'Fiches ouvertes et réservations', t.cars, x => (x.label || 'Véhicule') + (x.city ? ` · ${x.city}` : ''), detail)
       + bars('Villes de location', 'Où l’on cherche une voiture', t.carCities, x => x.city, detail)
       + `</div>`;
-  },
-
-  async settings() {
-    const st = await api('/admin/settings');
-    return pageHead('Gouvernance', '<em>Réglages</em>', 'Les prix et paramètres communs à tout le site.')
-      + `<form id="settingsForm" class="card">
-        <div class="card-head"><div><h3>Protection de la franchise</h3><p>Prix fixe par jour, identique pour toutes les voitures. Les loueurs ne le modifient pas : le client peut l’ajouter à sa réservation.</p></div></div>
-        <div class="form-grid">
-          ${field('Prix de la protection (€ par jour)', `name="franchisePerDay" type="number" min="0" max="200" step="0.01" required value="${esc(st.franchisePerDay)}"`)}
-          <p class="muted full">Mettez 0 pour ne plus proposer la protection. Le changement s’applique tout de suite à toutes les annonces.</p>
-          <div class="form-actions"><button class="btn primary" type="submit">Enregistrer le prix</button></div>
-        </div>
-      </form>`;
   },
 
   async chats() {
@@ -1323,19 +1307,25 @@ const fv = (x) => esc(x ?? '');
 const options = (list, current) => list.map(x => `<option ${x === current ? 'selected' : ''}>${esc(x)}</option>`).join('');
 
 /* ---------- Franchise : un seul montant, fixé par TripVision pour toutes les voitures ---------- */
-const FR = { amount: null };
+const FR = { amount: null, protection: null };
 function openFranchiseModal() {
   const has = FR.amount != null;
   openModal({
-    eyebrow: 'Annonces véhicules', title: has ? 'Modifier la franchise' : 'Définir la franchise', confirmLabel: has ? 'Enregistrer le montant' : 'Appliquer à tous les véhicules', loadingText: 'Enregistrement…',
-    bodyHtml: `<p class="modal-text">Le montant restant à la charge du client en cas de dommage ou de vol. Il s’applique à <b>toutes les annonces</b>, celles des partenaires comprises, et s’affiche sur chaque offre.</p>
-      <div class="form-grid">${field('Montant de la franchise (€)', `name="amount" type="number" min="1" max="100000" step="1" required placeholder="Ex. 1200" value="${has ? esc(FR.amount) : ''}"`)}</div>
-      ${has ? `<div class="fr-current"><span>Montant actuel : <b>${money(FR.amount)}</b></span><button class="btn small danger" type="button" data-action="franchise-delete">Supprimer la franchise</button></div>` : ''}`,
+    eyebrow: 'Annonces véhicules', title: 'Franchise et protection', confirmLabel: 'Appliquer à tous les véhicules', loadingText: 'Enregistrement…',
+    bodyHtml: `<p class="modal-text">Les mêmes valeurs pour <b>toutes les annonces</b>, celles des partenaires comprises. Elles s’affichent tout de suite sur chaque offre.</p>
+      <div class="form-grid">
+        ${field('Montant de la franchise (€)', `name="amount" type="number" min="1" max="100000" step="1" placeholder="Ex. 1200" value="${has ? esc(FR.amount) : ''}"`)}
+        ${field('Protection de la franchise (€ par jour)', `name="protection" type="number" min="0" max="200" step="0.01" required placeholder="Ex. 7" value="${FR.protection != null ? esc(FR.protection) : ''}"`)}
+        <p class="muted full">Franchise : ce qui reste à la charge du client en cas de dommage ou de vol (laissez vide pour ne pas en afficher). Protection : l’option que le client peut ajouter à sa réservation (0 pour ne plus la proposer).</p>
+      </div>
+      ${has ? `<div class="fr-current"><span>Franchise actuelle : <b>${money(FR.amount)}</b></span><button class="btn small danger" type="button" data-action="franchise-delete">Supprimer la franchise</button></div>` : ''}`,
     run: async (f) => {
-      const amount = Number(f.elements.amount.value);
-      const r = await api('/admin/franchise', { method: 'PUT', body: JSON.stringify({ amount }) });
-      FR.amount = r.amount;
-      return { title: 'Franchise enregistrée', text: `${money(r.amount)} pour toutes les voitures, affiché tout de suite sur le site.` };
+      const raw = f.elements.amount.value.trim();
+      const protection = Number(f.elements.protection.value);
+      if (raw) FR.amount = (await api('/admin/franchise', { method: 'PUT', body: JSON.stringify({ amount: Number(raw) }) })).amount;
+      else if (has) FR.amount = (await api('/admin/franchise', { method: 'DELETE' })).amount;
+      FR.protection = (await api('/admin/settings', { method: 'PUT', body: JSON.stringify({ franchisePerDay: protection }) })).franchisePerDay;
+      return { title: 'Enregistré', text: `${FR.amount ? `Franchise : ${money(FR.amount)}` : 'Aucune franchise affichée'} · protection : ${FR.protection > 0 ? `${money(FR.protection)} / jour` : 'non proposée'}. Appliqué à toutes les voitures.` };
     },
   });
 }
@@ -1747,22 +1737,12 @@ $('#overlay').addEventListener('click', closeDrawer);
 
 document.addEventListener('submit', async (e) => {
   const form = e.target;
-  if (!['loginForm', 'forgotForm', 'activateForm', 'changePasswordForm', 'partnerForm', 'profileForm', 'passwordForm', 'chatReplyForm', 'settingsForm'].includes(form.id)) return;
+  if (!['loginForm', 'forgotForm', 'activateForm', 'changePasswordForm', 'partnerForm', 'profileForm', 'passwordForm', 'chatReplyForm'].includes(form.id)) return;
   e.preventDefault();
   const data = Object.fromEntries(new FormData(form));
   const errorEl = form.id === 'loginForm' ? $('#loginError') : form.id === 'changePasswordForm' ? $('#changePasswordError') : form.id === 'activateForm' ? $('#activateError') : null;
   if (errorEl) errorEl.hidden = true;
   const submit = form.querySelector('button[type=submit]');
-
-  if (form.id === 'settingsForm') {
-    const stop = setLoading(submit, 'Enregistrement…');
-    try {
-      await api('/admin/settings', { method: 'PUT', body: JSON.stringify({ franchisePerDay: Number(data.franchisePerDay) }) });
-      toast('Prix enregistré : il s’applique tout de suite à toutes les voitures.');
-    } catch (err) { if (!(err instanceof ApiError)) console.error(err); toast(err.message); }
-    stop();
-    return;
-  }
 
   if (form.id === 'chatReplyForm') {
     const stopChat = setLoading(submit, 'Envoi…');

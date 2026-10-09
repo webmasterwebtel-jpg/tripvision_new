@@ -1352,11 +1352,11 @@ app.get('/api/admin/booking-stats', auth(...BACKOFFICE_ROLES), canAny('bookings.
 }));
 
 const settingsSchema = z.object({ franchisePerDay: z.coerce.number().min(0).max(200) });
-app.get('/api/admin/settings', auth(...BACKOFFICE_ROLES), can('settings.manage'), h(async (_req, res) => {
+app.get('/api/admin/settings', auth(...BACKOFFICE_ROLES), canAny('franchise.manage', 'settings.manage'), h(async (_req, res) => {
   await loadSettings();
   res.json({ franchisePerDay: settings.franchisePerDay });
 }));
-app.put('/api/admin/settings', auth(...BACKOFFICE_ROLES), can('settings.manage'), h(async (req, res) => {
+app.put('/api/admin/settings', auth(...BACKOFFICE_ROLES), canAny('franchise.manage', 'settings.manage'), h(async (req, res) => {
   const b = settingsSchema.parse(req.body);
   await query(`INSERT INTO site_settings(key, value, updated_at, updated_by) VALUES ('franchise_protection_per_day', $1::jsonb, now(), $2)
                ON CONFLICT (key) DO UPDATE SET value = $1::jsonb, updated_at = now(), updated_by = $2`, [JSON.stringify(b.franchisePerDay), req.user.name || req.user.email]);

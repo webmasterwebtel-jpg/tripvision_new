@@ -155,7 +155,7 @@
       ${select('Conducteur jeune : supplément', 'youngDriverAge', YOUNG_AGES, x.youngDriverFee > 0 ? (x.youngDriverAge ?? '') : (x.id || x.model ? 'none' : ''), { required: true, choose: true })}
       ${input('Montant du supplément jeune conducteur (€)', `name="youngDriverFee" type="number" min="0.01" step="0.01" placeholder="Ex. 25" ${x.youngDriverFee > 0 ? 'required' : 'disabled'} value="${esc(x.youngDriverFee > 0 ? x.youngDriverFee : '')}"`)}
       ${select('Facturation du supplément', 'youngDriverPricing', [['day', 'Par jour de location'], ['once', 'Forfait unique']], x.youngDriverPricing || 'day', {})}
-      ${lessor ? `${section('Franchise et protection')}${hint('Fixées par TripVision, identiques pour toutes les voitures : le montant de la franchise se règle avec le bouton « Franchise » de la page Annonces, le prix de la protection dans Réglages. Rien à saisir ici.')}` : ''}
+      ${lessor ? `${section('Franchise et protection')}${hint('Fixées par TripVision, identiques pour toutes les voitures : la franchise et le prix de sa protection se règlent avec le bouton « Franchise » de la page Annonces véhicules. Rien à saisir ici.')}` : ''}
       ${section('Options payantes (facultatif)')}
       ${hint('Ajoutez les options proposées avec ce véhicule : nom, description, prix, quantité maximale. Le client les choisit pendant sa réservation.')}
       <div class="full extras-box" data-extras>
