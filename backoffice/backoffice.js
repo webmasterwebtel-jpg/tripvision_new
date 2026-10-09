@@ -1943,3 +1943,11 @@ if (linkToken) {
 } else {
   render();
 }
+
+// Menu repliable (mobile et tablette)
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('#menuBtn');
+  const app = document.querySelector('.app');
+  if (b && app) { const on = app.classList.toggle('nav-open'); b.setAttribute('aria-expanded', String(on)); }
+  else if (app && e.target.closest('#nav a')) app.classList.remove('nav-open');
+});

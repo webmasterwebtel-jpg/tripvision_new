@@ -3866,7 +3866,7 @@ html.fx .page.active{animation:fxPage .5s ease backwards}
 .cabin-list li[aria-selected="true"] .tv-icon{opacity:1}
 .cabin-list li[aria-selected="true"]{font-weight:700}
 .cabin-list li:hover{background:#eef3f0}
-:is(.flight-search-panel):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)) .cabin-btn{color:#fff}
+@media (hover:hover) and (min-width:1121px){:is(.flight-search-panel):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)) .cabin-btn{color:#fff}}
 @media(max-width:1120px){.flight-meta-row{grid-template-columns:repeat(2,minmax(0,1fr))}.cabin-list{right:0;left:0;min-width:0}}
 @media(max-width:560px){.flight-meta-row{grid-template-columns:1fr!important}}
 
@@ -3940,3 +3940,23 @@ html.fx .page.active{animation:fxPage .5s ease backwards}
 .dest-hot{position:absolute;left:12px;top:12px;z-index:2;display:inline-flex;gap:5px;align-items:center;padding:5px 10px;border-radius:999px;background:rgba(233,201,122,.95);color:#2d2208;font-size:11.5px;font-weight:800;font-style:normal}
 .dest-hot .tv-icon{width:13px;height:13px;stroke-width:2.4}
 @media(max-width:800px){.trend-tiles{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:170px}.trend-tile.r1{grid-column:span 2;grid-row:span 1}.trend-tile.r1 .tt-rank{font-size:80px}.trend-tile.r1 .tt-name b{font-size:38px}.tt-rank{font-size:48px}}
+
+/* ============ Série 15 : adaptation à tous les écrans (site public) ============ */
+@media(max-width:1100px){.flight-card{grid-template-columns:minmax(0,1fr)!important}.flight-photo{max-height:220px}.flight-buy{grid-auto-flow:row}}
+.flight-sortbar,.service-filter-pills,.pills{flex-wrap:wrap}
+@media(max-width:760px){.flight-sortbar,.service-results-head{gap:10px}.flight-sortbar .pills{width:100%}.service-filter-pills .pill{flex:1 1 auto}}
+img,video,iframe{max-width:100%}
+
+/* Bandeaux de réassurance : sur mobile, plus de lignes alignées entre colonnes */
+@media(max-width:900px){
+  .hh-trust-grid,.trust-grid{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:22px;column-gap:18px}
+  .hh-trust-grid>div,.trust-grid>div{grid-row:auto;grid-template-rows:auto auto}
+}
+@media(max-width:560px){.hh-trust-grid,.trust-grid{grid-template-columns:minmax(0,1fr)}}
+.tips-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1180px){.tips-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.car-intro-steps{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.tips-grid{grid-template-columns:minmax(0,1fr)}}
+.tips-grid .tip-head{gap:10px}
+.tips-grid .tip-head b{width:30px;height:30px;font-size:14px}
+.tips-grid .tip-head h3{font-size:clamp(15px,1.2vw,18px)}
+@media(max-width:1180px){.tips-grid .tip-head h3{font-size:20px}}

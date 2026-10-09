@@ -199,3 +199,12 @@ body[data-theme="partner"] .btn.primary:hover { background: #0b5f58; }
 .card>.sec-sub,.card>.login-list,.card>.sec-note{margin-left:24px;margin-right:24px}
 .card>.login-list{margin-bottom:6px}.card>.sec-note{margin-bottom:22px}
 .card>.kv-grid{margin:8px 24px 22px}
+
+/* Petits écrans : en-tête compact */
+@media (max-width:640px){
+  .site-link span{display:none}
+  .site-link{width:40px;min-height:40px;padding:0;justify-content:center}
+  .brand-text small{display:none}
+  .page-head h1,.page-head h2{font-size:clamp(30px,9vw,44px)}
+  .workspace>*{min-width:0}
+}

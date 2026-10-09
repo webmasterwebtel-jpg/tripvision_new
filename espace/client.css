@@ -244,3 +244,26 @@ body[data-theme="client"] #logoutBtn { display: none; }
   body[data-theme="client"] .me.has-menu { padding: 3px; }
   body[data-theme="client"] .brand strong { font-size: 22px; }
 }
+
+/* Client : la barre d'onglets du bas ne déborde plus */
+@media (max-width:860px){
+  body[data-theme="client"] .menu-btn{display:none!important}
+  body[data-theme="client"] #nav{overflow:hidden!important;display:flex!important;flex-direction:row!important;max-height:none;padding:6px 4px calc(6px + env(safe-area-inset-bottom))!important}
+  body[data-theme="client"] #nav a{min-width:0;flex:1 1 0;padding:6px 2px!important;gap:2px;max-width:100%}
+  body[data-theme="client"] #nav a span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+  body[data-theme="client"] .app{padding-bottom:84px}
+}
+
+/* Client : l'en-tête et les billets ne dépassent jamais la largeur de l'écran */
+@media (max-width:960px){
+  body[data-theme="client"] .c-hero{grid-template-columns:minmax(0,1fr)}
+  body[data-theme="client"] .c-hero>*,body[data-theme="client"] .ticket>*,body[data-theme="client"] .c-stats>*{min-width:0}
+  body[data-theme="client"] .ticket{grid-template-columns:minmax(0,1fr)}
+  body[data-theme="client"] .c-stats{gap:6px}
+}
+@media (max-width:480px){
+  body[data-theme="client"] .c-hero{padding:24px 18px}
+  body[data-theme="client"] .c-hero h2,body[data-theme="client"] .c-hero h1{font-size:clamp(30px,9vw,44px);overflow-wrap:anywhere}
+  body[data-theme="client"] .c-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+  body[data-theme="client"] .c-stats span{font-size:10px;letter-spacing:.06em;overflow-wrap:anywhere}
+}
