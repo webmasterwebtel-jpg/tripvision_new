@@ -143,6 +143,7 @@
       <path class="trail" d="M64 60H4M66 66H14" />
       <g class="fly">
         <path class="body far-wing" d="M168 52l26-22h11l-15 22z"/>
+        <g class="engine far-engine" transform="translate(4 7)"><path d="M201 37.5c1.6 0 2.8 1.7 2.8 4s-1.2 4-2.8 4h-17l-5.5-2.2v-3.6l5.5-2.2z" fill="#2c5a4b"/><ellipse cx="178.6" cy="41.5" rx="1.8" ry="3" fill="#c6a76b"/></g>
         <path class="body" d="M80 53L62 16h17l29 36z"/>
         <path class="body" d="M72 63L48 75h12l34-9z"/>
         <path class="body" d="M64 66l12-11c4-3 8-4 14-4h176c16 0 30 5 38 11-8 6-22 10-38 10H86c-10 0-18-2-22-6z"/>
@@ -151,7 +152,7 @@
         <path class="ink" d="M258 55v13M264 55v13M258 55h6M258 68h6"/>
         <path d="M84 66.5h196" stroke="#c6a76b" stroke-width="2" stroke-linecap="round"/>
         <path class="body" d="M158 66l44 34h16l-18-34z"/>
-        <g class="engine"><ellipse cx="192" cy="85" rx="17" ry="7.5" fill="#0f3b2e"/><ellipse cx="207" cy="85" rx="3" ry="6" fill="#c6a76b"/><path d="M178 85h22" stroke="#2c5a4b" stroke-width="1.4"/></g>
+        <g class="engine"><path d="M208 79.5c2 0 3.5 2.4 3.5 5.5s-1.5 5.5-3.5 5.5h-24l-8-3v-5l8-3z" fill="#0f3b2e"/><ellipse cx="176.5" cy="85" rx="2.6" ry="4.2" fill="#c6a76b"/><path d="M190 85h18" stroke="#2c5a4b" stroke-width="1.4"/></g>
         <circle class="beacon" cx="62" cy="17" r="2.2" fill="#e8463a"/>
       </g>
       <g class="near"><path class="cloud near-cloud" d="M120 108c3-11 19-13 25-5 8-7 22-4 22 7 7 0 11 4 11 8h-66c0-6 3-10 8-10zM480 108c3-11 19-13 25-5 8-7 22-4 22 7 7 0 11 4 11 8h-66c0-6 3-10 8-10zM320 20c2-8 13-9 17-4 5-4 14-2 14 5 5 0 8 3 8 6h-46c0-4 3-7 7-7zM680 20c2-8 13-9 17-4 5-4 14-2 14 5 5 0 8 3 8 6h-46c0-4 3-7 7-7z"/></g>

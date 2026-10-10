@@ -205,6 +205,7 @@ function logout(message) {
   sessionStorage.clear();
   closeDrawer(); closeModalNow();
   location.hash = '';
+  document.querySelectorAll('#loginForm input, #forgotForm input, #changePasswordForm input').forEach((i) => { i.value = ''; });
   show('login');
   if (typeof message === 'string') toast(message);
 }
@@ -729,12 +730,15 @@ document.addEventListener('click', (e) => {
 });
 document.addEventListener('change', (e) => { if (e.target.matches?.('[data-notif-kind]')) filterNotifs(); });
 const hhmm = (t, off) => (t ? `${esc(t)}${off ? ` (+${off} j)` : ''}` : '—');
+// Comparateur pour retrouver le vol le moins cher, toutes compagnies confondues.
+const compareUrl = (o) => `https://www.google.com/travel/flights?hl=fr&q=${encodeURIComponent(`Vols ${o.from_city || ''} ${o.to_city || ''} ${o.start_date ? String(o.start_date).slice(0, 10) : ''}${o.flight?.tripType === 'oneway' ? ' aller simple' : o.end_date ? ` retour ${String(o.end_date).slice(0, 10)}` : ''}`)}`;
 const flightRows = (o) => {
   const f = o.flight;
   if (!f) return [];
   const dur = f.durationMin ? `${Math.floor(f.durationMin / 60)} h ${String(f.durationMin % 60).padStart(2, '0')}` : '';
   return [
     ['Compagnie', [esc(f.airline), esc(f.flightNumber)].filter(Boolean).join(' · ')],
+    ['Lien de réservation', f.bookingUrl ? `<a class="ext-link" href="${esc(f.bookingUrl)}" target="_blank" rel="noopener noreferrer">${esc(f.bookingUrl.replace(/^https?:\/\//, '').slice(0, 70))}${f.bookingUrl.length > 78 ? '…' : ''} ${icon('external')}</a>` : '<span class="muted">Aucun lien</span>'],
     ['Aller', `${fmtDay(o.start_date)} · ${hhmm(f.departTime)} → ${hhmm(f.arriveTime, f.arriveDayOffset)}${dur ? ` · ${dur}` : ''}`],
     f.tripType === 'roundtrip' ? ['Retour', `${fmtDay(o.end_date)} · ${hhmm(f.returnDepartTime)} → ${hhmm(f.returnArriveTime, f.returnDayOffset)}`] : ['Trajet', 'Aller simple'],
     ['Escales', f.stops ? `${f.stops} escale${f.stops > 1 ? 's' : ''}` : 'Direct'], ['Classe', esc(f.cabin)], ['Bagages', esc(f.baggage)],
@@ -845,6 +849,9 @@ function offerActions(o, withExtras = false) {
     siteBtn('offer', o, 'Voir l’offre'),
     can('offers.edit') && actionBtn('offer-edit', o.id, 'Modifier'),
     !isArchived(o) && can('offers.edit') && actionBtn('offer-schedule', o.id, `${icon('clock')} Programmer`),
+    o.flight?.bookingUrl && `<a class="btn small" href="${esc(o.flight.bookingUrl)}" target="_blank" rel="noopener noreferrer" title="Ouvrir l’offre sur le site de la compagnie">${icon('external')} Vérifier sur ${esc(o.flight.airline || 'la compagnie')}</a>`,
+    withExtras && o.flight && `<a class="btn small" href="${esc(compareUrl(o))}" target="_blank" rel="noopener noreferrer" title="Comparer toutes les compagnies sur ce trajet">${icon('search')} Comparer les prix</a>`,
+    withExtras && o.flight && can('offers.edit') && actionBtn('offer-link', o.id, 'Changer le lien'),
     !isArchived(o) && can('offers.edit') && (o.status === 'active' ? actionBtn('offer-deactivate', o.id, 'Désactiver', 'danger') : actionBtn('offer-activate', o.id, 'Activer', 'primary')),
     can('offers.delete') && actionBtn('offer-delete', o.id, 'Supprimer', 'danger'),
   ].filter(Boolean).join('');
@@ -963,7 +970,7 @@ const RENDERERS = {
     const { offers } = await api('/admin/dashboard');
     DATA.offers = offers;
     const rows = offers.map(o => `<tr class="clickable"${fa({ status: pubKey(o), country: o.country })} data-detail="offer" data-type="${o.type}" data-id="${esc(o.id)}">
-      <td><span class="badge plain">${o.type === 'flight' ? 'Vol' : 'Pack'}</span></td><td><strong>${esc(o.title)}</strong></td><td>${esc(o.to_city)}</td>
+      <td><span class="badge plain">${o.type === 'flight' ? 'Vol' : 'Pack'}</span></td><td><strong>${esc(o.title)}</strong>${o.flight?.bookingUrl ? `<a class="row-link" href="${esc(o.flight.bookingUrl)}" target="_blank" rel="noopener noreferrer" title="Vérifier l’offre sur le site de la compagnie">${esc(o.flight.airline || 'Compagnie')} ${icon('external')}</a>` : ''}</td><td>${esc(o.to_city)}</td>
       <td class="num">${money(o.price)}</td><td>${pubBadge(o)}</td>
       <td class="actions"><span class="row-actions">${offerActions(o)}</span></td></tr>`).join('');
     return pageHead('Opérations', 'Vols <em>& packs</em>', 'Cliquez sur une offre pour la consulter. Publiez-la tout de suite ou programmez-la.',
@@ -1621,6 +1628,21 @@ const ACT = {
   },
   'offer-deactivate': (id) => confirmCall({ eyebrow: 'Offre', title: `Désactiver « ${esc(find('offers', id).title)} » ?`, message: 'L’offre disparaîtra du site immédiatement. Vous pourrez la réactiver plus tard.', confirmLabel: 'Désactiver', tone: 'danger', loading: 'Désactivation en cours…', success: 'Offre désactivée', url: `/admin/offers/${id}/status`, body: { status: 'inactive' } }),
   'offer-delete': (id) => confirmCall({ eyebrow: 'Suppression', title: `Supprimer « ${esc(find('offers', id).title)} » ?`, message: 'L’offre sera retirée du site et de cette liste. Cette action ne peut pas être annulée depuis le back-office.', confirmLabel: 'Supprimer définitivement', tone: 'danger', loading: 'Suppression en cours…', success: 'Offre supprimée', method: 'DELETE', url: `/admin/offers/${id}` }),
+  'offer-link': (id) => {
+    const o = find('offers', id);
+    openModal({
+      eyebrow: 'Offre vol', title: 'Lien de réservation', confirmLabel: 'Enregistrer le lien', loadingText: 'Enregistrement…',
+      bodyHtml: `<p class="modal-text">Le bouton « Voir l’offre » du site ouvre ce lien. Vérifiez qu’il mène bien au vol, au bon prix, sur le site de ${esc(o.flight?.airline || 'la compagnie')}.</p>
+        <div class="form-grid">${field('Lien de la compagnie', `name="bookingUrl" type="url" required maxlength="600" value="${esc(o.flight?.bookingUrl || '')}" placeholder="https://…"`, true)}</div>
+        <p class="muted"><a href="${esc(o.flight?.bookingUrl || '#')}" target="_blank" rel="noopener noreferrer">Tester le lien actuel ${icon('external')}</a> · <a href="${esc(compareUrl(o))}" target="_blank" rel="noopener noreferrer">Comparer les prix ${icon('external')}</a></p>`,
+      run: async (f) => {
+        const url = f.elements.bookingUrl.value.trim();
+        if (!/^https:\/\//i.test(url)) throw new ApiError('Le lien doit commencer par https://');
+        await api(`/admin/offers/${id}/link`, { method: 'PATCH', body: JSON.stringify({ bookingUrl: url }) });
+        return { title: 'Lien enregistré', text: 'Le bouton du site ouvre maintenant ce lien.' };
+      },
+    });
+  },
   'offer-schedule': (id) => {
     const o = find('offers', id);
     openModal({ eyebrow: 'Offre', title: `Programmer « ${o.title} »`, confirmLabel: 'Enregistrer la date', loadingText: 'Enregistrement de la programmation…', bodyHtml: `<p class="modal-text">Choisissez quand l’offre doit apparaître sur le site. L’offre doit être active pour être publiée à cette date.</p>${scheduleFields(o.publish_at)}`,

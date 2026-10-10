@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="backoffice.css?v=20">
+  <link rel="stylesheet" href="backoffice.css?v=21">
 </head>
 <body>
   <div id="login" class="auth" hidden>
@@ -22,11 +22,11 @@
       <p class="auth-foot">Accès réservé aux équipes TripVision</p>
     </section>
     <section class="auth-panel">
-      <form id="loginForm" class="auth-card">
+      <form id="loginForm" class="auth-card" autocomplete="off">
         <p class="eyebrow">Connexion</p>
         <h2>Bon retour <em>parmi nous</em></h2>
-        <label>Adresse e-mail <input type="email" name="email" required autocomplete="username" placeholder="prenom@tripvision.fr"></label>
-        <label>Mot de passe <input type="password" name="password" required autocomplete="current-password" placeholder="••••••••••••"></label>
+        <label>Adresse e-mail <input type="email" name="email" required autocomplete="off" placeholder="prenom@tripvision.fr"></label>
+        <label>Mot de passe <input type="password" name="password" required autocomplete="new-password" placeholder="••••••••••••"></label>
         <p id="loginError" class="form-error" role="alert" hidden></p>
         <button class="btn primary block" type="submit">Se connecter</button>
         <button class="link-btn" type="button" data-goto="forgot">Mot de passe oublié ?</button>
@@ -48,7 +48,7 @@
       <form id="forgotForm" class="auth-card">
         <p class="eyebrow">Mot de passe oublié</p>
         <h2>Demander <em>une réinitialisation</em></h2>
-        <label>Adresse e-mail <input type="email" name="email" required autocomplete="username" placeholder="prenom@tripvision.fr"></label>
+        <label>Adresse e-mail <input type="email" name="email" required autocomplete="off" placeholder="prenom@tripvision.fr"></label>
         <p id="forgotMsg" class="form-note" role="status" hidden></p>
         <button class="btn primary block" type="submit">Envoyer la demande</button>
         <button class="link-btn" type="button" data-goto="login">← Retour à la connexion</button>
@@ -150,7 +150,7 @@
   <script src="/assets/pricing.js?v=1"></script>
   <script src="/assets/vehicle-form.js?v=20"></script>
   <script src="/assets/responsive-tables.js?v=1"></script>
-<script src="backoffice.js?v=39"></script>
+<script src="backoffice.js?v=40"></script>
 </body>
 </html>
 

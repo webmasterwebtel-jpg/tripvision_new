@@ -1478,6 +1478,15 @@ app.patch('/api/admin/offers/:id/status', auth(...BACKOFFICE_ROLES), can('offers
   res.json(rows[0]);
 }));
 
+// Changer seulement le lien de réservation d'un vol (vérification par l'équipe).
+app.patch('/api/admin/offers/:id/link', auth(...BACKOFFICE_ROLES), can('offers.edit'), h(async (req, res) => {
+  const { bookingUrl } = z.object({ bookingUrl: z.string().trim().max(600).url('Lien invalide').refine((u) => /^https:\/\//i.test(u), 'Le lien doit commencer par https://') }).parse(req.body);
+  const { rows } = await query(`UPDATE offers SET details = jsonb_set(COALESCE(details, '{}'::jsonb), '{flight,bookingUrl}', to_jsonb($1::text), true) WHERE id = $2 AND type = 'flight' AND deleted_at IS NULL RETURNING *`, [bookingUrl, req.params.id]);
+  if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
+  await audit(req.user.id, 'update_offer_link', 'offer', req.params.id, clientIp(req));
+  res.json(withAbsImage(rows[0]));
+}));
+
 app.patch('/api/admin/offers/:id/schedule', auth(...BACKOFFICE_ROLES), can('offers.edit'), h(async (req, res) => {
   const { publishAt } = scheduleSchema.parse(req.body);
   const { rows } = await query('UPDATE offers SET publish_at = $1 WHERE id = $2 AND deleted_at IS NULL RETURNING *', [publishAt || null, req.params.id]);

@@ -465,9 +465,10 @@
 
   /* ---------- Explorer : chaque destination avec son vol le moins cher ---------- */
   const AFRICA = /Sénégal|Côte d’Ivoire|Cameroun|Maroc|Gabon|Congo|Tunisie|Algérie|Bénin|Togo|Mali|Guinée|Burkina/i;
-  const regionOf = (d) => (/^France$/i.test(d.country) ? 'fr' : AFRICA.test(d.country) ? 'af' : /États-Unis|Canada|Émirats|Thaïlande|Indonésie|Maldives|Maurice|Seychelles|Mexique|dominicaine|Tanzanie|Cap-Vert|Égypte/i.test(d.country) ? 'world' : 'eu');
+  const AMERICAS = /États-Unis|Canada|Mexique|dominicaine|Guadeloupe|Martinique|Brésil|Cuba/i, ASIA = /Émirats|Thaïlande|Indonésie|Maldives|Japon|Vietnam|Inde|Turquie/i, INDIAN = /Maurice|Seychelles|Tanzanie|Cap-Vert|Égypte/i;
+  const regionOf = (d) => (/^France$/i.test(d.country) && !/réunion|guadeloupe|martinique/i.test(d.slug) ? 'fr' : /guadeloupe|martinique/.test(d.slug) ? 'am' : /reunion/.test(d.slug) ? 'af' : AFRICA.test(d.country) || INDIAN.test(d.country) ? 'af' : AMERICAS.test(d.country) ? 'am' : ASIA.test(d.country) && !/Turquie/.test(d.country) ? 'asia' : 'eu');
   const inRegion = (d, r) => r === 'all' || (r === 'beach' ? Boolean(d.beach) : regionOf(d) === r);
-  const REGIONS = [['all', 'Toutes'], ['beach', 'Plages et îles'], ['af', 'Afrique'], ['eu', 'Europe'], ['fr', 'France'], ['world', 'Monde']];
+  const REGIONS = [['all', 'Toutes'], ['beach', 'Plages et îles'], ['af', 'Afrique et océan Indien'], ['eu', 'Europe'], ['fr', 'France'], ['am', 'Amériques et Caraïbes'], ['asia', 'Asie et Moyen-Orient']];
   // Vol le moins cher vers une destination (offres publiées uniquement).
   function cheapestTo(d) {
     if (typeof state === 'undefined') return null;
@@ -492,7 +493,7 @@
           <span class="xp-name"><b>${E(d.name)}</b><small>${E(d.country)}</small></span>
           ${o ? `<span class="xp-price"><small>Vols à partir de</small><strong>${eur(o.price)}</strong></span>
           <span class="xp-meta"><span>${I('plane')} ${E(o.from_city || 'Paris')} → ${E(d.name)}</span><span class="${f.stops ? 'stop' : 'direct'}">${f.stops ? `${f.stops} escale${f.stops > 1 ? 's' : ''}` : 'Direct'}</span><span>${f.tripType === 'oneway' ? 'Aller simple' : 'Aller-retour'}</span></span>`
-          : `<span class="xp-price none"><small>${E(d.flight)}</small><em>Découvrir la destination →</em></span>`}
+          : `<span class="xp-soon">${I('plane')} Vols bientôt disponibles · <b>Découvrir ${E(d.name)} →</b></span>`}
         </span></a>`;
     }).join('');
     more.hidden = rows.length <= 9;
@@ -518,7 +519,7 @@
 
   /* ---------- Week-ends : destinations du monde entier, par envie ---------- */
   const WK = { tab: 'sun' };
-  const WK_TABS = [['sun', 'Soleil et plages'], ['city', 'Grandes villes'], ['fr', 'France'], ['eu', 'Europe'], ['af', 'Afrique'], ['world', 'Asie et Amériques']];
+  const WK_TABS = [['sun', 'Soleil et plages'], ['city', 'Grandes villes'], ['fr', 'France'], ['eu', 'Europe'], ['af', 'Afrique'], ['am', 'Amériques'], ['asia', 'Asie']];
   const packFrom = (d) => (typeof state === 'undefined' ? null : state.packs.filter((o) => norm(o.to_city) === norm(d.name)).sort((a, b) => Number(a.price) - Number(b.price))[0] || null);
   function renderWeekendDest() {
     const grid = document.getElementById('weekendDest');

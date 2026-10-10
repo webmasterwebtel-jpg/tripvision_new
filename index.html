@@ -7,7 +7,7 @@
   <meta name="description" content="TripVision sélectionne des bons plans vols, locations de voiture et packs week-end depuis la France." />
   <link rel="stylesheet" href="styles.css?v=20260927-admin-1" />
   <script src="assets/boot.js"></script>
-  <link rel="stylesheet" href="premium.css?v=20261019-v63" />
+  <link rel="stylesheet" href="premium.css?v=20261020-v65" />
 </head>
 <body>
   <svg class="tv-icon-sprite" aria-hidden="true" focusable="false">
@@ -156,7 +156,7 @@
             <div class="flight-search-top">
               <div>
                 <span>Rechercher un vol</span>
-                <strong>Choisissez vos deux aéroports</strong>
+                <strong>D’où partez-vous, où allez-vous ?</strong>
               </div>
               <div class="flight-trip-toggle" role="group" aria-label="Type de trajet">
                 <label><input type="radio" name="tripType" value="roundtrip" checked><span>Aller-retour</span></label>
@@ -381,17 +381,17 @@
         <div class="auth-form-panel">
           <div class="auth-form-wrap">
             <div class="auth-view active" id="authSignin">
-              <form id="loginForm" class="saas-auth-form" method="post" action="javascript:void(0)" autocomplete="on" onsubmit="return false;">
+              <form id="loginForm" class="saas-auth-form" method="post" action="javascript:void(0)" autocomplete="off" onsubmit="return false;">
                 <div class="saas-auth-head">
                   <div class="eyebrow">Mon Espace Client</div>
                   <h2>Connexion</h2>
                   <p>Renseignez vos identifiants pour accéder à votre compte.</p>
                 </div>
                 <label>Adresse e-mail
-                  <input name="email" placeholder="vous@exemple.fr" type="email" autocomplete="username" required>
+                  <input name="email" placeholder="vous@exemple.fr" type="email" autocomplete="off" required>
                 </label>
                 <label>Mot de passe
-                  <div class="password-field"><input name="password" placeholder="Votre mot de passe" type="password" autocomplete="current-password" required><button class="password-toggle" type="button" aria-label="Afficher le mot de passe">Afficher</button></div>
+                  <div class="password-field"><input name="password" placeholder="Votre mot de passe" type="password" autocomplete="new-password" required><button class="password-toggle" type="button" aria-label="Afficher le mot de passe">Afficher</button></div>
                 </label>
                 <div class="auth-options"><label class="remember-me"><input type="checkbox" name="remember"> <span>Se souvenir de moi</span></label><button type="button" class="auth-link-btn" data-auth-view="forgot">Mot de passe oublié ?</button></div>
                 <button class="btn auth-main-btn" type="submit">Se connecter</button>
@@ -439,11 +439,11 @@
             <p class="muted">Vous n’avez pas encore de compte ? Envoyez votre dossier à TripVision avant toute connexion.</p>
           </div>
           <div class="partner-access-card">
-            <form id="partnerLoginForm" class="panel form">
+            <form id="partnerLoginForm" class="panel form" autocomplete="off">
               <h2>Connexion partenaire</h2>
               <p class="muted">Utilisez les accès transmis après validation de votre dossier.</p>
-              <input name="email" placeholder="Email professionnel" type="email" autocomplete="username" required />
-              <input name="password" placeholder="Mot de passe" type="password" autocomplete="current-password" required />
+              <input name="email" placeholder="Email professionnel" type="email" autocomplete="off" required />
+              <input name="password" placeholder="Mot de passe" type="password" autocomplete="new-password" required />
               <button class="btn" type="submit">Accéder au portail</button>
               <button class="partner-forgot" id="partnerForgot" type="button">Mot de passe oublié ?</button>
               <button class="partner-request-toggle" id="openPartnerApplication" type="button">Demander un accès →</button>
@@ -529,17 +529,17 @@
   <script src="assets/cabin-pick.js?v=1"></script>
   <script src="assets/gallery.js?v=5"></script>
   <script src="assets/spin.js?v=5"></script>
-  <script src="assets/guest-auth.js?v=3"></script>
-  <script src="assets/destinations.js?v=8"></script>
+  <script src="assets/guest-auth.js?v=4"></script>
+  <script src="assets/destinations.js?v=9"></script>
   <script src="assets/scene.js?v=1"></script>
   <script src="assets/fx.js?v=10"></script>
-  <script src="assets/fx2.js?v=6"></script>
-  <script src="assets/pages.js?v=15"></script>
+  <script src="assets/fx2.js?v=7"></script>
+  <script src="assets/pages.js?v=16"></script>
   <script src="assets/pricing.js?v=1"></script>
   <script src="assets/range-picker.js?v=4"></script>
   <script src="assets/cars.js?v=43"></script>
-  <script src="script.js?v=20261016-v43"></script>
-  <script src="assets/flight-gate.js?v=2"></script>
+  <script src="script.js?v=20261020-v44"></script>
+  <script src="assets/flight-gate.js?v=4"></script>
 </body>
 </html>
 

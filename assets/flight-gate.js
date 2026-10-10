@@ -25,7 +25,7 @@
   @keyframes fgShake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
   .fg-err{min-height:18px;margin:6px 0 4px;color:#c0392b;font-size:.82rem}
   .fg-opt{display:flex;gap:10px;align-items:flex-start;margin:4px 0 16px;font-size:.84rem;color:#5f6a64;line-height:1.45;cursor:pointer}
-  .fg-opt input{margin-top:2px;width:17px;height:17px;accent-color:#075f4b}
+  .fg-opt input{margin-top:0;width:22px;height:22px;flex:0 0 22px;accent-color:#075f4b;cursor:pointer}
   .fg-go{width:100%;justify-content:center}
   .fg-note{margin:12px 0 0!important;text-align:center;font-size:.78rem!important;color:#8b948e!important}
   .fg-fallback{display:none;margin-top:12px;text-align:center;font-size:.88rem}
@@ -33,7 +33,8 @@
   document.head.appendChild(css);
 
   const offerOf = (id) => (typeof state !== 'undefined' ? state.flights.find((o) => String(o.id) === String(id)) : null);
-  const known = () => { try { return JSON.parse(localStorage.getItem('tvContact') || 'null') || {}; } catch { return {}; } };
+  const known = () => ({});
+  try { localStorage.removeItem('tvContact'); } catch { /* rien */ }
 
   function open(id) {
     const o = offerOf(id);
@@ -47,7 +48,7 @@
       <button type="button" class="fg-x" aria-label="Fermer" data-fg-close>×</button>
       <h3 id="fgTitle">${E(airline)}</h3>
       <p class="fg-route"><b>${E(o.from_city || '')} → ${E(o.to_city || '')}</b></p>
-      <label class="fg-f">Votre adresse e-mail <input type="email" name="email" autocomplete="email" inputmode="email" placeholder="vous@exemple.fr" value="${E(known().email || '')}" required></label>
+      <label class="fg-f">Votre adresse e-mail <input type="email" name="email" autocomplete="off" inputmode="email" placeholder="vous@exemple.fr" value="${E(known().email || '')}" required></label>
       <div class="fg-err" role="alert"></div>
       <label class="fg-opt"><input type="checkbox" name="consent" ${known().marketing ? 'checked' : ''}><span>Recevoir les meilleures offres de vols (facultatif)</span></label>
       <button class="btn fg-go" type="submit">Continuer ↗</button>
@@ -75,7 +76,6 @@
       const tab = window.open('', '_blank');
       try { if (tab) tab.opener = null; } catch { /* rien */ }
       const consent = form.elements.consent.checked;
-      try { localStorage.setItem('tvContact', JSON.stringify({ ...known(), email, marketing: consent })); } catch { /* rien */ }
       window.TVFX?.track('flight_click', o.id, o.to_city, o.country, `${o.from_city || ''} → ${o.to_city || ''}${o.flight?.airline ? ` · ${o.flight.airline}` : ''}`);
       const btn = form.querySelector('.fg-go');
       btn.disabled = true; btn.textContent = 'Ouverture…';

@@ -17,7 +17,8 @@
   .tvga-card label{display:grid;gap:5px;font-size:13px;font-weight:600;color:#33403b}
   .tvga-card input:not([type=checkbox]){padding:12px 13px;border:1px solid #cfc9bb;font:inherit;font-weight:400}
   .tvga-card .tvga-chk{display:flex;gap:9px;align-items:flex-start;font-weight:400;font-size:12.5px;color:#5c6660;line-height:1.45}
-  .tvga-card .tvga-chk input{margin-top:2px}
+  .tvga-card .tvga-chk input{flex:0 0 22px;width:22px;height:22px;margin:0;accent-color:#0d7a58;cursor:pointer}
+  .tvga-card .tvga-chk{font-size:13.5px!important;align-items:center!important;gap:12px!important;cursor:pointer}
   .tvga-err{color:#a73535;font-size:13px;min-height:0;margin:0}
   .tvga-card .btn{width:100%;justify-content:center}
   .tvga-card .btn:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.4)}

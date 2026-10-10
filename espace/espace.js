@@ -720,41 +720,72 @@ function orderCard(o) {
 }
 
 const CLIENT_PAGES = {
+  // Tableau de bord du voyageur : prochain voyage, suivi des réservations, idées de départ et aide.
   async overview() {
     await loadClient();
     const items = clientItems();
-    const active = items.filter(i => !['inactive', 'cancelled', 'completed'].includes(i.status));
-    const done = items.filter(i => ['confirmed', 'completed'].includes(i.status));
+    const isActive = (i) => !['inactive', 'cancelled', 'completed'].includes(i.status);
+    const active = items.filter(isActive), done = items.filter(i => ['confirmed', 'completed'].includes(i.status));
     const first = String(user.name || '').split(' ')[0] || 'voyageur';
     const today = new Date().toISOString().slice(0, 10);
-    const upcoming = items.filter(i => i.kind === 'car' && !['inactive', 'cancelled'].includes(i.status) && String(i.extra.end_date || '').slice(0, 10) >= today)
-      .sort((a, b) => String(a.extra.start_date).localeCompare(String(b.extra.start_date)))[0];
-    let next;
-    if (upcoming) {
-      const sd = String(upcoming.extra.start_date).slice(0, 10);
-      const days = Math.round((new Date(sd + 'T12:00:00') - new Date(today + 'T12:00:00')) / 864e5);
-      next = `<aside class="c-next"><small>Prochain départ</small><h3>${esc(upcoming.title)}</h3>
-        <div class="when"><b>${esc(fmtDay(sd))}</b><em>${days <= 0 ? 'En cours' : days === 1 ? 'Demain' : `Dans ${days} jours`}</em></div>
-        <p>${esc(upcoming.line)}</p><div><button class="btn gold" type="button" data-action="order-open" data-id="${esc(upcoming.id)}" data-kind="${upcoming.cancel}">Voir ma réservation</button></div></aside>`;
-    } else {
-      next = `<aside class="c-next empty">${icon('plane')}<h3>Aucun départ prévu</h3><p>Réservez un vol, une voiture ou un week-end : votre prochain voyage s’affichera ici.</p></aside>`;
-    }
+    const DEST = window.TV_DEST || [];
+    const norm = (v) => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const destFor = (txt) => DEST.find((d) => norm(txt).includes(norm(d.name)));
+    const startOf = (i) => String(i.kind === 'car' ? i.extra.start_date || '' : i.extra.start_date || '').slice(0, 10);
+    const next = items.filter((i) => isActive(i) && startOf(i) >= today).sort((a, b) => startOf(a).localeCompare(startOf(b)))[0] || active[0];
+    let flights = [];
+    try { flights = await fetch('/api/public/offers?type=flight').then((r) => (r.ok ? r.json() : [])); } catch { flights = []; }
+    const fromPrice = (d) => flights.filter((o) => norm(o.to_city) === norm(d.name)).map((o) => Number(o.price)).sort((a, b) => a - b)[0];
+    const inspo = DEST.filter((d) => d.beach).sort(() => Math.random() - 0.5).slice(0, 4);
+    const heroDest = inspo[0] || DEST[0];
+    const nd = next && destFor(`${next.title} ${next.line}`);
+    const days = next && startOf(next) ? Math.round((new Date(startOf(next) + 'T12:00:00') - new Date(today + 'T12:00:00')) / 864e5) : null;
+    const [kIc, kLabel] = next ? (KIND[next.kind] || KIND.car) : [];
+    const nextCard = next ? `
+      <article class="cd-next" ${nd ? `style="--img:url('/assets/dest/${nd.slug}.jpg')"` : ''}>
+        <div class="cd-next-img">${nd ? '' : icon(kIc)}</div>
+        <div class="cd-next-body">
+          <span class="cd-kicker">${icon(kIc)} ${esc(kLabel)} · ${esc(next.ref)}</span>
+          <h3>${esc(next.title)}</h3>
+          <p>${esc(next.line)}</p>
+          <div class="cd-next-row"><div class="cd-count"><b>${days == null ? '—' : days <= 0 ? 'En cours' : days === 1 ? 'Demain' : `J-${days}`}</b><small>${startOf(next) ? esc(fmtDay(startOf(next))) : esc(next.dates || '')}</small></div>${badge(...clientState(next.status))}</div>
+          <div class="cd-next-act"><button class="btn primary small" type="button" data-action="order-open" data-id="${esc(next.id)}" data-kind="${next.cancel}">Voir ma réservation</button><button class="btn small" type="button" data-action="order-pdf" data-id="${esc(next.id)}" data-kind="${next.cancel}">${icon('download')} Voucher</button></div>
+        </div></article>`
+      : `<article class="cd-next empty"><div class="cd-next-body"><span class="cd-kicker">${icon('plane')} Prochain voyage</span><h3>Aucun départ prévu</h3><p>Choisissez une destination ci-dessous : votre prochain voyage s’affichera ici, avec son compte à rebours.</p><div class="cd-next-act"><a class="btn primary small" href="/#flights" target="_blank" rel="noopener">Trouver un vol</a></div></div></article>`;
+    const unread = (BADGES.chat || 0);
     return `
-      <section class="c-hero">
-        <div><span class="c-eyebrow">Mon espace voyageur</span><h2>Bonjour ${esc(first)}, <em>où partez-vous ?</em></h2>
-          <p>${active.length ? 'Retrouvez vos réservations, leur avancement et tous vos échanges au même endroit.' : 'Aucune réservation en cours. Prêt pour votre prochain départ ?'}</p>
-          <div class="c-cta"><a class="btn gold" href="/#flights" target="_blank" rel="noopener">${icon('plane')} Réserver un vol</a><a class="btn ghost-light" href="/#cars" target="_blank" rel="noopener">${icon('car')} Louer une voiture</a></div>
-          <div class="c-stats"><div><b>${items.length}</b><span>Réservations</span></div><div><b>${active.length}</b><span>En cours</span></div><div><b>${done.length}</b><span>Confirmées</span></div></div></div>
-        ${next}
+      <section class="cd-hero" style="--img:url('/assets/dest/${heroDest ? heroDest.slug : 'santorin'}.jpg')">
+        <div class="cd-hero-in">
+          <span class="cd-kicker light">Mon espace voyageur</span>
+          <h2>Bonjour ${esc(first)}.<br><em>Où partez-vous ensuite ?</em></h2>
+          <div class="cd-quick">
+            <a href="/#flights" target="_blank" rel="noopener">${icon('plane')}<span><b>Vols</b><small>Les meilleurs prix</small></span></a>
+            <a href="/#cars" target="_blank" rel="noopener">${icon('car')}<span><b>Voitures</b><small>Prix total affiché</small></span></a>
+            <a href="/#packs" target="_blank" rel="noopener">${icon('pack')}<span><b>Week-ends</b><small>Transport + hôtel</small></span></a>
+          </div>
+        </div>
+        ${heroDest ? `<a class="cd-hero-cap" href="/#destination/${heroDest.slug}" target="_blank" rel="noopener">${esc(heroDest.name)}, ${esc(heroDest.country)} →</a>` : ''}
       </section>
-      <section class="c-block">
-        <div class="c-block-head"><h3>Partir ailleurs</h3></div>
-        <div class="c-tiles"><a class="c-tile" href="/#flights" target="_blank" rel="noopener"><span class="ic">${icon('plane')}</span><strong>Vols</strong><span>Les meilleurs tarifs, partout dans le monde</span></a><a class="c-tile" href="/#cars" target="_blank" rel="noopener"><span class="ic">${icon('car')}</span><strong>Voitures</strong><span>Louez auprès d’enseignes vérifiées</span></a><a class="c-tile" href="/#packs" target="_blank" rel="noopener"><span class="ic">${icon('pack')}</span><strong>Week-ends</strong><span>Vol et hôtel, tout compris</span></a></div>
+      <section class="cd-stats">
+        <a href="#orders"><b>${items.length}</b><span>Réservations</span></a>
+        <a href="#orders"><b>${active.length}</b><span>En cours</span></a>
+        <a href="#orders"><b>${done.length}</b><span>Confirmées</span></a>
+        <a href="#chat"><b>${unread}</b><span>Message${unread > 1 ? 's' : ''} non lu${unread > 1 ? 's' : ''}</span></a>
       </section>
-      <section class="c-block">
-        <div class="c-block-head"><h3>Vos dernières réservations</h3><a href="#orders">Tout voir →</a></div>
-        <div class="order-list">${items.slice(0, 3).map(orderCard).join('') || `<div class="empty card">${icon('empty')}<strong>Aucune réservation</strong><span>Vos réservations apparaîtront ici dès votre première demande.</span></div>`}</div>
-      </section>`;
+      <div class="cd-grid">
+        <div class="cd-col">
+          <div class="cd-head"><h3>Mon prochain voyage</h3></div>
+          ${nextCard}
+          <div class="cd-head"><h3>Mes réservations</h3>${items.length ? '<a href="#orders">Tout voir →</a>' : ''}</div>
+          <div class="cd-list">${items.slice(0, 4).map((o) => { const [ic, kl] = KIND[o.kind] || KIND.car; const [tone, label] = clientState(o.status); return `<button type="button" class="cd-row" data-action="order-open" data-id="${esc(o.id)}" data-kind="${o.cancel}"><span class="cd-row-ic">${icon(ic)}</span><span class="cd-row-main"><b>${esc(o.title)}</b><small>${esc(kl)} · ${esc(o.ref)}${o.dates ? ` · ${esc(o.dates)}` : ''}</small></span>${badge(tone, label)}</button>`; }).join('') || `<div class="cd-empty">${icon('orders')}<span>Vos réservations apparaîtront ici.</span></div>`}</div>
+        </div>
+        <aside class="cd-side">
+          <div class="cd-help"><span class="cd-help-ic">${icon('chat')}</span><h3>Une question ?</h3><p>Notre équipe vous répond dans la messagerie et vous prévient par e-mail.</p><a class="btn primary small" href="#chat">Écrire à TripVision${unread ? ` · ${unread}` : ''}</a></div>
+          <div class="cd-tips"><h4>Bon à savoir</h4><ul><li>${icon('download')} Votre voucher PDF se télécharge depuis chaque réservation.</li><li>${icon('car')} Pour une voiture : seul l’acompte se paie en ligne, le solde à l’agence.</li><li>${icon('bell')} Vous êtes prévenu à chaque étape de votre réservation.</li></ul></div>
+        </aside>
+      </div>
+      ${inspo.length ? `<section class="cd-inspo"><div class="cd-head"><h3>Envie d’ailleurs ?</h3><a href="/#flights" target="_blank" rel="noopener">Toutes les destinations →</a></div>
+        <div class="cd-inspo-grid">${inspo.map((d) => { const p = fromPrice(d); return `<a class="cd-dest" href="/#destination/${d.slug}" target="_blank" rel="noopener"><img src="/assets/dest/${d.slug}.jpg" alt="${esc(d.name)}" loading="lazy"><span><b>${esc(d.name)}</b><small>${esc(d.country)}</small>${p ? `<em>Vols dès <strong>${money(p)}</strong></em>` : ''}</span></a>`; }).join('')}</div></section>` : ''}`;
   },
 
   async orders() {
@@ -800,7 +831,7 @@ async function accountPage() {
   sessionStorage.setItem(KEY.user, JSON.stringify(user));
   renderNav();
   let logins = [];
-  try { logins = await api('/auth/logins'); } catch { /* facultatif */ }
+  if (isPartner) { try { logins = await api('/auth/logins'); } catch { /* facultatif */ } }
   const companyCard = isPartner ? `
     <section class="card">
       <div class="card-head"><div><h3>Ma société</h3><p>Les informations affichées à vos clients et à TripVision.</p></div><a class="btn small" href="#company">${icon('company')} ${co ? 'Modifier' : 'Compléter'}</a></div>
@@ -820,7 +851,7 @@ async function accountPage() {
         <div class="form-actions"><button class="btn primary" type="submit">Enregistrer les modifications</button></div>
       </div>
     </form>`;
-  return pageHead('Compte', 'Mon <em>compte</em>', isPartner ? 'Les informations de votre entreprise et la sécurité de votre accès.' : 'Gérez vos informations personnelles et la sécurité de votre accès.') + `
+  return pageHead('Compte', 'Mon <em>compte</em>', isPartner ? 'Les informations de votre entreprise et la sécurité de votre accès.' : 'Vos informations personnelles et votre mot de passe.') + `
     <section class="card profile-hero"><span class="avatar xl">${esc(initials(shown))}</span>
       <div><h3>${esc(shown)}</h3><div class="profile-meta"><span class="role-chip dark">${isPartner ? 'Partenaire' : 'Client'}</span><span class="muted">${esc(u.email)}</span></div>
         <p class="muted">Dernière connexion : ${fmtDate(u.lastLoginAt)} · Compte créé le ${fmtDay(u.createdAt)}</p></div></section>
@@ -834,12 +865,12 @@ async function accountPage() {
         <div class="form-actions"><button class="btn primary" type="submit">Changer le mot de passe</button></div>
       </div>
     </form>
-    <section class="card">
+    ${isPartner ? `<section class="card">
       <div class="card-head"><div><h3>Sécurité de l’accès</h3><p>Pour votre protection, la session se ferme d’elle-même après <b>15 minutes d’inactivité</b>.</p></div><button class="btn small danger" type="button" data-um-logout-account>${icon('logout')} Se déconnecter</button></div>
       <h4 class="sec-sub">Dernières connexions</h4>
       ${logins.length ? `<ul class="login-list">${logins.map((l, i) => `<li><span class="li-ic"><svg viewBox="0 0 24 24" aria-hidden="true">${deviceIcon(l.device)}</svg></span><div><strong>${esc(l.device)}</strong><small>${esc(l.ip)}</small></div><time>${fmtDate(l.at)}</time>${i === 0 ? '<span class="badge ok">Actuelle</span>' : ''}</li>`).join('')}</ul>` : '<p class="muted">Aucune connexion enregistrée.</p>'}
       <p class="muted sec-note">Une connexion que vous ne reconnaissez pas ? Changez immédiatement votre mot de passe.</p>
-    </section>`;
+    </section>` : `<section class="card logout-card"><div><h3>Se déconnecter</h3><p class="muted">Fermez votre session sur cet appareil.</p></div><button class="btn small danger" type="button" data-um-logout-account>${icon('logout')} Se déconnecter</button></section>`}`;
 }
 
 /* ---------- Mise en ligne : tout de suite ou à une date choisie ---------- */
