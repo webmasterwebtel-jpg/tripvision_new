@@ -77,7 +77,7 @@ export function bookingPdf(b) {
   const doc = start();
   doc.options.bufferPages = true;
   const confirmed = b.status === 'confirmed' || b.status === 'completed';
-  header(doc, { title: 'Voucher de location de voiture', reference: b.reference, status: { ok: confirmed, label: confirmed ? 'Confirmée' : ['inactive', 'cancelled'].includes(b.status) ? 'Annulée' : 'En attente' } });
+  header(doc, { title: 'Voucher', reference: b.reference, status: { ok: confirmed, label: confirmed ? 'Confirmée' : ['inactive', 'cancelled'].includes(b.status) ? 'Annulée' : 'En attente' } });
   section(doc, 'Votre véhicule');
   rows(doc, [['Véhicule', b.vehicle], ['Enseigne', b.lessor], ['Réservé le', day(b.createdAt)]]);
   section(doc, 'Retrait et restitution');

@@ -244,5 +244,95 @@
   "artist": "Norlando Pobre",
   "license": "CC BY 2.0",
   "url": "https://commons.wikimedia.org/wiki/File:Dubai_Marina_Skyline.jpg"
+ },
+ "zanzibar": {
+  "title": "Stone Town Beach, Zanzibar (16794828306).jpg",
+  "artist": "Rod Waddington",
+  "license": "CC BY-SA 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Stone_Town_Beach,_Zanzibar_(16794828306).jpg"
+ },
+ "bangkok": {
+  "title": "Phra Borom Maha Ratchawang, Phra Nakhon, Bangkok, Thailand - panoramio (47).jpg",
+  "artist": "song songroov",
+  "license": "CC BY 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Phra_Borom_Maha_Ratchawang,_Phra_Nakhon,_Bangkok,_Thailand_-_panoramio_(47).jpg"
+ },
+ "phuket": {
+  "title": "Kata Beach November 2011 - panoramio.jpg",
+  "artist": "Jacek Lesniowski",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Kata_Beach_November_2011_-_panoramio.jpg"
+ },
+ "bali": {
+  "title": "Rice terraces, Bali.jpg",
+  "artist": "Vyacheslav Argenberg",
+  "license": "CC BY 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Rice_terraces,_Bali.jpg"
+ },
+ "maldives": {
+  "title": "Diamonds Thudufushi Beach and Water Villas, May 2017 -09.jpg",
+  "artist": "Martin Falbisoner",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Diamonds_Thudufushi_Beach_and_Water_Villas,_May_2017_-09.jpg"
+ },
+ "maurice": {
+  "title": "Sunbathing at Le Morne Beach in Mauritius (53697787846).jpg",
+  "artist": "\"dronepicr\"",
+  "license": "CC BY 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Sunbathing_at_Le_Morne_Beach_in_Mauritius_(53697787846).jpg"
+ },
+ "seychelles": {
+  "title": "Anse Source d'Argent - La Digue - Seychelles - 03.jpg",
+  "artist": "NorbertNagel",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Anse_Source_d%27Argent_-_La_Digue_-_Seychelles_-_03.jpg"
+ },
+ "la-reunion": {
+  "title": "View from Maïdo onto Cirque de Mafate 5 (31407863172).jpg",
+  "artist": "VillageHero from Ulm, Germany",
+  "license": "CC BY-SA 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:View_from_Ma%C3%AFdo_onto_Cirque_de_Mafate_5_(31407863172).jpg"
+ },
+ "guadeloupe": {
+  "title": "Plage de la Caravelle St-Anne (6).jpg",
+  "artist": "Tournasol7",
+  "license": "CC BY 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Plage_de_la_Caravelle_St-Anne_(6).jpg"
+ },
+ "martinique": {
+  "title": "Plage-de-pointe-faula.JPG",
+  "artist": "Olivier.jarfas",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Plage-de-pointe-faula.JPG"
+ },
+ "punta-cana": {
+  "title": "Punta Cana Beach 01.jpg",
+  "artist": "NoonIcarus",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Punta_Cana_Beach_01.jpg"
+ },
+ "cancun": {
+  "title": "Cancun-beach-Mexico-2016-Luka-Peternel.jpg",
+  "artist": "Luka Peternel",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Cancun-beach-Mexico-2016-Luka-Peternel.jpg"
+ },
+ "cap-vert": {
+  "title": "Fishing boats Santa Maria, Sal, Cape Verde (4334753258).jpg",
+  "artist": "IDS.photos from Tiverton, UK",
+  "license": "CC BY-SA 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Fishing_boats_Santa_Maria,_Sal,_Cape_Verde_(4334753258).jpg"
+ },
+ "djerba": {
+  "title": "Djerba plage Agir (9).jpg",
+  "artist": "Langar mehdi",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Djerba_plage_Agir_(9).jpg"
+ },
+ "hurghada": {
+  "title": "Beach, Hilton Hurghada Plaza, New Year, 2010-2011 - panoramio (6).jpg",
+  "artist": "anagh",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Beach,_Hilton_Hurghada_Plaza,_New_Year,_2010-2011_-_panoramio_(6).jpg"
  }
 }

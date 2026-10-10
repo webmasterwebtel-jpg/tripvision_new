@@ -422,9 +422,9 @@ const offerSchema = z.object({
   if (o.type === 'pack') {
     if (!o.hotelName) ctx.addIssue({ code: 'custom', path: ['hotelName'], message: 'Hôtel obligatoire pour un pack' });
     if (!o.hotelNights) ctx.addIssue({ code: 'custom', path: ['hotelNights'], message: 'Nombre de nuits obligatoire pour un pack' });
-    // Nos packs sont des week-ends (1 ou 2 nuits) ou des week-ends prolongés (3 nuits), en France.
-    if (o.hotelNights > 3) ctx.addIssue({ code: 'custom', path: ['hotelNights'], message: 'Un pack est un week-end (1 ou 2 nuits) ou un week-end prolongé (3 nuits).' });
-    if (countryCodeByName(o.country || 'France') !== 'FR') ctx.addIssue({ code: 'custom', path: ['country'], message: 'Les packs week-end sont proposés en France uniquement.' });
+    // Week-end (1 ou 2 nuits), week-end prolongé (3 nuits) ou escapade (4 à 7 nuits), partout dans le monde.
+    if (o.hotelNights > 7) ctx.addIssue({ code: 'custom', path: ['hotelNights'], message: 'Un pack dure 7 nuits au maximum.' });
+    if (!o.country) ctx.addIssue({ code: 'custom', path: ['country'], message: 'Indiquez le pays de destination.' });
     if (!o.transport?.mode) ctx.addIssue({ code: 'custom', path: ['transport'], message: 'Choisissez le mode de transport jusqu’à l’hôtel.' });
     for (const r of o.ratings || []) if (r.score > ratingMax(r.source)) ctx.addIssue({ code: 'custom', path: ['ratings'], message: `La note ${r.source} va jusqu’à ${ratingMax(r.source)}.` });
   }
@@ -1444,7 +1444,7 @@ app.post('/api/admin/offers', auth(...BACKOFFICE_ROLES), can('offers.create'), h
   const { rows } = await query(
     `INSERT INTO offers(type, title, from_city, to_city, country, badge, price, old_price, partner_name, start_date, end_date, image, description, publish_at, hotel_name, hotel_stars, hotel_nights, hotel_board, details)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
-    [o.type, o.title, o.fromCity || '', o.toCity, o.country || '', o.badge || (o.type === 'flight' ? 'Bon plan' : (o.hotelNights >= 3 ? 'Week-end prolongé' : 'Week-end')), o.price, o.oldPrice || null, o.partnerName || 'TripVision', o.startDate || null, o.endDate || null, offerCover(o) || DEFAULT_OFFER_IMAGE, o.description || '', o.publishAt || null, o.type === 'pack' ? o.hotelName : null, o.type === 'pack' ? (o.hotelStars || null) : null, o.type === 'pack' ? o.hotelNights : null, o.type === 'pack' ? (o.hotelBoard || null) : null, offerDetails(o)]
+    [o.type, o.title, o.fromCity || '', o.toCity, o.country || '', o.badge || (o.type === 'flight' ? 'Bon plan' : (o.hotelNights >= 4 ? 'Escapade' : o.hotelNights === 3 ? 'Week-end prolongé' : 'Week-end')), o.price, o.oldPrice || null, o.partnerName || 'TripVision', o.startDate || null, o.endDate || null, offerCover(o) || DEFAULT_OFFER_IMAGE, o.description || '', o.publishAt || null, o.type === 'pack' ? o.hotelName : null, o.type === 'pack' ? (o.hotelStars || null) : null, o.type === 'pack' ? o.hotelNights : null, o.type === 'pack' ? (o.hotelBoard || null) : null, offerDetails(o)]
   );
   await audit(req.user.id, o.publishAt ? 'schedule_offer' : 'create_offer', 'offer', rows[0].id, clientIp(req));
   res.status(201).json(withAbsImage(rows[0]));
@@ -1457,7 +1457,7 @@ app.patch('/api/admin/offers/:id', auth(...BACKOFFICE_ROLES), can('offers.edit')
             image = COALESCE($10, image), description = $11, hotel_name = $12, hotel_stars = $13, hotel_nights = $14, hotel_board = $15,
             details = $17::jsonb || (CASE WHEN status = 'inactive' AND details ? 'draft' THEN jsonb_build_object('draft', true, 'toVerify', details->'toVerify') ELSE '{}'::jsonb END)
      WHERE id = $16 AND deleted_at IS NULL RETURNING *`,
-    [o.title, o.fromCity || '', o.toCity, o.country || '', o.badge || (o.type === 'flight' ? 'Bon plan' : (o.hotelNights >= 3 ? 'Week-end prolongé' : 'Week-end')), o.price, o.oldPrice || null, o.startDate || null, o.endDate || null,
+    [o.title, o.fromCity || '', o.toCity, o.country || '', o.badge || (o.type === 'flight' ? 'Bon plan' : (o.hotelNights >= 4 ? 'Escapade' : o.hotelNights === 3 ? 'Week-end prolongé' : 'Week-end')), o.price, o.oldPrice || null, o.startDate || null, o.endDate || null,
      (o.images ? (offerCover(o) || DEFAULT_OFFER_IMAGE) : (normalizeImage(o.image) || null)), o.description || '', o.type === 'pack' ? o.hotelName : null, o.type === 'pack' ? (o.hotelStars || null) : null, o.type === 'pack' ? o.hotelNights : null, o.type === 'pack' ? (o.hotelBoard || null) : null, req.params.id, offerDetails(o)]
   );
   if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
@@ -1867,6 +1867,80 @@ app.get('/api/admin/trends', auth(...BACKOFFICE_ROLES), can('trends.view'), h(as
   const period = ['month', '30d', '90d', '12m'].includes(req.query.period) ? req.query.period : '30d';
   const [from, to] = periodRange(period);
   res.json({ period, from, to, ...(await trendsData(from, to)) });
+}));
+
+// Détail d'un chiffre des statistiques : la liste des événements ou des réservations derrière le total.
+const KIND_LABEL = { dest_view: 'Page destination', pack_view: 'Fiche séjour', car_view: 'Fiche voiture', search_flight: 'Recherche de vol', search_car: 'Recherche de voiture', search_pack: 'Recherche de séjour', flight_click: 'Clic vers la compagnie' };
+async function trendsDetail(kind, from, to) {
+  if (kind === 'bookings') {
+    const { rows: b } = await query(`SELECT b.created_at, 'Location de voiture' AS type, v.model AS offer, COALESCE(NULLIF(v.details->>'city', ''), v.pickup_address) AS city, b.customer_name AS customer, b.total_estimate AS amount, b.status
+      FROM bookings b JOIN vehicles v ON v.id = b.vehicle_id WHERE b.payment_status NOT IN ('awaiting', 'failed') AND b.created_at >= $1 AND b.created_at < $2`, [from, to]);
+    const { rows: r } = await query(`SELECT r.created_at, CASE WHEN r.offer_type = 'pack' THEN 'Séjour' ELSE 'Vol' END AS type, o.title AS offer, o.to_city AS city, r.customer_name AS customer, r.total AS amount, r.status
+      FROM offer_requests r JOIN offers o ON o.id = r.offer_id WHERE r.payment_status NOT IN ('awaiting', 'failed') AND r.created_at >= $1 AND r.created_at < $2`, [from, to]);
+    return [...b, ...r].sort((x, y) => new Date(y.created_at) - new Date(x.created_at)).slice(0, 1000)
+      .map((x) => ({ date: x.created_at, type: x.type, label: x.offer, city: x.city || '', country: '', customer: x.customer || '', amount: x.amount == null ? null : Number(x.amount), status: x.status }));
+  }
+  const kinds = kind === 'clicks' ? ['flight_click'] : kind === 'searches' ? ['search_flight', 'search_car', 'search_pack'] : ['dest_view', 'pack_view', 'car_view'];
+  const { rows } = await query('SELECT kind, label, city, country, created_at FROM site_events WHERE kind = ANY($1) AND created_at >= $2 AND created_at < $3 ORDER BY created_at DESC LIMIT 1000', [kinds, from, to]);
+  return rows.map((x) => ({ date: x.created_at, type: KIND_LABEL[x.kind] || x.kind, label: x.label || '', city: x.city || '', country: x.country || '' }));
+}
+const trendPeriodOf = (q) => (['month', '30d', '90d', '12m'].includes(q) ? q : '30d');
+app.get('/api/admin/trends/detail', auth(...BACKOFFICE_ROLES), can('trends.view'), h(async (req, res) => {
+  const kind = ['views', 'clicks', 'searches', 'bookings'].includes(req.query.kind) ? req.query.kind : 'views';
+  const [from, to] = periodRange(trendPeriodOf(req.query.period));
+  res.json({ kind, rows: await trendsDetail(kind, from, to) });
+}));
+// Export des statistiques : Excel (.xlsx), Excel 97-2003 (.xls) ou CSV.
+app.get('/api/admin/trends/export', auth(...BACKOFFICE_ROLES), can('trends.view'), h(async (req, res) => {
+  const period = trendPeriodOf(req.query.period), format = ['xlsx', 'xls', 'csv'].includes(req.query.format) ? req.query.format : 'xlsx';
+  const [from, to] = periodRange(period);
+  const t = await trendsData(from, to);
+  const day = (d) => new Date(d).toISOString().slice(0, 10);
+  const stamp = new Date().toISOString().slice(0, 10);
+  const top = (list, name) => list.map((x, i) => [i + 1, name(x), x.views || 0, x.clicks || 0, x.searches || 0, x.bookings || 0]);
+  const TOPH = ['Rang', 'Nom', 'Vues', 'Clics', 'Recherches', 'Réservations'];
+  const sheets = [
+    ['Résumé', ['Indicateur', 'Valeur'], [['Période', `${day(from)} → ${day(to)}`], ['Pages consultées', t.totals.views], ['Clics vers les compagnies', t.totals.clicks], ['Recherches lancées', t.totals.searches], ['Réservations et demandes', t.totals.bookings]]],
+    ['Par jour', ['Jour', 'Événements'], t.daily.map((x) => [day(x.d), x.n])],
+    ['Pays', TOPH, top(t.countries, (x) => x.country || '—')],
+    ['Villes', TOPH, top(t.cities, (x) => [x.city, x.country].filter(Boolean).join(', ') || '—')],
+    ['Vols', TOPH, top(t.flights, (x) => x.label || 'Vol')],
+    ['Séjours', TOPH, top(t.packs, (x) => x.label || 'Séjour')],
+    ['Voitures', TOPH, top(t.cars, (x) => [x.label, x.city].filter(Boolean).join(' · ') || 'Véhicule')],
+  ];
+  for (const [kind, title] of [['views', 'Pages consultées'], ['clicks', 'Clics compagnies'], ['searches', 'Recherches'], ['bookings', 'Réservations']]) {
+    const rows = await trendsDetail(kind, from, to);
+    sheets.push([title, kind === 'bookings' ? ['Date', 'Type', 'Offre', 'Ville', 'Client', 'Montant (€)', 'Statut'] : ['Date', 'Type', 'Libellé', 'Ville', 'Pays'],
+      rows.map((r) => (kind === 'bookings' ? [new Date(r.date).toLocaleString('fr-FR'), r.type, r.label, r.city, r.customer, r.amount, r.status] : [new Date(r.date).toLocaleString('fr-FR'), r.type, r.label, r.city, r.country]))]);
+  }
+  const name = `tripvision-statistiques-${stamp}`;
+  if (format === 'csv') {
+    const cell = (v) => { const x = String(v ?? ''); return /[;"\n]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x; };
+    const csv = sheets.map(([title, head, rows]) => [title, head.map(cell).join(';'), ...rows.map((r) => r.map(cell).join(';'))].join('\r\n')).join('\r\n\r\n');
+    res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="${name}.csv"` });
+    return res.send('\ufeff' + csv);
+  }
+  if (format === 'xls') {
+    // Classeur XML Excel 2003 : s'ouvre dans toutes les versions d'Excel.
+    const x = (v) => String(v ?? '').replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+    const cellX = (v) => (typeof v === 'number' ? `<Cell><Data ss:Type="Number">${v}</Data></Cell>` : `<Cell><Data ss:Type="String">${x(v)}</Data></Cell>`);
+    const xml = `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="h"><Font ss:Bold="1"/><Interior ss:Color="#E3F1EA" ss:Pattern="Solid"/></Style></Styles>${sheets.map(([title, head, rows]) => `<Worksheet ss:Name="${x(title).slice(0, 31)}"><Table><Row>${head.map((hh) => `<Cell ss:StyleID="h"><Data ss:Type="String">${x(hh)}</Data></Cell>`).join('')}</Row>${rows.map((r) => `<Row>${r.map(cellX).join('')}</Row>`).join('')}</Table></Worksheet>`).join('')}</Workbook>`;
+    res.set({ 'Content-Type': 'application/vnd.ms-excel; charset=utf-8', 'Content-Disposition': `attachment; filename="${name}.xls"` });
+    return res.send(xml);
+  }
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'TripVision';
+  for (const [title, head, rows] of sheets) {
+    const ws = wb.addWorksheet(title.slice(0, 31));
+    ws.addRow(head);
+    rows.forEach((r) => ws.addRow(r));
+    ws.getRow(1).font = { bold: true, color: { argb: 'FF0F3B2E' } };
+    ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE3F1EA' } };
+    ws.columns.forEach((c, i) => { c.width = Math.min(48, Math.max(12, ...[head[i], ...rows.map((r) => r[i])].map((v) => String(v ?? '').length + 2))); });
+    ws.views = [{ state: 'frozen', ySplit: 1 }];
+  }
+  res.set({ 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': `attachment; filename="${name}.xlsx"` });
+  res.send(Buffer.from(await wb.xlsx.writeBuffer()));
 }));
 
 // Mise en avant automatique sur le site public : recalculée sur les 30 derniers jours (mise en cache 10 minutes).

@@ -922,10 +922,10 @@ const RENDERERS = {
       </section>
       ${fresh}
       <div class="kpis">
-        ${canPartners ? `<div class="kpi"><div class="kpi-icon">${icon('partners')}</div><div><strong>${d.partners.length}</strong><span>Partenaires</span></div></div>` : ''}
-        <div class="kpi"><div class="kpi-icon">${icon('vehicles')}</div><div><strong>${d.vehicles.length}</strong><span>Annonces</span></div></div>
-        <div class="kpi"><div class="kpi-icon">${icon('offers')}</div><div><strong>${d.offers.length}</strong><span>Vols &amp; packs</span></div></div>
-        <div class="kpi"><div class="kpi-icon">${icon('bookings')}</div><div><strong>${d.bookings.length + (d.offerRequests || []).length}</strong><span>Réservations & demandes</span></div></div>
+        ${canPartners ? `<a class="kpi link" href="#partners"><div class="kpi-icon">${icon('partners')}</div><div><strong>${d.partners.length}</strong><span>Partenaires</span></div><i class="kpi-go">→</i></a>` : ''}
+        <a class="kpi link" href="#vehicles"><div class="kpi-icon">${icon('vehicles')}</div><div><strong>${d.vehicles.length}</strong><span>Annonces</span></div><i class="kpi-go">→</i></a>
+        <a class="kpi link" href="#offers"><div class="kpi-icon">${icon('offers')}</div><div><strong>${d.offers.length}</strong><span>Vols &amp; packs</span></div><i class="kpi-go">→</i></a>
+        ${can('bookings.view') || can('bookings.manage') ? `<a class="kpi link" href="#bookings"><div class="kpi-icon">${icon('bookings')}</div><div><strong>${d.bookings.length + (d.offerRequests || []).length}</strong><span>Réservations & demandes</span></div><i class="kpi-go">→</i></a>` : ''}
       </div>
       ${st ? `<section class="card"><div class="card-head"><div><h3>Réservations enregistrées</h3><p>Voitures, packs et vols réservés : TripVision en garde la trace.</p></div><a class="btn small" href="#bookings">Voir le suivi</a></div>${statsCards(st)}</section>` : ''}
       <section class="card">
@@ -1045,23 +1045,23 @@ const RENDERERS = {
     const [t, pub] = await Promise.all([api(`/admin/trends?period=${period}`), api('/public/trending').catch(() => null)]);
     const n = (v) => Number(v || 0).toLocaleString('fr-FR');
     const PERIODS = [['month', 'Ce mois-ci'], ['30d', '30 jours'], ['90d', '90 jours'], ['12m', '12 mois']];
-    const kpi = (ic, v, label) => `<div class="kpi"><div class="kpi-icon">${icon(ic)}</div><div><strong>${n(v)}</strong><span>${label}</span></div></div>`;
+    DATA.trendPeriodNow = period;
+    const kpi = (ic, v, label, kind) => `<button type="button" class="kpi link" data-trend-detail="${kind}" title="Voir le détail"><div class="kpi-icon">${icon(ic)}</div><div><strong>${n(v)}</strong><span>${label}</span></div><i class="kpi-go">→</i></button>`;
     const bars = (title, sub, list, label, extra) => {
       const max = Math.max(1, ...list.map(x => x.score));
       return `<section class="card trend-card"><div class="card-head"><div><h3>${title}</h3><p>${sub}</p></div></div>
         ${list.length ? `<ol class="trend-list">${list.map((x, i) => `<li><span class="trend-rank">${i + 1}</span><div class="trend-main"><div class="trend-line"><strong>${esc(label(x))}</strong><em>${extra(x)}</em></div><div class="trend-bar"><i style="width:${Math.max(6, Math.round(x.score / max * 100))}%"></i></div></div></li>`).join('')}</ol>` : '<p class="muted trend-empty">Pas encore de données sur cette période.</p>'}</section>`;
     };
     const detail = (x) => [x.views && `${n(x.views)} vue${x.views > 1 ? 's' : ''}`, x.clicks && `${n(x.clicks)} clic${x.clicks > 1 ? 's' : ''}`, x.searches && `${n(x.searches)} recherche${x.searches > 1 ? 's' : ''}`, x.bookings && `<b>${n(x.bookings)} réservation${x.bookings > 1 ? 's' : ''}</b>`].filter(Boolean).join(' · ') || '—';
-    const days = t.daily, maxD = Math.max(1, ...days.map(d => d.n));
-    const W = 640, H = 120, pts = days.map((d, i) => [days.length > 1 ? i / (days.length - 1) * W : W / 2, H - 8 - (d.n / maxD) * (H - 24)]);
-    const line = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
-    const spark = days.length ? `<svg viewBox="0 0 ${W} ${H}" class="trend-spark" preserveAspectRatio="none" aria-label="Activité par jour"><path d="${line} L${W} ${H} L0 ${H} Z" class="area"/><path d="${line}" class="ln"/></svg>` : '<p class="muted trend-empty">L’activité apparaîtra ici dès les premières visites.</p>';
+    const spark = dayChart(t.daily, t.from, t.to);
+    const mix = mixChart(t.totals);
     const feat = pub ? `<section class="card trend-card trend-feature"><div class="card-head"><div><h3>Mise en avant sur le site</h3><p>Affichée automatiquement sur l’accueil : « Tendances de ${esc(pub.monthName)} ». Recalculée sur les 30 derniers jours, sans rien faire.</p></div><span class="badge ${pub.estimated ? 'warn' : 'ok'}">${pub.estimated ? 'Démarrage : offres les plus fournies' : 'Basée sur les visites'}</span></div>
         <div class="trend-chips">${pub.cities.map(c => `<span class="trend-chip"><b>#${c.rank}</b> ${esc(c.city)}${c.country ? ` <small>${esc(c.country)}</small>` : ''}</span>`).join('')}</div></section>` : '';
     return pageHead('Analyse', 'Tendances <em>du site</em>', 'Ce que les visiteurs consultent, cliquent, recherchent et réservent. Les destinations les plus populaires remontent d’elles-mêmes sur le site public.',
-      `<div class="pillbar" role="group" aria-label="Période">${PERIODS.map(([k, l]) => `<button type="button" class="pill ${k === period ? 'active' : ''}" data-action="trend-period" data-id="${k}">${l}</button>`).join('')}</div>`)
-      + `<div class="kpis">${kpi('overview', t.totals.views, 'Pages consultées')}${kpi('external', t.totals.clicks, 'Clics vers les compagnies')}${kpi('search', t.totals.searches, 'Recherches lancées')}${kpi('bookings', t.totals.bookings, 'Réservations & demandes')}</div>`
-      + `<section class="card trend-card"><div class="card-head"><div><h3>Activité du site</h3><p>Visites, clics et recherches par jour.</p></div></div>${spark}</section>`
+      `<div class="pillbar" role="group" aria-label="Période">${PERIODS.map(([k, l]) => `<button type="button" class="pill ${k === period ? 'active' : ''}" data-action="trend-period" data-id="${k}">${l}</button>`).join('')}</div><div class="export-bar"><span class="muted">Exporter :</span><button type="button" class="btn small" data-trend-export="xlsx">${icon('upload')} Excel (.xlsx)</button><button type="button" class="btn small" data-trend-export="xls">Excel 97-2003 (.xls)</button><button type="button" class="btn small" data-trend-export="csv">CSV</button></div>`)
+      + `<div class="kpis">${kpi('overview', t.totals.views, 'Pages consultées', 'views')}${kpi('external', t.totals.clicks, 'Clics vers les compagnies', 'clicks')}${kpi('search', t.totals.searches, 'Recherches lancées', 'searches')}${kpi('bookings', t.totals.bookings, 'Réservations & demandes', 'bookings')}</div>`
+      + `<div class="trend-duo"><section class="card trend-card"><div class="card-head"><div><h3>Activité par jour</h3><p>Pages vues, clics et recherches. Survolez une barre pour le détail.</p></div></div>${spark}</section>
+        <section class="card trend-card"><div class="card-head"><div><h3>Répartition</h3><p>Sur la période choisie.</p></div></div>${mix}</section></div>`
       + feat
       + `<div class="trend-grid">`
       + bars('Pays les plus populaires', 'Consultés, cherchés et réservés', t.countries, x => x.country, detail)
@@ -1445,8 +1445,8 @@ function openOfferModal(type, existing = null) {
         ${field(isPack ? 'Titre' : 'Titre (facultatif)', `name="title" ${isPack ? 'required' : ''} minlength="2" placeholder="${isPack ? 'Week-end gourmand à Bordeaux' : 'Auto : Paris → Rome'}" value="${fv(o?.title)}"`, true)}
         ${isPack ? `
         ${field('Ville de départ', `name="fromCity" required data-geo="city" placeholder="Rechercher une ville…" value="${fv(o?.from_city)}"`)}
-        ${field('Destination (en France)', `name="toCity" required minlength="2" data-geo="city" data-geo-country="country" placeholder="Rechercher une ville…" value="${fv(o?.to_city)}"`)}
-        ${field('Pays', `name="country" readonly data-code="FR" value="France" title="Les packs week-end sont proposés en France uniquement"`)}
+        ${field('Destination', `name="toCity" required minlength="2" data-geo="city" data-geo-country="country" placeholder="Rechercher une ville…" value="${fv(o?.to_city)}"`)}
+        ${field('Pays', `name="country" required data-geo="country" placeholder="Rechercher un pays…" value="${fv(o?.country)}"`)}
         <h4 class="form-section full">Transport jusqu’à l’hôtel</h4>
         <div class="full transport-pick" role="radiogroup" aria-label="Mode de transport">${PACK_TRANSPORTS.map(([k, t]) => `<label class="tp-opt"><input type="radio" name="transportMode" value="${k}" required ${(o?.transport?.mode || '') === k ? 'checked' : ''}><span>${TP_ICON[k]}<b>${t}</b></span></label>`).join('')}</div>
         ${field('Précision sur le transport (facultatif)', `name="transportDetails" maxlength="160" placeholder="Ex. TGV direct Paris → Bordeaux, aller-retour" value="${fv(o?.transport?.details)}"`, true)}` : routeFields(o)}
@@ -1459,7 +1459,7 @@ function openOfferModal(type, existing = null) {
         <h4 class="form-section full">Hôtel inclus dans le pack</h4>
         ${field('Nom de l’hôtel', `name="hotelName" required maxlength="160" placeholder="Ex. Hôtel de la Cité, Bordeaux" value="${fv(o?.hotel_name)}"`, true)}
         <label>Catégorie de l’hôtel<select name="hotelStars">${[1, 2, 3, 4, 5].map(n => `<option value="${n}" ${(o?.hotel_stars ? Number(o.hotel_stars) : 3) === n ? 'selected' : ''}>${'★'.repeat(n)} ${n} étoile${n > 1 ? 's' : ''}</option>`).join('')}</select></label>
-        <label>Formule<select name="hotelNights" required>${[[1, 'Week-end · 1 nuit'], [2, 'Week-end · 2 nuits'], [3, 'Week-end prolongé · 3 nuits']].map(([n, t]) => `<option value="${n}" ${Number(o?.hotel_nights || 2) === n ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+        <label>Formule<select name="hotelNights" required>${[[1, 'Week-end · 1 nuit'], [2, 'Week-end · 2 nuits'], [3, 'Week-end prolongé · 3 nuits'], [4, 'Escapade · 4 nuits'], [5, 'Escapade · 5 nuits'], [6, 'Escapade · 6 nuits'], [7, 'Escapade · 7 nuits']].map(([n, t]) => `<option value="${n}" ${Number(o?.hotel_nights || 2) === n ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
         <label>Formule repas<select name="hotelBoard">${options(HOTEL_BOARDS, o?.hotel_board || HOTEL_BOARDS[0])}</select></label>
         <h4 class="form-section full">Notes de l’hôtel sur les sites d’avis (facultatif)</h4>
         <p class="muted full">Recopiez les notes affichées sur TripAdvisor, Booking.com ou Google : elles s’affichent sur l’offre avec leur source.</p>
@@ -1475,7 +1475,7 @@ function openOfferModal(type, existing = null) {
       const body = { type, title: g('title') || `${g('fromCity') || ''} → ${g('toCity')}`, toCity: g('toCity'), price: Number(g('price')), fromCity: g('fromCity') || undefined, country: g('country') || undefined, badge: g('badge') || undefined, oldPrice: g('oldPrice') ? Number(g('oldPrice')) : undefined, startDate: g('startDate') || undefined, endDate: g('endDate') || undefined, images: JSON.parse(g('images') || '[]'), description: g('description') || undefined };
       if (isPack) {
         const ratings = RATING_SITES.map(([source]) => ({ source, score: g(`rate_${source}`), count: g(`count_${source}`) })).filter((r) => r.score !== '' && r.score != null).map((r) => ({ source: r.source, score: Number(r.score), ...(r.count ? { count: Number(r.count) } : {}) }));
-        Object.assign(body, { country: 'France', hotelName: g('hotelName'), hotelStars: Number(g('hotelStars')), hotelNights: Number(g('hotelNights')), hotelBoard: g('hotelBoard'), transport: { mode: f.querySelector('input[name=transportMode]:checked')?.value, details: g('transportDetails') || undefined }, ratings });
+        Object.assign(body, { hotelName: g('hotelName'), hotelStars: Number(g('hotelStars')), hotelNights: Number(g('hotelNights')), hotelBoard: g('hotelBoard'), transport: { mode: f.querySelector('input[name=transportMode]:checked')?.value, details: g('transportDetails') || undefined }, ratings });
       }
       else {
         const roundtrip = g('tripType') !== 'oneway';
@@ -1511,6 +1511,57 @@ const categoryModal = (c = null) => openModal({
     return { title: c ? 'Catégorie modifiée' : 'Catégorie ajoutée' };
   },
 });
+/* ---------- Statistiques : graphiques simples et lisibles ---------- */
+function dayChart(daily, from, to) {
+  if (!daily.length) return '<p class="muted trend-empty">L’activité apparaîtra ici dès les premières visites.</p>';
+  const map = new Map(daily.map((d) => [String(d.d).slice(0, 10), d.n]));
+  const start = new Date(String(from).slice(0, 10)), end = new Date(Math.min(new Date(to).getTime(), Date.now()));
+  const days = [];
+  for (let d = new Date(start); d <= end && days.length < 400; d.setDate(d.getDate() + 1)) { const k = d.toISOString().slice(0, 10); days.push([k, map.get(k) || 0]); }
+  const max = Math.max(1, ...days.map(([, v]) => v)), nice = Math.max(4, Math.ceil(max / 4) * 4);
+  const W = 720, H = 200, L = 34, B = 26, bw = (W - L) / days.length;
+  const y = (v) => H - B - (v / nice) * (H - B - 10);
+  const grid = [0, .5, 1].map((f) => `<line x1="${L}" x2="${W}" y1="${y(nice * f)}" y2="${y(nice * f)}" class="g"/><text x="${L - 6}" y="${y(nice * f) + 4}" class="ax" text-anchor="end">${Math.round(nice * f)}</text>`).join('');
+  const fmt = (k) => new Date(k).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  const step = Math.max(1, Math.ceil(days.length / 6));
+  const bars = days.map(([k, v], i) => `<g class="col"><rect class="hit" x="${L + i * bw}" y="0" width="${bw}" height="${H - B}"/><rect class="bar" x="${L + i * bw + Math.min(2, bw * .15)}" y="${y(v)}" width="${Math.max(1, bw - Math.min(4, bw * .3))}" height="${Math.max(0, H - B - y(v))}" rx="${Math.min(4, bw / 3)}"/><title>${fmt(k)} : ${v} événement${v > 1 ? 's' : ''}</title></g>${i % step === 0 ? `<text x="${L + i * bw + bw / 2}" y="${H - 8}" class="ax" text-anchor="middle">${fmt(k)}</text>` : ''}`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" class="day-chart" role="img" aria-label="Activité par jour">${grid}${bars}</svg>`;
+}
+function mixChart(t) {
+  const rows = [['Pages consultées', t.views], ['Recherches', t.searches], ['Clics compagnies', t.clicks], ['Réservations', t.bookings]];
+  const max = Math.max(1, ...rows.map(([, v]) => v));
+  return `<ul class="mix">${rows.map(([l, v]) => `<li><span>${l}</span><div class="mix-bar"><i style="width:${Math.max(v ? 3 : 0, Math.round(v / max * 100))}%"></i></div><b>${Number(v || 0).toLocaleString('fr-FR')}</b></li>`).join('')}</ul>`;
+}
+const TREND_TITLES = { views: 'Pages consultées', clicks: 'Clics vers les compagnies', searches: 'Recherches lancées', bookings: 'Réservations & demandes' };
+async function openTrendDetail(kind) {
+  try {
+    const d = await api(`/admin/trends/detail?kind=${kind}&period=${DATA.trendPeriodNow || '30d'}`);
+    const head = kind === 'bookings' ? ['Date', 'Type', 'Offre', 'Ville', 'Client', 'Montant', 'Statut'] : ['Date', 'Type', 'Libellé', 'Ville', 'Pays'];
+    const rows = d.rows.map((r) => `<tr><td>${fmtDate(r.date)}</td><td>${esc(r.type)}</td><td><strong>${esc(r.label || '—')}</strong></td><td>${esc(r.city || '—')}</td>${kind === 'bookings' ? `<td>${esc(r.customer || '—')}</td><td class="num">${money(r.amount)}</td><td>${badge(r.status)}</td>` : `<td>${esc(r.country || '—')}</td>`}</tr>`).join('');
+    $('#drawer').innerHTML = `<header class="drawer-head"><div><span class="eyebrow">Statistiques</span><h3>${TREND_TITLES[kind]}</h3><div class="drawer-status"><span class="muted">${d.rows.length} ligne${d.rows.length > 1 ? 's' : ''} sur la période${d.rows.length >= 1000 ? ' (les 1 000 plus récentes)' : ''}</span></div></div><button class="icon-btn light" type="button" data-action="close-drawer" aria-label="Fermer">${icon('close')}</button></header>
+      <div class="drawer-body">${d.rows.length ? `<div class="table-wrap"><table class="detail-table"><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="muted">Aucune donnée sur cette période.</p>'}</div>`;
+    $('#drawer').hidden = false; $('#overlay').hidden = false; document.body.classList.add('drawer-open');
+  } catch (err) { toast(err.message); }
+}
+document.addEventListener('click', async (e) => {
+  const k = e.target.closest('[data-trend-detail]');
+  if (k) { openTrendDetail(k.dataset.trendDetail); return; }
+  const x = e.target.closest('[data-trend-export]');
+  if (!x) return;
+  const format = x.dataset.trendExport;
+  try {
+    const res = await fetch(`/api/admin/trends/export?format=${format}&period=${DATA.trendPeriodNow || '30d'}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error();
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `tripvision-statistiques-${new Date().toISOString().slice(0, 10)}.${format}`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast('Export téléchargé.');
+  } catch { toast('Export impossible.'); }
+});
+
 const ACT = {
   'category-add': () => categoryModal(),
   'category-edit': (id) => categoryModal(find('categories', id)),

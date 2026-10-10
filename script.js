@@ -82,7 +82,7 @@ const TP_LABEL={avion:'Avion',train:'Train',bus:'Bus',voiture:'Voiture'};
 const TP_SVG={avion:'<svg class="tv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2l-1.1 1.1 6.4 3.6-3.3 3.3-2.7-.5L3 14.8l3.2 1.4 1.4 3.2 1.1-1.1-.5-2.7 3.3-3.3 3.6 6.4z"/></svg>',train:'<svg class="tv-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 11h14M9 21l-2-4M15 21l2-4"/></svg>',bus:'<svg class="tv-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="15" rx="2"/><path d="M4 11h16M8 21v-3M16 21v-3"/></svg>',voiture:'<svg class="tv-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17h14M3 13l2-6a2 2 0 0 1 1.9-1.4h10.2A2 2 0 0 1 19 7l2 6v4h-2M3 13v4h2M3 13h18"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="16.5" cy="17" r="1.8"/></svg>'};
 const tpIcon=o=>TP_SVG[o.transport?.mode]||TP_SVG.avion;
 const transportText=o=>{const t=o.transport;if(!t?.mode)return o.from_city?`Vol depuis ${o.from_city}`:'';return `${TP_LABEL[t.mode]}${o.from_city?` depuis ${o.from_city}`:''}`};
-const packFormula=o=>Number(o.hotel_nights)>=3?'Week-end prolongé':'Week-end';
+const packFormula=o=>Number(o.hotel_nights)>=4?'Escapade':Number(o.hotel_nights)===3?'Week-end prolongé':'Week-end';
 const ratingMaxOf=src=>['Booking.com','Expedia','Hotels.com'].includes(src)?10:5;
 function ratingsHtml(o,cls='pk-rates'){const r=o.ratings||[];if(!r.length)return '';return `<ul class="${cls}">${r.map(x=>`<li><b>${String(x.score).replace('.',',')}<small>/${ratingMaxOf(x.source)}</small></b><span>${escapeHtml(x.source)}${x.count?` · ${Number(x.count).toLocaleString('fr-FR')} avis`:''}</span></li>`).join('')}</ul>`}
 let packTab='all';
@@ -116,7 +116,7 @@ function renderPacks(){
     const fromOk=!filt.fromCity||nrm(p.from_city).includes(nrm(filt.fromCity));
     const toOk=!filt.toCity||nrm(p.to_city).includes(nrm(filt.toCity));
     const n=Number(p.hotel_nights)||0;
-    const durOk=!filt.duration||(filt.duration==='wel'?n===3:n<=2);
+    const durOk=!filt.duration||(filt.duration==='esc'?n>=4:filt.duration==='wel'?n===3:n<=2);
     const monthOk=!filt.month||day10(p.start_date).startsWith(filt.month);
     return fromOk&&toOk&&durOk&&monthOk;
   });

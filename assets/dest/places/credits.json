@@ -132,10 +132,10 @@
   "url": "https://commons.wikimedia.org/wiki/File:Place_Mohammed_V_-_Casablanca_-_2022.jpg"
  },
  "casablanca-4.jpg": {
-  "file": "Vue_sur_Tunis.jpg",
-  "artist": "Cimoi",
-  "license": "CC BY-SA 3.0",
-  "url": "https://commons.wikimedia.org/wiki/File:Vue_sur_Tunis.jpg"
+  "file": "Ancienne médina à Casablanca.jpg",
+  "artist": "Farid mernissi",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Ancienne_m%C3%A9dina_%C3%A0_Casablanca.jpg"
  },
  "casablanca-5.jpg": {
   "file": "Pergola Casablanca 2.JPG",
@@ -1438,5 +1438,545 @@
   "artist": "Ankur Panchbudhe",
   "license": "CC BY 2.0",
   "url": "https://commons.wikimedia.org/wiki/File:Al_Fahidi_Historical_Neighbourhood_(Bastakiya).jpg"
+ },
+ "zanzibar-0.jpg": {
+  "file": "Palacio del Sultán, Stone Town, Zanzíbar, Tanzania, 2024-05-31, DD 25.jpg",
+  "artist": "Diego Delso",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Palacio_del_Sult%C3%A1n,_Stone_Town,_Zanz%C3%ADbar,_Tanzania,_2024-05-31,_DD_25.jpg"
+ },
+ "zanzibar-1.jpg": {
+  "file": "Nungwi,Zanzibar - panoramio.jpg",
+  "artist": "Jang Woo Lee",
+  "license": "CC BY 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Nungwi,Zanzibar_-_panoramio.jpg"
+ },
+ "zanzibar-2.jpg": {
+  "file": "Pescadores en isla Changuu, Tanzania, 2024-05-31, DD 21.jpg",
+  "artist": "Diego Delso",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Pescadores_en_isla_Changuu,_Tanzania,_2024-05-31,_DD_21.jpg"
+ },
+ "zanzibar-3.jpg": {
+  "file": "Magrove forest, Jozani Chwaka Bay National Park, Kusini DC, South Zanzibar, Tanzania.jpg",
+  "artist": "Mnazini",
+  "license": "CC BY 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Magrove_forest,_Jozani_Chwaka_Bay_National_Park,_Kusini_DC,_South_Zanzibar,_Tanzania.jpg"
+ },
+ "zanzibar-4.jpg": {
+  "file": "Paje beach at low tide.jpg",
+  "artist": "Matt Kieffer from London, United Kingdom",
+  "license": "CC BY-SA 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Paje_beach_at_low_tide.jpg"
+ },
+ "zanzibar-5.jpg": {
+  "file": "2024-06-15 Zanzibar spices 092025526.jpg",
+  "artist": "Bärbel Miemietz",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:2024-06-15_Zanzibar_spices_092025526.jpg"
+ },
+ "bangkok-0.jpg": {
+  "file": "Phra Borom Maha Ratchawang, Phra Nakhon, Bangkok, Thailand - panoramio (48).jpg",
+  "artist": "song songroov",
+  "license": "CC BY 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Phra_Borom_Maha_Ratchawang,_Phra_Nakhon,_Bangkok,_Thailand_-_panoramio_(48).jpg"
+ },
+ "bangkok-1.jpg": {
+  "file": "Templo Wat Arun, Bangkok, Tailandia, 2013-08-22, DD 30.jpg",
+  "artist": "Diego Delso",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Templo_Wat_Arun,_Bangkok,_Tailandia,_2013-08-22,_DD_30.jpg"
+ },
+ "bangkok-2.jpg": {
+  "file": "Wat Pho, Bangkok, Tailandia, 2013-08-22, DD 43.jpg",
+  "artist": "Diego Delso",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Wat_Pho,_Bangkok,_Tailandia,_2013-08-22,_DD_43.jpg"
+ },
+ "bangkok-3.jpg": {
+  "file": "Marché flottant du district Damnoen Saduak 9.jpg",
+  "artist": "Welcome to Thailand",
+  "license": "CC0",
+  "url": "https://commons.wikimedia.org/wiki/File:March%C3%A9_flottant_du_district_Damnoen_Saduak_9.jpg"
+ },
+ "bangkok-4.jpg": {
+  "file": "Chinatown in Bangkok.JPG",
+  "artist": "Milei.vencel",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Chinatown_in_Bangkok.JPG"
+ },
+ "bangkok-5.jpg": {
+  "file": "Chao Phraya - Horizons.JPG",
+  "artist": "Éclusette",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Chao_Phraya_-_Horizons.JPG"
+ },
+ "phuket-0.jpg": {
+  "file": "Phuket - Kata Beach 001.jpg",
+  "artist": "ADwarf",
+  "license": "Public domain",
+  "url": "https://commons.wikimedia.org/wiki/File:Phuket_-_Kata_Beach_001.jpg"
+ },
+ "phuket-1.jpg": {
+  "file": "Isla Tapu, Phuket, Tailandia, 2013-08-20, DD 36.JPG",
+  "artist": "Diego Delso",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Isla_Tapu,_Phuket,_Tailandia,_2013-08-20,_DD_36.JPG"
+ },
+ "phuket-2.jpg": {
+  "file": "Isla Phi Phi Lay, Tailandia, 2013-08-19, DD 04.JPG",
+  "artist": "Diego Delso",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Isla_Phi_Phi_Lay,_Tailandia,_2013-08-19,_DD_04.JPG"
+ },
+ "phuket-3.jpg": {
+  "file": "Phuket Old Town 3.jpg",
+  "artist": "Ryomaandres",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Phuket_Old_Town_3.jpg"
+ },
+ "phuket-4.jpg": {
+  "file": "Big Buddha - Phuket.jpg",
+  "artist": "Mussi Katz",
+  "license": "CC0",
+  "url": "https://commons.wikimedia.org/wiki/File:Big_Buddha_-_Phuket.jpg"
+ },
+ "phuket-5.jpg": {
+  "file": "Promthep Cape 03.jpg",
+  "artist": "ADwarf",
+  "license": "Public domain",
+  "url": "https://commons.wikimedia.org/wiki/File:Promthep_Cape_03.jpg"
+ },
+ "bali-0.jpg": {
+  "file": "Rice terraces tegalaland (9).jpg",
+  "artist": "Tavana",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Rice_terraces_tegalaland_(9).jpg"
+ },
+ "bali-1.jpg": {
+  "file": "Kuta Bali Indonesia Pura-Luhur-Uluwatu-03.jpg",
+  "artist": "CEphoto, Uwe Aranas",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Kuta_Bali_Indonesia_Pura-Luhur-Uluwatu-03.jpg"
+ },
+ "bali-2.jpg": {
+  "file": "Diamond Beach in Nusa Penida, Bali.jpg",
+  "artist": "Stryn",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Diamond_Beach_in_Nusa_Penida,_Bali.jpg"
+ },
+ "bali-3.jpg": {
+  "file": "Fields in Ubud, Bali, Indonesia, 20220823 1052 0411.jpg",
+  "artist": "Jakub Hałun",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Fields_in_Ubud,_Bali,_Indonesia,_20220823_1052_0411.jpg"
+ },
+ "bali-4.jpg": {
+  "file": "Pura Tanah Lot, Bali, Indonesia, 20220827 1007 1147.jpg",
+  "artist": "Jakub Hałun",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Pura_Tanah_Lot,_Bali,_Indonesia,_20220827_1007_1147.jpg"
+ },
+ "bali-5.jpg": {
+  "file": "Seminyak Beach Resort Large.JPG",
+  "artist": "User: (WT-shared) Jpatokal at  wts wikivoyage",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Seminyak_Beach_Resort_Large.JPG"
+ },
+ "maldives-0.jpg": {
+  "file": "Diamonds Thudufushi Beach and Water Villas, May 2017 -04.jpg",
+  "artist": "Martin Falbisoner",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Diamonds_Thudufushi_Beach_and_Water_Villas,_May_2017_-04.jpg"
+ },
+ "maldives-1.jpg": {
+  "file": "Male-total.jpg",
+  "artist": "Shahee Ilyas",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Male-total.jpg"
+ },
+ "maldives-2.jpg": {
+  "file": "Buiobuione Maafushi Port.jpg",
+  "artist": "Buiobuione",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Buiobuione_Maafushi_Port.jpg"
+ },
+ "maldives-3.jpg": {
+  "file": "Baa atoll islands.JPG",
+  "artist": "Frédéric Ducarme",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Baa_atoll_islands.JPG"
+ },
+ "maldives-4.jpg": {
+  "file": "Diamonds Thudufushi Beach and Water Villas, May 2017 -09.jpg",
+  "artist": "Martin Falbisoner",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Diamonds_Thudufushi_Beach_and_Water_Villas,_May_2017_-09.jpg"
+ },
+ "maldives-5.jpg": {
+  "file": "Maldives (15383006025).jpg",
+  "artist": "Laika ac from UK",
+  "license": "CC BY-SA 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Maldives_(15383006025).jpg"
+ },
+ "maurice-0.jpg": {
+  "file": "Le Morne Peninsula in Mauritius (53697779236).jpg",
+  "artist": "\"dronepicr\"",
+  "license": "CC BY 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Le_Morne_Peninsula_in_Mauritius_(53697779236).jpg"
+ },
+ "maurice-1.jpg": {
+  "file": "Mauritius Île aux Cerfs.jpg",
+  "artist": "Arne Müseler",
+  "license": "CC BY-SA 3.0 de",
+  "url": "https://commons.wikimedia.org/wiki/File:Mauritius_%C3%8Ele_aux_Cerfs.jpg"
+ },
+ "maurice-2.jpg": {
+  "file": "Terre des 7 couleurs a Chamarel ile Maurice.JPG",
+  "artist": "Toutaitanous 2",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Terre_des_7_couleurs_a_Chamarel_ile_Maurice.JPG"
+ },
+ "maurice-3.jpg": {
+  "file": "Plage de trou aux biches ile Maurice.JPG",
+  "artist": "Toutaitanous 2",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Plage_de_trou_aux_biches_ile_Maurice.JPG"
+ },
+ "maurice-4.jpg": {
+  "file": "The Champ de Mars Racecourse.JPG",
+  "artist": "Martin Falbisoner",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:The_Champ_de_Mars_Racecourse.JPG"
+ },
+ "maurice-5.jpg": {
+  "file": "Mauritius Black-River-Gorges-National-Park-01.jpg",
+  "artist": "CEphoto, Uwe Aranas",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Mauritius_Black-River-Gorges-National-Park-01.jpg"
+ },
+ "seychelles-0.jpg": {
+  "file": "Anse Source d'Argent 2-La Digue.jpg",
+  "artist": "Tobias Alt, Tobi 87",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Anse_Source_d%27Argent_2-La_Digue.jpg"
+ },
+ "seychelles-1.jpg": {
+  "file": "Vallée De Mai - National Park - Praslin - Seychelles - 01.jpg",
+  "artist": "NorbertNagel",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Vall%C3%A9e_De_Mai_-_National_Park_-_Praslin_-_Seychelles_-_01.jpg"
+ },
+ "seychelles-2.jpg": {
+  "file": "Beach Anse Lazio Praslin Seychelles islands.DNG (25746025298).jpg",
+  "artist": "dronepicr",
+  "license": "CC BY 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Beach_Anse_Lazio_Praslin_Seychelles_islands.DNG_(25746025298).jpg"
+ },
+ "seychelles-3.jpg": {
+  "file": "Beau Vallon, Mahé, Seychelles, 2025-09-07, DD 03.jpg",
+  "artist": "Diego Delso",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Beau_Vallon,_Mah%C3%A9,_Seychelles,_2025-09-07,_DD_03.jpg"
+ },
+ "seychelles-4.jpg": {
+  "file": "Big Ben Clock Tower - Victoria - Mahe - Seychelles - 01.jpg",
+  "artist": "NorbertNagel",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Big_Ben_Clock_Tower_-_Victoria_-_Mahe_-_Seychelles_-_01.jpg"
+ },
+ "seychelles-5.jpg": {
+  "file": "Granite rocks on the coast of Curieuse Island - Seychelles - 04.jpg",
+  "artist": "NorbertNagel",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Granite_rocks_on_the_coast_of_Curieuse_Island_-_Seychelles_-_04.jpg"
+ },
+ "la-reunion-0.jpg": {
+  "file": "Piton de La Fournaise - Paysage de l'île de La Réunion.jpg",
+  "artist": "Alexandre Péribé",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Piton_de_La_Fournaise_-_Paysage_de_l%27%C3%AEle_de_La_R%C3%A9union.jpg"
+ },
+ "la-reunion-1.jpg": {
+  "file": "14-07-2011 Grand Bénare (26) Mafate (version améliorée).jpg",
+  "artist": "User:Mamphi",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:14-07-2011_Grand_B%C3%A9nare_(26)_Mafate_(version_am%C3%A9lior%C3%A9e).jpg"
+ },
+ "la-reunion-2.jpg": {
+  "file": "Saint-Gilles les Bains depuis le chemin Summer.jpg",
+  "artist": "Innshou",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Saint-Gilles_les_Bains_depuis_le_chemin_Summer.jpg"
+ },
+ "la-reunion-3.jpg": {
+  "file": "2012 12 La Réunion cirque Cilaos -15.jpg",
+  "artist": "Bollenmarco",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:2012_12_La_R%C3%A9union_cirque_Cilaos_-15.jpg"
+ },
+ "la-reunion-4.jpg": {
+  "file": "Reunion Piton des Neiges.JPG",
+  "artist": "Geolina163",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Reunion_Piton_des_Neiges.JPG"
+ },
+ "la-reunion-5.jpg": {
+  "file": "Anse des Cascades, Piton Sainte-Rose, La Réunion..jpg",
+  "artist": "Clémenceau Lauret",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Anse_des_Cascades,_Piton_Sainte-Rose,_La_R%C3%A9union..jpg"
+ },
+ "guadeloupe-0.jpg": {
+  "file": "Plage de la Caravelle St-Anne (6).jpg",
+  "artist": "Tournasol7",
+  "license": "CC BY 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Plage_de_la_Caravelle_St-Anne_(6).jpg"
+ },
+ "guadeloupe-1.jpg": {
+  "file": "Les Saintes - Archipel de Guadeloupe.jpg",
+  "artist": "Jonathan SALAÜN",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Les_Saintes_-_Archipel_de_Guadeloupe.jpg"
+ },
+ "guadeloupe-2.jpg": {
+  "file": "Guadeloupe 114 - Sommet de la Soufrière 1467m - Guadeloupe.jpg",
+  "artist": "No machine-readable author provided. Ofol assumed (based on copyright claims).",
+  "license": "CC BY 2.5",
+  "url": "https://commons.wikimedia.org/wiki/File:Guadeloupe_114_-_Sommet_de_la_Soufri%C3%A8re_1467m_-_Guadeloupe.jpg"
+ },
+ "guadeloupe-3.jpg": {
+  "file": "Pointe des Châteaux et Désirade.jpg",
+  "artist": "Tiomax80",
+  "license": "CC BY 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Pointe_des_Ch%C3%A2teaux_et_D%C3%A9sirade.jpg"
+ },
+ "guadeloupe-4.jpg": {
+  "file": "Guadeloupe - bassin paradise près des chutes du Carbet.jpg",
+  "artist": "Sylvain JORIS",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Guadeloupe_-_bassin_paradise_pr%C3%A8s_des_chutes_du_Carbet.jpg"
+ },
+ "guadeloupe-5.jpg": {
+  "file": "Marie-Galante moulin eoliennes.jpg",
+  "artist": "No machine-readable author provided. Smiley assumed (based on copyright claims).",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Marie-Galante_moulin_eoliennes.jpg"
+ },
+ "martinique-0.jpg": {
+  "file": "Martinique Beach (Salines).jpg",
+  "artist": "Barbacha|Nicolas BOUTHORS",
+  "license": "Public domain",
+  "url": "https://commons.wikimedia.org/wiki/File:Martinique_Beach_(Salines).jpg"
+ },
+ "martinique-1.jpg": {
+  "file": "Saint-Pierre (Martinique) avec Montage Pelée.JPG",
+  "artist": "lb:user:Zinneke",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Saint-Pierre_(Martinique)_avec_Montage_Pel%C3%A9e.JPG"
+ },
+ "martinique-2.jpg": {
+  "file": "Anse Dufour.jpg",
+  "artist": "Patrice78500",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Anse_Dufour.jpg"
+ },
+ "martinique-3.jpg": {
+  "file": "Jardin Balata 1.JPG",
+  "artist": "Mica",
+  "license": "CC BY 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Jardin_Balata_1.JPG"
+ },
+ "martinique-4.jpg": {
+  "file": "Saint-Pierre 02 2025.jpg",
+  "artist": "Concord",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Saint-Pierre_02_2025.jpg"
+ },
+ "martinique-5.jpg": {
+  "file": "Diamond Rock.jpg",
+  "artist": "Apmarles",
+  "license": "CC BY 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Diamond_Rock.jpg"
+ },
+ "punta-cana-0.jpg": {
+  "file": "Punta Cana Beach 01.jpg",
+  "artist": "NoonIcarus",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Punta_Cana_Beach_01.jpg"
+ },
+ "punta-cana-1.jpg": {
+  "file": "2023 - Saona Island - 25.jpg",
+  "artist": "Oleg Yunakov",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:2023_-_Saona_Island_-_25.jpg"
+ },
+ "punta-cana-2.jpg": {
+  "file": "Dominican Republic Hoyo Azul.jpg",
+  "artist": "https://www.flickr.com/photos/asw909/",
+  "license": "CC BY 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Dominican_Republic_Hoyo_Azul.jpg"
+ },
+ "punta-cana-3.jpg": {
+  "file": "Playa Macao Dominican Republic.jpg",
+  "artist": "https://www.flickr.com/photos/bogdix/",
+  "license": "CC BY 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Playa_Macao_Dominican_Republic.jpg"
+ },
+ "punta-cana-4.jpg": {
+  "file": "Dominicana-Altos de Chavon.jpg",
+  "artist": "Original uploader was Niedźwiadek78 (Michał Sulczyński) at pl.wikipedia",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Dominicana-Altos_de_Chavon.jpg"
+ },
+ "punta-cana-5.jpg": {
+  "file": "Dominicana-Isla Catalina2.jpg",
+  "artist": "Original uploader was Niedźwiadek78 (Michał Sulczyński) at pl.wikipedia",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Dominicana-Isla_Catalina2.jpg"
+ },
+ "cancun-0.jpg": {
+  "file": "Tulum - God of the Winds Temple 03.JPG",
+  "artist": "Martin Falbisoner",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Tulum_-_God_of_the_Winds_Temple_03.JPG"
+ },
+ "cancun-1.jpg": {
+  "file": "T01 Chichen Itza (108720965).jpeg",
+  "artist": "Valentina Tosi",
+  "license": "CC BY 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:T01_Chichen_Itza_(108720965).jpeg"
+ },
+ "cancun-2.jpg": {
+  "file": "T01 Chichen Itza (108720897).jpeg",
+  "artist": "Valentina Tosi",
+  "license": "CC BY 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:T01_Chichen_Itza_(108720897).jpeg"
+ },
+ "cancun-3.jpg": {
+  "file": "Ourism, Ecology, and Coastal Features of Cancún and Isla Mujeres 3.jpg",
+  "artist": "Ulrich Dus",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Ourism,_Ecology,_and_Coastal_Features_of_Canc%C3%BAn_and_Isla_Mujeres_3.jpg"
+ },
+ "cancun-4.jpg": {
+  "file": "Playa Delfines - panoramio.jpg",
+  "artist": "jc_castaneda",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Playa_Delfines_-_panoramio.jpg"
+ },
+ "cancun-5.jpg": {
+  "file": "Holbox, Q.R., Mexico - panoramio (9).jpg",
+  "artist": "Андрей Бобровский",
+  "license": "CC BY 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Holbox,_Q.R.,_Mexico_-_panoramio_(9).jpg"
+ },
+ "cap-vert-0.jpg": {
+  "file": "Sal Sta Maria beach hotel.jpg",
+  "artist": "Cayambe",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Sal_Sta_Maria_beach_hotel.jpg"
+ },
+ "cap-vert-1.jpg": {
+  "file": "Salt mine.JPG",
+  "artist": "Ladislav Luppa",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Salt_mine.JPG"
+ },
+ "cap-vert-2.jpg": {
+  "file": "Boa Vista - Cape Verde - 2024-12-06 11-44-41 ILCE-7CM2 DSCGG0506 DxO.jpg",
+  "artist": "Miguel Discart &amp; Kiri Karma",
+  "license": "CC BY-SA 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Boa_Vista_-_Cape_Verde_-_2024-12-06_11-44-41_ILCE-7CM2_DSCGG0506_DxO.jpg"
+ },
+ "cap-vert-3.jpg": {
+  "file": "Coastline Santo Antao.JPG",
+  "artist": "Konstantin Krismer",
+  "license": "CC BY 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Coastline_Santo_Antao.JPG"
+ },
+ "cap-vert-4.jpg": {
+  "file": "Mindelo (S Vicente, Cabo Verde).JPG",
+  "artist": "Manuel de Sousa",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Mindelo_(S_Vicente,_Cabo_Verde).JPG"
+ },
+ "cap-vert-5.jpg": {
+  "file": "Plage de Praia aux îles du Cap-Vert (Ifremer 00572-68372 - 51185).jpg",
+  "artist": "Olivier Dugornay (IFREMER, Pôle Images, Centre Bretagne - ZI de la Pointe du Dia",
+  "license": "CC BY 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Plage_de_Praia_aux_%C3%AEles_du_Cap-Vert_(Ifremer_00572-68372_-_51185).jpg"
+ },
+ "djerba-0.jpg": {
+  "file": "Djerba-camel on the beach-sky walker.jpg",
+  "artist": "Henning Leweke from Kiel, Germany",
+  "license": "CC BY-SA 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Djerba-camel_on_the_beach-sky_walker.jpg"
+ },
+ "djerba-1.jpg": {
+  "file": "Houmt Souk May 2007.JPG",
+  "artist": "Chesdovi",
+  "license": "CC BY 2.5",
+  "url": "https://commons.wikimedia.org/wiki/File:Houmt_Souk_May_2007.JPG"
+ },
+ "djerba-2.jpg": {
+  "file": "Djerbahood-Collaboration-SETH-PUMPUM.jpg",
+  "artist": "Galerie Itinerrance",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Djerbahood-Collaboration-SETH-PUMPUM.jpg"
+ },
+ "djerba-3.jpg": {
+  "file": "Synagogue La Ghriba de Djerba (8480818301).jpg",
+  "artist": "Citizen59 from Tunis, Tunisie",
+  "license": "CC BY-SA 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Synagogue_La_Ghriba_de_Djerba_(8480818301).jpg"
+ },
+ "djerba-4.jpg": {
+  "file": "Un groupe de flamants roses à Guellala - Djerba.jpg",
+  "artist": "Skander zarrad",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Un_groupe_de_flamants_roses_%C3%A0_Guellala_-_Djerba.jpg"
+ },
+ "djerba-5.jpg": {
+  "file": "Abu Mesouar Guellala Djerba 02.jpg",
+  "artist": "Rais67",
+  "license": "CC0",
+  "url": "https://commons.wikimedia.org/wiki/File:Abu_Mesouar_Guellala_Djerba_02.jpg"
+ },
+ "hurghada-0.jpg": {
+  "file": "Beach of giftun island.JPG",
+  "artist": "Caprice4540",
+  "license": "CC BY-SA 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Beach_of_giftun_island.JPG"
+ },
+ "hurghada-1.jpg": {
+  "file": "Paysage de mer Rouge (Ifremer 00618-72967).jpg",
+  "artist": "Jerome Paillet",
+  "license": "CC BY 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Paysage_de_mer_Rouge_(Ifremer_00618-72967).jpg"
+ },
+ "hurghada-2.jpg": {
+  "file": "El Gouna, Qesm Hurghada, Red Sea Governorate, Egypt - panoramio (3).jpg",
+  "artist": "Leonid Sh.",
+  "license": "CC BY 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:El_Gouna,_Qesm_Hurghada,_Red_Sea_Governorate,_Egypt_-_panoramio_(3).jpg"
+ },
+ "hurghada-3.jpg": {
+  "file": "Ar-Rub' Al-Khali (Oman) kz01.jpg",
+  "artist": "Krzysztof Ziarnek, Kenraiz",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Ar-Rub%27_Al-Khali_(Oman)_kz01.jpg"
+ },
+ "hurghada-4.jpg": {
+  "file": "Karnak Khonsu Temple R01.jpg",
+  "artist": "Marc Ryckaert (MJJR)",
+  "license": "CC BY 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Karnak_Khonsu_Temple_R01.jpg"
+ },
+ "hurghada-5.jpg": {
+  "file": "Hurghada marina.jpg",
+  "artist": "Gigi Ibrahim",
+  "license": "CC BY 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Hurghada_marina.jpg"
  }
 }

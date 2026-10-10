@@ -48,7 +48,6 @@
         <span class="eyebrow">À voir, à faire</span><h2>Les lieux <em>à ne pas manquer</em></h2>
         <div class="dp-places">${d.places.map(([t, x], i) => `<article><figure class="dp-pic"><img src="/assets/dest/places/${E(d.slug)}-${i}.jpg" alt="${E(t)}" loading="lazy" decoding="async"></figure><div class="dp-ptxt"><b>${String(i + 1).padStart(2, '0')}</b><h3>${E(t)}</h3><p>${E(x)}</p></div></article>`).join('')}</div>
       </div></section>
-      <section class="dp-section dp-media" id="dpMedia" hidden><div class="wrap"><span class="eyebrow">Aperçu</span><h2>${E(d.name)} <em>en images et en vidéos</em></h2><div class="dm-grid" id="dmGrid"></div></div></section>
       <section class="dp-section wrap dp-tips"><span class="eyebrow">Avant de partir</span><h2>Conseils <em>pratiques</em></h2>
         <ul>${d.tips.map((t) => `<li>${E(t)}</li>`).join('')}</ul></section>
       <section class="dp-section dp-deals" id="dpDeals"><div class="wrap">
@@ -64,7 +63,6 @@
       </div></section>`;
     if (typeof bindLinks === 'function') bindLinks(root);
     window.TVFX?.track('dest_view', d.slug, d.name, d.country, d.name);
-    mountMedia(d);
     mountCars(d, !flights.length && !packs.length);
   }
 
@@ -467,8 +465,9 @@
 
   /* ---------- Explorer : chaque destination avec son vol le moins cher ---------- */
   const AFRICA = /Sénégal|Côte d’Ivoire|Cameroun|Maroc|Gabon|Congo|Tunisie|Algérie|Bénin|Togo|Mali|Guinée|Burkina/i;
-  const regionOf = (d) => (/^France$/i.test(d.country) ? 'fr' : AFRICA.test(d.country) ? 'af' : /États-Unis|Canada|Émirats/i.test(d.country) ? 'world' : 'eu');
-  const REGIONS = [['all', 'Toutes'], ['af', 'Afrique'], ['eu', 'Europe'], ['fr', 'France'], ['world', 'Amériques et Dubaï']];
+  const regionOf = (d) => (/^France$/i.test(d.country) ? 'fr' : AFRICA.test(d.country) ? 'af' : /États-Unis|Canada|Émirats|Thaïlande|Indonésie|Maldives|Maurice|Seychelles|Mexique|dominicaine|Tanzanie|Cap-Vert|Égypte/i.test(d.country) ? 'world' : 'eu');
+  const inRegion = (d, r) => r === 'all' || (r === 'beach' ? Boolean(d.beach) : regionOf(d) === r);
+  const REGIONS = [['all', 'Toutes'], ['beach', 'Plages et îles'], ['af', 'Afrique'], ['eu', 'Europe'], ['fr', 'France'], ['world', 'Monde']];
   // Vol le moins cher vers une destination (offres publiées uniquement).
   function cheapestTo(d) {
     if (typeof state === 'undefined') return null;
@@ -480,7 +479,7 @@
     const sec = document.getElementById('flightExplore');
     if (!sec) return;
     const tabs = sec.querySelector('.xp-tabs'), grid = sec.querySelector('.xp-grid'), more = sec.querySelector('[data-xp-more]');
-    const rows = D().map((d) => ({ d, o: cheapestTo(d) })).filter(({ d }) => XP.region === 'all' || regionOf(d) === XP.region)
+    const rows = D().map((d) => ({ d, o: cheapestTo(d) })).filter(({ d }) => inRegion(d, XP.region))
       .sort((a, b) => (a.o ? 0 : 1) - (b.o ? 0 : 1) || (a.o && b.o ? Number(a.o.price) - Number(b.o.price) : 0));
     tabs.innerHTML = REGIONS.map(([k, t]) => `<button type="button" class="xp-tab ${XP.region === k ? 'on' : ''}" data-xp-region="${k}">${t}</button>`).join('');
     const limit = XP.open ? rows.length : 9;
@@ -516,6 +515,42 @@
       chip.innerHTML = `${I('plane')}<i class="fc-route">${E(o.from_city || 'Paris')} → ${E(d.name)}</i><b>à partir de ${eur(o.price)}</b>`;
     });
   }
+
+  /* ---------- Week-ends : destinations du monde entier, par envie ---------- */
+  const WK = { tab: 'sun' };
+  const WK_TABS = [['sun', 'Soleil et plages'], ['city', 'Grandes villes'], ['fr', 'France'], ['eu', 'Europe'], ['af', 'Afrique'], ['world', 'Asie et Amériques']];
+  const packFrom = (d) => (typeof state === 'undefined' ? null : state.packs.filter((o) => norm(o.to_city) === norm(d.name)).sort((a, b) => Number(a.price) - Number(b.price))[0] || null);
+  function renderWeekendDest() {
+    const grid = document.getElementById('weekendDest');
+    if (!grid) return;
+    const tabs = grid.previousElementSibling;
+    const list = D().filter((d) => (WK.tab === 'sun' ? d.beach : WK.tab === 'city' ? !d.beach && regionOf(d) !== 'af' : regionOf(d) === WK.tab));
+    tabs.innerHTML = WK_TABS.map(([k, t]) => `<button type="button" class="xp-tab ${WK.tab === k ? 'on' : ''}" data-wk-tab="${k}">${t}</button>`).join('');
+    grid.innerHTML = list.map((d, i) => { const o = packFrom(d); return `<a class="wk-card" href="#destination/${d.slug}" data-page-link="destination/${d.slug}" style="--i:${i % 12}"><img src="${img(d.slug)}" alt="${E(d.name)}" loading="lazy" decoding="async"><span><b>${E(d.name)}</b><small>${E(d.country)}</small>${o ? `<em>Séjours dès <strong>${eur(o.price)}</strong></em>` : ''}</span></a>`; }).join('');
+    if (typeof bindLinks === 'function') bindLinks(grid);
+  }
+  document.addEventListener('click', (e) => { const t = e.target.closest('[data-wk-tab]'); if (t) { WK.tab = t.dataset.wkTab; renderWeekendDest(); } });
+
+  /* ---------- Accueil : plages de rêve ---------- */
+  function renderBeaches() {
+    const box = document.getElementById('beachRow');
+    if (!box) return;
+    const list = D().filter((d) => d.beach);
+    box.innerHTML = list.map((d, i) => {
+      const o = cheapestTo(d);
+      return `<a class="bc-card" href="#destination/${d.slug}" data-page-link="destination/${d.slug}" style="--i:${i}">
+        <img src="${img(d.slug)}" alt="${E(d.name)}" loading="lazy" decoding="async">
+        <span class="bc-body"><small>${E(d.country)}</small><b>${E(d.name)}</b><em>${E(d.tag)}</em>
+          <i class="bc-price">${o ? `${I('plane')} Vols dès <strong>${eur(o.price)}</strong>` : `${I('sun')} ${E(d.best)}`}</i></span></a>`;
+    }).join('');
+    if (typeof bindLinks === 'function') bindLinks(box);
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-bc-nav]');
+    if (!b) return;
+    const row = document.getElementById('beachRow');
+    row.scrollBy({ left: Number(b.dataset.bcNav) * row.clientWidth * 0.8, behavior: 'smooth' });
+  });
 
   /* ---------- Tendances du mois : mise en avant automatique ---------- */
   let trendData = null, trendAt = 0;
@@ -605,7 +640,7 @@
   };
   window.TVPages = {
     route,
-    refresh() { route(location.hash.slice(1), true); renderHomeDeals(); renderHomeStats(); renderTrending().then(paintFromPrices); renderExplore(); paintFromPrices(); },
+    refresh() { route(location.hash.slice(1), true); renderHomeDeals(); renderHomeStats(); renderTrending().then(paintFromPrices); renderExplore(); renderBeaches(); renderWeekendDest(); paintFromPrices(); },
     init() { initHome(); renderHomeDeals(); renderHomeStats(); renderTrending(); payConfig().then(() => { const h = location.hash.slice(1); if (/^pack(-reserve)?\//.test(h) && !h.endsWith('/done')) route(h); }); },
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => window.TVPages.init()); else window.TVPages.init();
