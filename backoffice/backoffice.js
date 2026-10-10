@@ -1177,29 +1177,29 @@ const RENDERERS = {
   async mailing() {
     const [{ contacts, stats }, leadsData] = await Promise.all([api('/admin/mailing'), api('/admin/flight-leads').catch(() => null)]);
     DATA.mailing = contacts;
-    const leadRows = (leadsData?.leads || []).map(l => `<tr data-f-consent="${l.consent ? 'yes' : 'no'}"><td class="num">${fmtDate(l.created_at)}</td><td><strong>${esc(l.email)}</strong></td><td>${esc(l.route)}</td><td>${esc(l.airline || '—')}</td><td>${l.consent ? '<span class="badge ok">Oui</span>' : '<span class="badge plain">Non</span>'}</td></tr>`).join('');
-    const SRC = { vol: 'Vol (réservation ou clic compagnie)' };
-    const rows = contacts.map(c => {
-      const state = c.unsubscribed_at ? 'unsub' : c.consent ? 'yes' : 'no';
-      return `<tr${fa({ state })}>
-        <td><strong>${esc(c.email)}</strong><span class="muted">${esc(c.name || '—')}${c.phone ? ' · ' + esc(c.phone) : ''}</span></td>
-        <td>${c.sources.map(s => `<span class="badge plain">${esc(SRC[s] || s)}</span>`).join(' ')}</td>
-        <td>${state === 'yes' ? badge('active', 'Accord marketing') : state === 'unsub' ? badge('inactive', 'Désinscrit') : '<span class="badge waiting">Sans accord</span>'}</td>
-        <td class="num">${c.requests_count}</td><td class="num">${fmtDay(c.created_at)}</td><td class="num">${fmtDate(c.last_seen_at)}</td></tr>`;
-    }).join('');
-    const exportCard = `<section class="card"><div class="card-head"><div><h3>Exporter la liste</h3><p>Choisissez les contacts à inclure, puis le format. La colonne « Accord marketing » indique ceux qui ont coché la case lors de leur réservation.</p></div></div>
-      <div class="form-grid" style="align-items:end">
-        <label>Consentement<select id="mlConsent"><option value="all">Tous les contacts</option><option value="yes">Avec accord marketing uniquement</option><option value="no">Sans accord</option></select></label>
-        <div class="form-actions" style="display:flex;gap:10px"><button class="btn primary" type="button" data-action="mailing-export" data-id="xlsx">Télécharger Excel (.xlsx)</button><button class="btn" type="button" data-action="mailing-export" data-id="csv">Télécharger CSV</button></div>
-      </div></section>`;
-    return pageHead('Gouvernance', '<em>Mailing</em>', 'Adresses e-mail des personnes qui réservent un vol ou qui laissent leur e-mail avant d’ouvrir le site d’une compagnie. Une adresse déjà connue est reconnue à son retour.')
+    // Une seule liste : chaque e-mail une fois, avec d'où il vient et s'il accepte de recevoir nos offres.
+    const leadsBy = new Map();
+    for (const l of leadsData?.leads || []) { const k = l.email.toLowerCase(); if (!leadsBy.has(k)) leadsBy.set(k, l); }
+    const list = contacts.map(c => ({ email: c.email, name: c.name, date: c.last_seen_at || c.created_at, lead: leadsBy.get(c.email.toLowerCase()), state: c.unsubscribed_at ? 'unsub' : c.consent ? 'yes' : 'no' }));
+    for (const [k, l] of leadsBy) if (!contacts.some(c => c.email.toLowerCase() === k)) list.push({ email: l.email, name: '', date: l.created_at, lead: l, state: l.consent ? 'yes' : 'no' });
+    list.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const rows = list.map(x => `<tr${fa({ state: x.state })}>
+        <td><strong>${esc(x.email)}</strong>${x.name ? `<span class="muted">${esc(x.name)}</span>` : ''}</td>
+        <td>${x.lead ? `Avant de réserver un vol <span class="muted">${esc(x.lead.route)}${x.lead.airline ? ` · ${esc(x.lead.airline)}` : ''}</span>` : 'Réservation sur le site'}</td>
+        <td>${x.state === 'yes' ? '<span class="badge ok">Oui</span>' : x.state === 'unsub' ? '<span class="badge bad">Désinscrit</span>' : '<span class="badge plain">Non</span>'}</td>
+        <td class="num">${fmtDate(x.date)}</td></tr>`).join('');
+    const yes = list.filter(x => x.state === 'yes').length;
+    return pageHead('Gouvernance', '<em>Mailing</em>', 'Toutes les adresses e-mail collectées sur le site. « Accepte nos offres » : la personne a coché la case pour recevoir nos bons plans.')
       + `<div class="kpis">
-        <div class="kpi"><div class="kpi-icon">${icon('mailing')}</div><div><strong>${stats.total}</strong><span>Contacts</span></div></div>
-        <div class="kpi"><div class="kpi-icon">${icon('clients')}</div><div><strong>${stats.consent}</strong><span>Avec accord marketing</span></div></div>
+        <div class="kpi"><div class="kpi-icon">${icon('mailing')}</div><div><strong>${list.length}</strong><span>E-mails</span></div></div>
+        <div class="kpi"><div class="kpi-icon">${icon('clients')}</div><div><strong>${yes}</strong><span>Acceptent nos offres</span></div></div>
         <div class="kpi"><div class="kpi-icon">${icon('alert')}</div><div><strong>${stats.unsubscribed}</strong><span>Désinscrits</span></div></div></div>`
-      + exportCard
-      + tableCard({ id: 'tblMailing', title: 'Contacts', count: plural(contacts.length, 'contact', 'contacts'), head: ['Contact', 'Origine', 'Consentement', 'Demandes', 'Premier contact', 'Dernière activité'], rows, empty: 'Aucun contact pour le moment', cols: 6, filters: [{ key: 'state', label: 'Consentement', options: [['yes', 'Accord marketing'], ['no', 'Sans accord'], ['unsub', 'Désinscrits']] }] })
-      + (leadsData ? tableCard({ id: 'tblLeads', title: 'E-mails laissés avant une compagnie', count: `${plural(leadsData.stats.week, 'e-mail', 'e-mails')} ces 7 jours · ${leadsData.stats.total} au total`, head: ['Date', 'E-mail', 'Trajet', 'Compagnie', 'Accord offres'], rows: leadRows, empty: 'Aucun e-mail laissé pour le moment', cols: 5, filters: [{ key: 'consent', label: 'Accord offres', options: [['yes', 'Oui'], ['no', 'Non']] }] }) : '');
+      + tableCard({ id: 'tblMailing', title: 'E-mails', count: plural(list.length, 'e-mail', 'e-mails'), head: ['E-mail', 'D’où vient-il ?', 'Accepte nos offres', 'Date'], rows, empty: 'Aucun e-mail pour le moment', cols: 4, filters: [{ key: 'state', label: 'Accepte nos offres', options: [['yes', 'Oui'], ['no', 'Non'], ['unsub', 'Désinscrits']] }] })
+      + `<section class="card"><div class="card-head"><div><h3>Télécharger la liste</h3><p>Pour vos envois d’e-mails : choisissez les adresses, puis le format.</p></div></div>
+        <div class="form-grid" style="align-items:end">
+          <label>Adresses<select id="mlConsent"><option value="yes">Seulement celles qui acceptent nos offres</option><option value="all">Toutes les adresses</option></select></label>
+          <div class="form-actions" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn primary" type="button" data-action="mailing-export" data-id="xlsx">Excel (.xlsx)</button><button class="btn" type="button" data-action="mailing-export" data-id="csv">CSV</button></div>
+        </div></section>`;
   },
 
   async audit() {

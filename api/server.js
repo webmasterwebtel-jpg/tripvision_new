@@ -2290,7 +2290,7 @@ app.get('/api/admin/mailing/export', auth(...BACKOFFICE_ROLES), can('mailing.exp
   const w = mailingWhere(req.query);
   const { rows } = await query(`SELECT * FROM contacts ${w.sql} ORDER BY last_seen_at DESC`, w.params);
   const fmtD = (d) => (d ? new Date(d).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '');
-  const header = ['E-mail', 'Nom', 'Téléphone', 'Origine', 'Accord marketing', 'Désinscrit', 'Première activité', 'Dernière activité', 'Demandes', 'Lien de désinscription'];
+  const header = ['E-mail', 'Nom', 'Téléphone', 'Origine', 'Accepte nos offres', 'Désinscrit', 'Première activité', 'Dernière activité', 'Demandes', 'Lien de désinscription'];
   const table = rows.map(c => [c.email, c.name || '', c.phone || '', c.sources.map(x => SOURCE_LABELS[x] || x).join(', '), c.consent ? 'Oui' : 'Non', c.unsubscribed_at ? 'Oui' : 'Non', fmtD(c.created_at), fmtD(c.last_seen_at), c.requests_count, `${APP_URL}/unsubscribe?t=${c.unsub_token}`]);
   await audit(req.user.id, 'export_contacts', 'contacts', null, clientIp(req));
   const stamp = new Date().toISOString().slice(0, 10);
