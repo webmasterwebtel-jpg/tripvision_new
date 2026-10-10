@@ -7,7 +7,7 @@
   <meta name="description" content="TripVision sélectionne des bons plans vols, locations de voiture et packs week-end depuis la France." />
   <link rel="stylesheet" href="styles.css?v=20260927-admin-1" />
   <script src="assets/boot.js"></script>
-  <link rel="stylesheet" href="premium.css?v=20261020-v67" />
+  <link rel="stylesheet" href="premium.css?v=20261020-v69" />
 </head>
 <body>
   <svg class="tv-icon-sprite" aria-hidden="true" focusable="false">
@@ -149,16 +149,18 @@
             <div class="fv-opts" role="group" aria-label="Options du trajet">
               <label class="fv-opt"><input type="radio" name="tripType" value="roundtrip" checked><span>Aller-retour</span></label>
               <label class="fv-opt"><input type="radio" name="tripType" value="oneway"><span>Aller simple</span></label>
-              <label class="fv-chk"><input type="checkbox" name="direct" value="1"><span>Vols directs uniquement</span></label>
+              <label class="fv-opt"><input type="checkbox" name="direct" value="1"><span>Vols directs uniquement</span></label>
+              <label class="fv-opt"><input type="checkbox" name="flex" value="1"><span>Dates flexibles ±3 jours</span></label>
             </div>
             <div class="fv-fields">
               <label class="fv-field fv-from"><span>Départ</span><input name="fromCity" placeholder="Ville ou aéroport" autocomplete="off" data-geo="place" data-geo-only="offers"></label>
-              <button type="button" class="flight-swap fv-swap" id="flightSwap" aria-label="Inverser départ et destination">⇄</button>
-              <label class="fv-field fv-to"><span>Destination</span><input name="toCity" placeholder="Ville ou aéroport" autocomplete="off" data-geo="place" data-geo-only="offers"></label>
+              <button type="button" class="fv-swap" id="flightSwap" aria-label="Inverser départ et destination">⇄</button>
+              <label class="fv-field fv-to"><span>Destination</span><input name="toCity" placeholder="Ville, pays ou aéroport" autocomplete="off" data-geo="place" data-geo-only="offers"></label>
+              <label class="fv-field fv-date"><span>Aller</span><b class="fv-date-txt" data-ph="Date indifférente">Date indifférente</b><input type="date" name="departDate" aria-label="Date d’aller"></label>
+              <label class="fv-field fv-date fv-ret"><span>Retour</span><b class="fv-date-txt" data-ph="Date indifférente">Date indifférente</b><input type="date" name="returnDate" aria-label="Date de retour"></label>
               <label class="fv-field fv-trav"><span>Voyageurs</span><select name="travelers"><option value="1">1 adulte</option><option value="2">2 adultes</option><option value="3">3 adultes</option><option value="4">4 adultes</option><option value="5">5 adultes et +</option></select></label>
-              <label class="fv-field fv-cabin flight-cabin-field"><span>Classe</span><div class="cabin-pick" data-cabin-pick><input type="hidden" name="cabin" value="all"></div></label>
-              <button class="btn fv-go" type="submit"><svg class="tv-icon" aria-hidden="true"><use href="#i-search"></use></svg> Rechercher</button>
             </div>
+            <button class="btn fv-go" type="submit"><svg class="tv-icon" aria-hidden="true"><use href="#i-search"></use></svg> Rechercher</button>
           </form>
         </div>
       </section>
@@ -532,7 +534,7 @@
   <script src="assets/pricing.js?v=1"></script>
   <script src="assets/range-picker.js?v=4"></script>
   <script src="assets/cars.js?v=43"></script>
-  <script src="script.js?v=20261020-v45"></script>
+  <script src="script.js?v=20261020-v46"></script>
   <script src="assets/flight-gate.js?v=4"></script>
 </body>
 </html>
