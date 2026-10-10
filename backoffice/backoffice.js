@@ -122,8 +122,11 @@ const isLive = (item) => ['active', 'approved'].includes(item.status) && !isSche
 // Un pack est archivé dès le jour du départ (plus réservable) ; un vol quand sa date est passée. Il reste consultable ici.
 const todayIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const isArchived = (o) => Boolean(o.type && o.start_date && (o.type === 'pack' ? String(o.start_date).slice(0, 10) <= todayIso() : String(o.start_date).slice(0, 10) < todayIso()));
+const isDraftOffer = (item) => item.status === 'inactive' && Boolean(item.details?.draft);
 const pubBadge = (item) => isArchived(item)
   ? '<span class="badge plain">Archivée</span><span class="muted">départ passé</span>'
+  : isDraftOffer(item)
+  ? '<span class="badge warn">Brouillon</span><span class="muted">à vérifier avant publication</span>'
   : item.rentedUntil
   ? `<span class="badge warn">Loué</span><span class="muted">jusqu’au ${fmtDate(item.rentedUntil)}</span>`
   : item.afterRental && item.status === 'inactive'
@@ -133,7 +136,7 @@ const pubBadge = (item) => isArchived(item)
   : badge(item.status);
 
 const fa = (attrs) => Object.entries(attrs).map(([k, v]) => ` data-f-${k}="${esc(v)}"`).join('');
-const pubKey = (item) => (isArchived(item) ? 'archived' : item.rentedUntil ? 'rented' : item.afterRental && item.status === 'inactive' ? 'draft' : isScheduled(item) ? 'scheduled' : item.status);
+const pubKey = (item) => (isArchived(item) ? 'archived' : isDraftOffer(item) ? 'draft' : item.rentedUntil ? 'rented' : item.afterRental && item.status === 'inactive' ? 'draft' : isScheduled(item) ? 'scheduled' : item.status);
 const uniq = (list) => [...new Set(list.filter(Boolean))].sort().map(v => [v, v]);
 const hotelSummary = (o) => [esc(o.hotel_name), o.hotel_stars ? '★'.repeat(Number(o.hotel_stars)) : '', o.hotel_nights ? `${o.hotel_nights} nuit${Number(o.hotel_nights) > 1 ? 's' : ''}` : '', esc(o.hotel_board)].filter(Boolean).join(' · ');
 
@@ -749,6 +752,7 @@ function detailContent(kind, id) {
       body: kv([
         ['Trajet', `${esc(o.from_city || '—')} → ${esc(o.to_city)}`], ['Pays', esc(o.country)], ['Prix', `${money(o.price)}${o.old_price ? ` <s class="muted">${money(o.old_price)}</s>` : ''}`],
         o.hotel_name && ['Hôtel inclus', hotelSummary(o)], ...flightRows(o), ['Étiquette', esc(o.badge)], ['Partenaire', esc(o.partner_name)], ['Dates', `${fmtDay(o.start_date)} → ${fmtDay(o.end_date)}`],
+        ...(isDraftOffer(o) ? [['À vérifier', `<b>${esc(o.details.toVerify || 'Brouillon à vérifier avant publication.')}</b> Contrôlez le prix, les dates et le lien de la compagnie, puis publiez.`]] : []),
         ['Mise en ligne', isArchived(o) ? 'Archivée : le départ est passé, l’offre n’est plus visible sur le site' : isScheduled(o) ? `Programmée le ${fmtDate(o.publish_at)}` : isLive(o) ? 'En ligne' : 'Hors ligne'], ['Réservations', o.type === 'pack' && o.start_date ? `Possibles jusqu’à la veille du départ (${fmtDay(new Date(new Date(String(o.start_date).slice(0, 10)).getTime() - 864e5).toISOString())})` : ''], ['Créée le', fmtDate(o.created_at)], ['Description', esc(o.description)],
       ]),
       actions: offerActions(o, true),
@@ -965,7 +969,7 @@ const RENDERERS = {
     return pageHead('Opérations', 'Vols <em>& packs</em>', 'Cliquez sur une offre pour la consulter. Publiez-la tout de suite ou programmez-la.',
       can('offers.create') ? '<button class="btn" type="button" data-action="offer-new-flight">+ Nouveau vol</button><button class="btn primary" type="button" data-action="offer-new-pack">+ Nouveau pack</button>' : '')
       + '<div class="pills" role="group" aria-label="Filtrer par type"><button type="button" class="pill active" data-type-filter="all">Tous</button><button type="button" class="pill" data-type-filter="flight">Vols</button><button type="button" class="pill" data-type-filter="pack">Packs</button></div>'
-      + tableCard({ id: 'tblOffers', title: 'Offres', count: plural(offers.length, 'offre', 'offres'), head: ['Type', 'Titre', 'Destination', 'Prix', 'Publication', ''], rows, empty: 'Aucune offre', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['active', 'En ligne'], ['scheduled', 'Programmée'], ['inactive', 'Désactivée'], ['archived', 'Archivée']] }, { key: 'country', label: 'Pays', options: uniq(offers.map(o => o.country)) }] });
+      + tableCard({ id: 'tblOffers', title: 'Offres', count: plural(offers.length, 'offre', 'offres'), head: ['Type', 'Titre', 'Destination', 'Prix', 'Publication', ''], rows, empty: 'Aucune offre', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['active', 'En ligne'], ['draft', 'Brouillon à vérifier'], ['scheduled', 'Programmée'], ['inactive', 'Désactivée'], ['archived', 'Archivée']] }, { key: 'country', label: 'Pays', options: uniq(offers.map(o => o.country)) }] });
   },
 
   async bookings() {

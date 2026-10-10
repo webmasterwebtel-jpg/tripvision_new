@@ -465,6 +465,58 @@
     n('dest', D().length); n('flights', state.flights.length); n('cars', state.vehicles.length); n('packs', state.packs.length);
   }
 
+  /* ---------- Explorer : chaque destination avec son vol le moins cher ---------- */
+  const AFRICA = /Sénégal|Côte d’Ivoire|Cameroun|Maroc|Gabon|Congo|Tunisie|Algérie|Bénin|Togo|Mali|Guinée|Burkina/i;
+  const regionOf = (d) => (/^France$/i.test(d.country) ? 'fr' : AFRICA.test(d.country) ? 'af' : /États-Unis|Canada|Émirats/i.test(d.country) ? 'world' : 'eu');
+  const REGIONS = [['all', 'Toutes'], ['af', 'Afrique'], ['eu', 'Europe'], ['fr', 'France'], ['world', 'Amériques et Dubaï']];
+  // Vol le moins cher vers une destination (offres publiées uniquement).
+  function cheapestTo(d) {
+    if (typeof state === 'undefined') return null;
+    const list = state.flights.filter((o) => norm(o.to_city) === norm(d.name));
+    return list.sort((a, b) => Number(a.price) - Number(b.price))[0] || null;
+  }
+  const XP = { region: 'all', open: false };
+  function renderExplore() {
+    const sec = document.getElementById('flightExplore');
+    if (!sec) return;
+    const tabs = sec.querySelector('.xp-tabs'), grid = sec.querySelector('.xp-grid'), more = sec.querySelector('[data-xp-more]');
+    const rows = D().map((d) => ({ d, o: cheapestTo(d) })).filter(({ d }) => XP.region === 'all' || regionOf(d) === XP.region)
+      .sort((a, b) => (a.o ? 0 : 1) - (b.o ? 0 : 1) || (a.o && b.o ? Number(a.o.price) - Number(b.o.price) : 0));
+    tabs.innerHTML = REGIONS.map(([k, t]) => `<button type="button" class="xp-tab ${XP.region === k ? 'on' : ''}" data-xp-region="${k}">${t}</button>`).join('');
+    const limit = XP.open ? rows.length : 9;
+    grid.innerHTML = rows.slice(0, limit).map(({ d, o }, i) => {
+      const f = o?.flight || {};
+      const oldP = o?.old_price && Number(o.old_price) > Number(o.price) ? Math.round((1 - Number(o.price) / Number(o.old_price)) * 100) : 0;
+      return `<a class="xp-card" href="#destination/${d.slug}" data-page-link="destination/${d.slug}" style="--i:${i % 9}">
+        <span class="xp-img"><img src="${img(d.slug)}" alt="${E(d.name)}" loading="lazy" decoding="async">${o ? `<i class="xp-flag">${oldP ? `−${oldP} %` : 'Bon plan'}</i>` : ''}<span class="xp-tag">${E(d.tag)}</span></span>
+        <span class="xp-body">
+          <span class="xp-name"><b>${E(d.name)}</b><small>${E(d.country)}</small></span>
+          ${o ? `<span class="xp-price"><small>Vols à partir de</small><strong>${eur(o.price)}</strong></span>
+          <span class="xp-meta"><span>${I('plane')} ${E(o.from_city || 'Paris')} → ${E(d.name)}</span><span class="${f.stops ? 'stop' : 'direct'}">${f.stops ? `${f.stops} escale${f.stops > 1 ? 's' : ''}` : 'Direct'}</span><span>${f.tripType === 'oneway' ? 'Aller simple' : 'Aller-retour'}</span></span>`
+          : `<span class="xp-price none"><small>${E(d.flight)}</small><em>Découvrir la destination →</em></span>`}
+        </span></a>`;
+    }).join('');
+    more.hidden = rows.length <= 9;
+    more.textContent = XP.open ? 'Voir moins' : `Voir les ${rows.length} destinations`;
+    if (typeof bindLinks === 'function') bindLinks(grid);
+  }
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-xp-region]');
+    if (t) { XP.region = t.dataset.xpRegion; XP.open = false; renderExplore(); return; }
+    if (e.target.closest('[data-xp-more]')) { XP.open = !XP.open; renderExplore(); }
+  });
+  // Sur les photos des destinations (accueil, vols) : « Paris → Dakar · à partir de … ».
+  function paintFromPrices() {
+    document.querySelectorAll('a.bento[href^="#destination/"], a.trend-tile[href^="#destination/"], a.dest-card[href^="#destination/"]').forEach((a) => {
+      const d = D().find((x) => `#destination/${x.slug}` === a.getAttribute('href'));
+      const o = d && cheapestTo(d);
+      let chip = a.querySelector('.from-chip');
+      if (!o) { chip?.remove(); return; }
+      if (!chip) { chip = document.createElement('em'); chip.className = 'from-chip'; (a.querySelector(':scope > span:not(.tt-rank):not(.tt-flag):not(.xp-img)') || a).appendChild(chip); }
+      chip.innerHTML = `${I('plane')}<i class="fc-route">${E(o.from_city || 'Paris')} → ${E(d.name)}</i><b>à partir de ${eur(o.price)}</b>`;
+    });
+  }
+
   /* ---------- Tendances du mois : mise en avant automatique ---------- */
   let trendData = null, trendAt = 0;
   async function loadTrending() {
@@ -553,7 +605,7 @@
   };
   window.TVPages = {
     route,
-    refresh() { route(location.hash.slice(1), true); renderHomeDeals(); renderHomeStats(); renderTrending(); },
+    refresh() { route(location.hash.slice(1), true); renderHomeDeals(); renderHomeStats(); renderTrending().then(paintFromPrices); renderExplore(); paintFromPrices(); },
     init() { initHome(); renderHomeDeals(); renderHomeStats(); renderTrending(); payConfig().then(() => { const h = location.hash.slice(1); if (/^pack(-reserve)?\//.test(h) && !h.endsWith('/done')) route(h); }); },
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => window.TVPages.init()); else window.TVPages.init();

@@ -7,7 +7,7 @@
   <meta name="description" content="TripVision sélectionne des bons plans vols, locations de voiture et packs week-end depuis la France." />
   <link rel="stylesheet" href="styles.css?v=20260927-admin-1" />
   <script src="assets/boot.js"></script>
-  <link rel="stylesheet" href="premium.css?v=20261017-v59" />
+  <link rel="stylesheet" href="premium.css?v=20261018-v62" />
 </head>
 <body>
   <svg class="tv-icon-sprite" aria-hidden="true" focusable="false">
@@ -181,10 +181,12 @@
         </div>
       </section>
 
-      <section class="dest-band">
+      <section class="xp-band" id="flightExplore">
         <div class="wrap">
-          <div class="dest-head"><span class="eyebrow">Inspirations</span><h2>Destinations <em>populaires</em></h2><p>Un clic sur une destination pour voir les vols disponibles.</p></div>
-          <div class="dest-grid"><a class="dest-card" href="#destination/dakar" data-page-link="destination/dakar"><img src="assets/dest/dakar.jpg" alt="Dakar" loading="lazy" decoding="async"><span class="dest-info"><b>Dakar</b><small>Sénégal</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/abidjan" data-page-link="destination/abidjan"><img src="assets/dest/abidjan.jpg" alt="Abidjan" loading="lazy" decoding="async"><span class="dest-info"><b>Abidjan</b><small>Côte d’Ivoire</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/douala" data-page-link="destination/douala"><img src="assets/dest/douala.jpg" alt="Douala" loading="lazy" decoding="async"><span class="dest-info"><b>Douala</b><small>Cameroun</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/casablanca" data-page-link="destination/casablanca"><img src="assets/dest/casablanca.jpg" alt="Casablanca" loading="lazy" decoding="async"><span class="dest-info"><b>Casablanca</b><small>Maroc</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/marrakech" data-page-link="destination/marrakech"><img src="assets/dest/marrakech.jpg" alt="Marrakech" loading="lazy" decoding="async"><span class="dest-info"><b>Marrakech</b><small>Maroc</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/libreville" data-page-link="destination/libreville"><img src="assets/dest/libreville.jpg" alt="Libreville" loading="lazy" decoding="async"><span class="dest-info"><b>Libreville</b><small>Gabon</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/brazzaville" data-page-link="destination/brazzaville"><img src="assets/dest/brazzaville.jpg" alt="Brazzaville" loading="lazy" decoding="async"><span class="dest-info"><b>Brazzaville</b><small>Congo</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/tunis" data-page-link="destination/tunis"><img src="assets/dest/tunis.jpg" alt="Tunis" loading="lazy" decoding="async"><span class="dest-info"><b>Tunis</b><small>Tunisie</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/paris" data-page-link="destination/paris"><img src="assets/dest/paris.jpg" alt="Paris" loading="lazy" decoding="async"><span class="dest-info"><b>Paris</b><small>France</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/marseille" data-page-link="destination/marseille"><img src="assets/dest/marseille.jpg" alt="Marseille" loading="lazy" decoding="async"><span class="dest-info"><b>Marseille</b><small>France</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/alger" data-page-link="destination/alger"><img src="assets/dest/alger.jpg" alt="Alger" loading="lazy" decoding="async"><span class="dest-info"><b>Alger</b><small>Algérie</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/cotonou" data-page-link="destination/cotonou"><img src="assets/dest/cotonou.jpg" alt="Cotonou" loading="lazy" decoding="async"><span class="dest-info"><b>Cotonou</b><small>Bénin</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/nice" data-page-link="destination/nice"><img src="assets/dest/nice.jpg" alt="Nice" loading="lazy" decoding="async"><span class="dest-info"><b>Nice</b><small>France</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/lyon" data-page-link="destination/lyon"><img src="assets/dest/lyon.jpg" alt="Lyon" loading="lazy" decoding="async"><span class="dest-info"><b>Lyon</b><small>France</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/bordeaux" data-page-link="destination/bordeaux"><img src="assets/dest/bordeaux.jpg" alt="Bordeaux" loading="lazy" decoding="async"><span class="dest-info"><b>Bordeaux</b><small>France</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/toulouse" data-page-link="destination/toulouse"><img src="assets/dest/toulouse.jpg" alt="Toulouse" loading="lazy" decoding="async"><span class="dest-info"><b>Toulouse</b><small>France</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/lille" data-page-link="destination/lille"><img src="assets/dest/lille.jpg" alt="Lille" loading="lazy" decoding="async"><span class="dest-info"><b>Lille</b><small>France</small></span><i class="dest-go">→</i></a><a class="dest-card" href="#destination/nantes" data-page-link="destination/nantes"><img src="assets/dest/nantes.jpg" alt="Nantes" loading="lazy" decoding="async"><span class="dest-info"><b>Nantes</b><small>France</small></span><i class="dest-go">→</i></a></div>
+          <div class="xp-head"><div><span class="eyebrow">Explorer</span><h2>Où partir <em>au meilleur prix ?</em></h2><p>Les meilleurs tarifs dénichés par TripVision, destination par destination.</p></div>
+            <div class="xp-tabs" role="group" aria-label="Filtrer par région"></div></div>
+          <div class="xp-grid"></div>
+          <div class="xp-more"><button type="button" class="btn ghost" data-xp-more hidden>Voir plus de destinations</button></div>
         </div>
       </section>
 
@@ -522,11 +524,11 @@
   <script src="assets/gallery.js?v=5"></script>
   <script src="assets/spin.js?v=5"></script>
   <script src="assets/guest-auth.js?v=3"></script>
-  <script src="assets/destinations.js?v=6"></script>
+  <script src="assets/destinations.js?v=7"></script>
   <script src="assets/scene.js?v=1"></script>
   <script src="assets/fx.js?v=10"></script>
-  <script src="assets/fx2.js?v=5"></script>
-  <script src="assets/pages.js?v=12"></script>
+  <script src="assets/fx2.js?v=6"></script>
+  <script src="assets/pages.js?v=14"></script>
   <script src="assets/pricing.js?v=1"></script>
   <script src="assets/range-picker.js?v=4"></script>
   <script src="assets/cars.js?v=43"></script>

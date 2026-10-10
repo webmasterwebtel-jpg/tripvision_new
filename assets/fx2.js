@@ -47,6 +47,17 @@
   .rsl-art .win{fill:#efe9dc;animation:rslWin 3.6s ease-in-out infinite;animation-delay:var(--d)}
   @keyframes rslWin{0%,18%{fill:#efe9dc}32%,72%{fill:#e3c27e}88%,100%{fill:#efe9dc}}
   .rsl-art .twk{animation:rslTwk 2.4s ease-in-out infinite;animation-delay:var(--d)}
+  .rsl-art .cloud{fill:#f6f4ee;stroke:#e4ded0;stroke-width:1.2}
+  .rsl-art .near-cloud{fill:#fff;stroke:#ddd5c4}
+  .rsl-art .far-wing{fill:#eef2ef}
+  .rsl-art .trail{fill:none;stroke:#cfd8d3;stroke-width:2.4;stroke-linecap:round;stroke-dasharray:18 10;animation:rslLane .45s linear infinite}
+  .rsl-art .near{animation:rslFar 3.2s linear infinite}
+  .rsl-art .beacon{animation:rslTwk 1.1s ease-in-out infinite}
+  .rsl-art .engine{animation:rslBob .25s ease-in-out infinite}
+  .rsl-art .drive{animation:rslDrive 4.2s cubic-bezier(.45,.05,.55,.95) infinite}
+  @keyframes rslDrive{0%{transform:translateX(-140px)}100%{transform:translateX(390px)}}
+  .rsl-art .glow{transform-box:fill-box;transform-origin:center;animation:rslGlow 2.6s ease-in-out infinite}
+  @keyframes rslGlow{50%{transform:scale(1.25);opacity:.2}}
   @keyframes rslTwk{0%,100%{opacity:.25}50%{opacity:1}}
   .rsl-skel{display:grid;gap:16px}
   .rsl-skel.cols{grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
@@ -127,31 +138,44 @@
       <path class="soft" d="M110 108h150" stroke="#cfc6b1" stroke-width="3" opacity=".35"/>
     </svg>`,
     flight: `<svg class="rsl-art" viewBox="0 0 360 124" aria-hidden="true">
-      <g class="far"><path class="faint" d="M40 34c4-8 16-9 21-2 6-5 16-2 16 6H34c0-2 2-4 6-4zM230 22c3-6 12-7 16-2 5-4 12-1 12 5h-31c0-2 1-3 3-3zM300 92c4-8 16-9 21-2 6-5 16-2 16 6h-43c0-2 2-4 6-4zM400 34c4-8 16-9 21-2 6-5 16-2 16 6h-43c0-2 2-4 6-4zM590 22c3-6 12-7 16-2 5-4 12-1 12 5h-31c0-2 1-3 3-3zM660 92c4-8 16-9 21-2 6-5 16-2 16 6h-43c0-2 2-4 6-4z"/></g>
-      <path class="soft trail" d="M8 104C70 104 90 78 128 72"/>
+      ${skyline(122, 'far')}
+      <g class="far"><path class="cloud" d="M30 40c2-9 15-11 20-4 6-6 18-3 18 6 6 0 9 3 9 6H24c0-5 2-8 6-8zM390 40c2-9 15-11 20-4 6-6 18-3 18 6 6 0 9 3 9 6h-53c0-5 2-8 6-8zM250 100c2-7 12-8 16-3 5-4 14-2 14 5 5 0 7 2 7 5h-42c0-4 2-7 5-7zM610 100c2-7 12-8 16-3 5-4 14-2 14 5 5 0 7 2 7 5h-42c0-4 2-7 5-7z"/></g>
+      <path class="trail" d="M64 60H4M66 66H14" />
       <g class="fly">
-        <path class="faint" d="M188 60l-16-16h8l24 15z" stroke="#0f3b2e" stroke-opacity=".35" fill="#f4f0e6"/>
-        <path class="body" d="M128 70.5c0-5 6.5-8.2 16-8.6l94-.6c12 0 21 2.4 27.6 6.8 2 1.4 2 3.4 0 4.8-6.6 4.4-15.6 6.6-27.6 6.6h-94c-9.6-.4-16-3.8-16-9z"/>
-        <path class="body" d="M140 63l-14-24h10.4l24.6 23.4z"/>
-        <path class="body" d="M184 74l-24 22h11.6l36-22z"/>
-        <ellipse cx="181" cy="80" rx="10" ry="4.2" fill="#0f3b2e"/>
-        <path d="M156 67.6h82" stroke="#0f3b2e" stroke-width="2.2" stroke-linecap="round" stroke-dasharray=".1 6.2"/>
-        <path d="M253 65.8c3.6.6 6.6 1.8 9 3.4h-9.6z" fill="#0f3b2e"/>
-        <path d="M134 72.2h118" stroke="#c6a76b" stroke-width="1.6" stroke-linecap="round"/>
+        <path class="body far-wing" d="M168 52l26-22h11l-15 22z"/>
+        <path class="body" d="M80 53L62 16h17l29 36z"/>
+        <path class="body" d="M72 63L48 75h12l34-9z"/>
+        <path class="body" d="M64 66l12-11c4-3 8-4 14-4h176c16 0 30 5 38 11-8 6-22 10-38 10H86c-10 0-18-2-22-6z"/>
+        <path class="glass" d="M276 55h11c3 0 6 1.5 8 4h-19z"/>
+        <path d="M112 59.5h150" stroke="#0f3b2e" stroke-width="3.2" stroke-linecap="round" stroke-dasharray=".1 7"/>
+        <path class="ink" d="M258 55v13M264 55v13M258 55h6M258 68h6"/>
+        <path d="M84 66.5h196" stroke="#c6a76b" stroke-width="2" stroke-linecap="round"/>
+        <path class="body" d="M158 66l44 34h16l-18-34z"/>
+        <g class="engine"><ellipse cx="192" cy="85" rx="17" ry="7.5" fill="#0f3b2e"/><ellipse cx="207" cy="85" rx="3" ry="6" fill="#c6a76b"/><path d="M178 85h22" stroke="#2c5a4b" stroke-width="1.4"/></g>
+        <circle class="beacon" cx="62" cy="17" r="2.2" fill="#e8463a"/>
       </g>
-      <path class="ink wind" d="M120 56h-70" stroke-opacity=".5"/><path class="ink wind w2" d="M124 88h-84" stroke-opacity=".5"/>
+      <g class="near"><path class="cloud near-cloud" d="M120 108c3-11 19-13 25-5 8-7 22-4 22 7 7 0 11 4 11 8h-66c0-6 3-10 8-10zM480 108c3-11 19-13 25-5 8-7 22-4 22 7 7 0 11 4 11 8h-66c0-6 3-10 8-10zM320 20c2-8 13-9 17-4 5-4 14-2 14 5 5 0 8 3 8 6h-46c0-4 3-7 7-7zM680 20c2-8 13-9 17-4 5-4 14-2 14 5 5 0 8 3 8 6h-46c0-4 3-7 7-7z"/></g>
     </svg>`,
     pack: `<svg class="rsl-art" viewBox="0 0 360 124" aria-hidden="true">
-      <path class="soft" d="M20 110h320"/>
-      <path d="M286 26a11 11 0 1 0 9 17 9 9 0 1 1-9-17z" fill="#c6a76b"/>
-      <g class="gold"><circle class="twk" style="--d:0s" cx="70" cy="22" r="1.6"/><circle class="twk" style="--d:.8s" cx="104" cy="40" r="1.2"/><circle class="twk" style="--d:1.5s" cx="262" cy="52" r="1.3"/><circle class="twk" style="--d:.4s" cx="318" cy="64" r="1.1"/></g>
-      <path class="body" d="M126 110V34h108v76"/>
-      <path class="ink" d="M120 34h120M122 28h116v6H122zM166 22h28v6h-28z"/>
-      <text x="180" y="26.6" text-anchor="middle" font-size="5.6" font-weight="700" letter-spacing="1.6" fill="#0f3b2e" font-family="Inter,Arial,sans-serif">HÔTEL</text>
-      ${[0, 1, 2, 3].map((r) => [0, 1, 2, 3, 4].map((c) => `<rect class="win" style="--d:${((r * 5 + c) * 0.37) % 3.6}s" x="${136 + c * 18.6}" y="${42 + r * 15}" width="9.6" height="10" rx="1.2"/>`).join('')).join('')}
-      <path class="ink" d="M166 110V96h28v14M160 96h40l-4-6h-32z"/>
-      <path class="gold" d="M178 102h4v1.4h-4z"/>
-      <path class="ink" d="M104 110v-14M104 98c-10-2-12-12-4-16 2-8 14-8 16 0 8 4 6 14-4 16zM256 110v-14M256 98c-10-2-12-12-4-16 2-8 14-8 16 0 8 4 6 14-4 16z" stroke-width="1.4"/>
+      <circle cx="300" cy="28" r="12" fill="#f1d9a0"/><circle cx="300" cy="28" r="18" fill="none" stroke="#f1d9a0" stroke-opacity=".5" class="glow"/>
+      <path class="soft" d="M0 112h360"/>
+      <path class="soft lane" d="M0 119h360"/>
+      <g class="hotel">
+        <path class="body" d="M118 104V30h124v74"/>
+        <path class="ink" d="M112 30h136M116 24h128v6H116zM160 16h40v8h-40z"/>
+        <text x="180" y="22.4" text-anchor="middle" font-size="6" font-weight="700" letter-spacing="2" fill="#0f3b2e" font-family="Inter,Arial,sans-serif">HÔTEL</text>
+        ${[0, 1, 2, 3].map((r) => [0, 1, 2, 3, 4, 5].map((c) => `<rect class="win" style="--d:${((r * 6 + c) * 0.31) % 3.6}s" x="${128 + c * 18}" y="${38 + r * 14}" width="10" height="9" rx="1.2"/>`).join('')).join('')}
+        <path class="body" d="M158 104V92h44v12"/><path class="ink" d="M150 92h60l-5-6h-50zM180 92v12"/>
+        <path class="gold" d="M170 86h20v-1.6h-20z"/>
+        <path class="ink" d="M96 104V88M96 90c-11-2-13-13-4-17 2-9 15-9 17 0 9 4 7 15-4 17zM266 104V88M266 90c-11-2-13-13-4-17 2-9 15-9 17 0 9 4 7 15-4 17z" stroke-width="1.5"/>
+        <path class="ink" d="M126 30v-7M234 30v-7" stroke-width="1.2"/><path d="M126 23h9l-2 3h-7zM234 23h-9l2 3h7z" fill="#c6a76b"/>
+      </g>
+      <g class="drive"><g transform="translate(0 55) scale(.52)">
+        <path class="body" d="M112 96c-4 0-6.5-3-6.5-8.5l1-11c.6-5 4-8 10-8.6l21-15c3.6-2.6 7.6-3.9 13-3.9h40c6 0 10.4 1.5 14.6 4.6l17.4 13.4 21 3.6c6.6 1.2 10.6 4.6 11.4 10.6l.8 7.2c.4 4.6-2.2 7.6-6.6 7.6h-8.6a13 13 0 0 0-26 0h-68a13 13 0 0 0-26 0z"/>
+        <path class="glass" d="M124 68.6l17.6-12.6c2.6-1.8 5.4-2.6 9-2.6h17.2v15.2zM171.8 53.4h17c4.6 0 8 1.2 11.4 3.8l13.6 11.4h-42z"/>
+        <rect x="150" y="44" width="40" height="7" rx="2" fill="#c6a76b"/>
+        ${wheel(134)}${wheel(229)}
+      </g></g>
     </svg>`,
   };
   const SCENES = {

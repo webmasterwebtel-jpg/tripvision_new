@@ -1454,7 +1454,8 @@ app.patch('/api/admin/offers/:id', auth(...BACKOFFICE_ROLES), can('offers.edit')
   const o = offerSchema.parse(req.body);
   const { rows } = await query(
     `UPDATE offers SET title = $1, from_city = $2, to_city = $3, country = $4, badge = $5, price = $6, old_price = $7, start_date = $8, end_date = $9,
-            image = COALESCE($10, image), description = $11, hotel_name = $12, hotel_stars = $13, hotel_nights = $14, hotel_board = $15, details = $17
+            image = COALESCE($10, image), description = $11, hotel_name = $12, hotel_stars = $13, hotel_nights = $14, hotel_board = $15,
+            details = $17::jsonb || (CASE WHEN status = 'inactive' AND details ? 'draft' THEN jsonb_build_object('draft', true, 'toVerify', details->'toVerify') ELSE '{}'::jsonb END)
      WHERE id = $16 AND deleted_at IS NULL RETURNING *`,
     [o.title, o.fromCity || '', o.toCity, o.country || '', o.badge || (o.type === 'flight' ? 'Bon plan' : (o.hotelNights >= 3 ? 'Week-end prolongé' : 'Week-end')), o.price, o.oldPrice || null, o.startDate || null, o.endDate || null,
      (o.images ? (offerCover(o) || DEFAULT_OFFER_IMAGE) : (normalizeImage(o.image) || null)), o.description || '', o.type === 'pack' ? o.hotelName : null, o.type === 'pack' ? (o.hotelStars || null) : null, o.type === 'pack' ? o.hotelNights : null, o.type === 'pack' ? (o.hotelBoard || null) : null, req.params.id, offerDetails(o)]
@@ -1469,7 +1470,8 @@ const statusWithSchedule = (values) => z.object({ status: z.enum(values), publis
 app.patch('/api/admin/offers/:id/status', auth(...BACKOFFICE_ROLES), can('offers.edit'), h(async (req, res) => {
   const { status, publishAt } = statusWithSchedule(['active', 'inactive']).parse(req.body);
   const { rows } = status === 'active'
-    ? await query('UPDATE offers SET status = $1, publish_at = $2 WHERE id = $3 AND deleted_at IS NULL RETURNING *', [status, publishAt || null, req.params.id])
+    // Publier une offre en brouillon la valide : elle n'est plus marquée « à vérifier ».
+    ? await query(`UPDATE offers SET status = $1, publish_at = $2, details = COALESCE(details, '{}'::jsonb) - 'draft' - 'toVerify' WHERE id = $3 AND deleted_at IS NULL RETURNING *`, [status, publishAt || null, req.params.id])
     : await query('UPDATE offers SET status = $1 WHERE id = $2 AND deleted_at IS NULL RETURNING *', [status, req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
   await audit(req.user.id, `offer_${status}`, 'offer', req.params.id, clientIp(req));

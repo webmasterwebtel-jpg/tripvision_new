@@ -190,5 +190,59 @@
   "artist": "Celuici",
   "license": "CC BY-SA 4.0",
   "url": "https://commons.wikimedia.org/wiki/File:Grand-Place,_Brussels_-_panorama,_June_2018.jpg"
+ },
+ "kinshasa": {
+  "title": "2013 Boulevard du 30 Juin Kinshasa 8756682965.jpg",
+  "artist": "Antoine Moens de Hase",
+  "license": "CC BY 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:2013_Boulevard_du_30_Juin_Kinshasa_8756682965.jpg"
+ },
+ "lome": {
+  "title": "CNSS – Lomé.jpg",
+  "artist": "Edison McCullen",
+  "license": "CC BY 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:CNSS_%E2%80%93_Lom%C3%A9.jpg"
+ },
+ "bamako": {
+  "title": "Bamako bridge1.jpg",
+  "artist": "upyernoz",
+  "license": "CC BY 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Bamako_bridge1.jpg"
+ },
+ "yaounde": {
+  "title": "Rue De Narvik, Yaounde, Cameroon.jpg",
+  "artist": "Ambo64",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Rue_De_Narvik,_Yaounde,_Cameroon.jpg"
+ },
+ "conakry": {
+  "title": "Ville de Conaky.jpg",
+  "artist": "Boubacar Bila Diao Balde",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Ville_de_Conaky.jpg"
+ },
+ "ouagadougou": {
+  "title": "Ouagadougou-Musée national du Burkina Faso (3).jpg",
+  "artist": "Ji-Elle",
+  "license": "CC BY-SA 4.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Ouagadougou-Mus%C3%A9e_national_du_Burkina_Faso_(3).jpg"
+ },
+ "new-york": {
+  "title": "View of the Statue of Liberty and Lower Manhattan from our Stateroom on Departure Day (52931938687).jpg",
+  "artist": "slgckgc",
+  "license": "CC BY 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:View_of_the_Statue_of_Liberty_and_Lower_Manhattan_from_our_Stateroom_on_Departure_Day_(52931938687).jpg"
+ },
+ "montreal": {
+  "title": "Montreal - QC - Skyline.jpg",
+  "artist": "Taxiarchos228",
+  "license": "CC BY 3.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Montreal_-_QC_-_Skyline.jpg"
+ },
+ "dubai": {
+  "title": "Dubai Marina Skyline.jpg",
+  "artist": "Norlando Pobre",
+  "license": "CC BY 2.0",
+  "url": "https://commons.wikimedia.org/wiki/File:Dubai_Marina_Skyline.jpg"
  }
 }
