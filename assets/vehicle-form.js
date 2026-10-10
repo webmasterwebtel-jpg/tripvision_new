@@ -76,6 +76,109 @@
       <button type="button" class="btn small danger" data-blk-remove>Retirer</button>
     </div>`;
 
+  /* ---------- Tarifs : grille par durée, saisons, règles, simulateur ---------- */
+  const P = () => window.TVPricing;
+  const ddmm = (mmdd) => (mmdd ? `${mmdd.slice(3, 5)}/${mmdd.slice(0, 2)}` : '');
+  const mmdd = (txt) => { const m = String(txt || '').trim().match(/^(\d{1,2})\/(\d{1,2})$/); if (!m) return null; const d = Number(m[1]), mo = Number(m[2]); return d >= 1 && d <= 31 && mo >= 1 && mo <= 12 ? `${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}` : null; };
+  const seasonRow = (z = {}) => `<div class="rt-season" data-season>
+      <label>Nom de la saison<input data-sf="name" maxlength="40" required value="${esc(z.name || '')}" placeholder="Ex. Haute saison"></label>
+      <label>Du (jj/mm)<input data-sf="from" required pattern="\\d{1,2}/\\d{1,2}" placeholder="01/07" value="${esc(ddmm(z.from))}"></label>
+      <label>Au (jj/mm)<input data-sf="to" required pattern="\\d{1,2}/\\d{1,2}" placeholder="31/08" value="${esc(ddmm(z.to))}"></label>
+      <label>Coefficient<input data-sf="coef" type="number" min="0.5" max="3" step="0.05" required value="${esc(z.coef ?? 1.3)}"></label>
+      <button type="button" class="btn small danger" data-season-remove>Retirer</button>
+    </div>`;
+  function ratesHtml(x) {
+    const r = P().ratesOf(x.rates || x.priceDay ? x : { rates: { tiers: ['', '', '', '', ''] } });
+    const tiers = x.rates || x.priceDay ? r.tiers : ['', '', '', '', ''];
+    const now = new Date(Date.now() + 864e5), back = new Date(now.getTime() + 10 * 864e5), loc = (d) => `${d.toISOString().slice(0, 10)}T10:00`;
+    return `${section('Tarifs')}
+      ${hint('Saisissez votre grille une seule fois : le prix se calcule automatiquement à chaque réservation. Tous les prix sont TTC, c’est ce que paie le client.')}
+      <div class="full rates" data-rates>
+        <div class="rt-card">
+          <h5>1. Prix par jour selon la durée</h5>
+          <p class="muted">Le palier est choisi selon la durée totale de la location, puis appliqué à chaque jour.</p>
+          <div class="rt-gen"><label>Prix de base par jour (€)<input data-rt-base type="number" min="1" step="1" placeholder="45" value="${esc(tiers[0] || '')}"></label><label>Baisse par palier (%)<input data-rt-pct type="number" min="0" max="20" step="1" value="10"></label><button type="button" class="btn small" data-rt-generate>Générer la grille</button></div>
+          <div class="rt-grid"><span>Durée de location</span><span>Prix par jour (TTC)</span><span>Exemple de total</span>
+            ${P().PALIERS.map((pl, i) => `<b>${esc(P().label(pl))}</b><span class="rt-in"><input data-tier="${i}" type="number" min="1" step="0.01" required aria-label="Prix par jour, ${esc(P().label(pl))}" value="${esc(tiers[i] ?? '')}"><em>€</em></span><span data-tier-ex="${i}"></span>`).join('')}
+          </div>
+          <p class="rt-warn" data-rt-warn hidden></p>
+        </div>
+        <div class="rt-card">
+          <h5>2. Saisons <small>(facultatif)</small></h5>
+          <p class="muted">Chaque jour de la location prend le coefficient de sa saison, chaque année aux mêmes dates. Ex. × 1,30 = 30 % plus cher.</p>
+          <div data-season-rows>${r.seasons.map(seasonRow).join('')}</div>
+          <button type="button" class="chip-btn" data-season-add>+ Ajouter une saison</button>
+        </div>
+        <div class="rt-card">
+          <h5>3. Règles de location</h5>
+          <div class="rt-rules">
+            <label>Durée minimale (jours)<input name="rtMin" type="number" min="1" max="30" step="1" required value="${esc(r.minDays)}"></label>
+            <label>Durée maximale (jours)<input name="rtMax" type="number" min="1" max="30" step="1" required value="${esc(r.maxDays)}"></label>
+            <label>Retard toléré (minutes)<input name="rtGrace" type="number" min="0" max="180" step="1" required value="${esc(r.grace)}"></label>
+            <label>Dépôt de garantie (€)<input name="deposit" type="number" min="0" step="1" placeholder="800" value="${esc(num(x.deposit))}"></label>
+            <label>Ancien prix par jour barré (€, facultatif)<input name="oldPriceDay" type="number" min="1" step="0.01" placeholder="Affiche une remise" value="${esc(num(x.oldPriceDay))}"></label>
+          </div>
+          <label class="rt-check"><input type="checkbox" name="rtSmooth" ${r.smoothing ? 'checked' : ''}><span>Ne jamais facturer plus cher qu’un palier supérieur (lissage des seuils)</span></label>
+          <p class="muted">Les options (siège enfant, conducteur supplémentaire…), la restitution dans un autre lieu et le supplément jeune conducteur se règlent plus bas.</p>
+        </div>
+        <div class="rt-card rt-sim">
+          <h5>Simulateur de réservation <small>ce que le client verra</small></h5>
+          <div class="rt-sim-dates"><label>Prise du véhicule<input type="datetime-local" data-sim-from value="${loc(now)}"></label><label>Retour<input type="datetime-local" data-sim-to value="${loc(back)}"></label></div>
+          <div data-sim-out></div>
+        </div>
+      </div>`;
+  }
+  const fmtE = (n) => `${Number(n).toLocaleString('fr-FR', { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 })} €`;
+  function readRates(f) {
+    const tiers = [...f.querySelectorAll('[data-tier]')].map((i) => Number(i.value));
+    const seasons = [...f.querySelectorAll('[data-season]')].map((row) => { const v = (k) => row.querySelector(`[data-sf=${k}]`).value.trim(); return { name: v('name'), from: mmdd(v('from')), to: mmdd(v('to')), coef: Number(v('coef')) }; });
+    const g = (n) => Number(f.elements.namedItem(n)?.value);
+    return { tiers, seasons, minDays: g('rtMin') || 1, maxDays: Math.min(30, g('rtMax') || 30), grace: Number.isFinite(g('rtGrace')) ? g('rtGrace') : 59, smoothing: Boolean(f.elements.namedItem('rtSmooth')?.checked) };
+  }
+  // Exemples de la grille, alerte de seuil et simulateur, recalculés à chaque saisie.
+  function paintRates(f) {
+    const box = f?.querySelector?.('[data-rates]');
+    if (!box || !P()) return;
+    const rates = readRates(f), ok = rates.tiers.every((t) => t > 0);
+    P().PALIERS.forEach((pl, i) => { const el = box.querySelector(`[data-tier-ex="${i}"]`); const n = i < 2 ? pl.max : pl.min; el.textContent = rates.tiers[i] > 0 ? `${n} j = ${fmtE(rates.tiers[i] * n)}` : '—'; });
+    const warn = box.querySelector('[data-rt-warn]');
+    const bad = ok ? P().PALIERS.slice(0, -1).map((pl, i) => [pl.max, rates.tiers[i] * pl.max, P().PALIERS[i + 1].min, rates.tiers[i + 1] * P().PALIERS[i + 1].min]).find(([, a, , b]) => a > b) : null;
+    warn.hidden = !bad;
+    if (bad) warn.textContent = `Attention : ${bad[0]} jours (${fmtE(bad[1])}) coûtent plus cher que ${bad[2]} jours (${fmtE(bad[3])}).${rates.smoothing ? ` Le lissage des seuils facturera ${fmtE(bad[3])} au client.` : ' Cochez le lissage des seuils pour que le client ne paie jamais plus.'}`;
+    const out = box.querySelector('[data-sim-out]');
+    const from = box.querySelector('[data-sim-from]').value, to = box.querySelector('[data-sim-to]').value;
+    if (!ok) { out.innerHTML = '<p class="muted">Complétez la grille pour voir le prix.</p>'; return; }
+    if (!from || !to || to <= from) { out.innerHTML = '<p class="muted">Choisissez une date de retour après la prise du véhicule.</p>'; return; }
+    const q = P().quote({ rates }, from, to);
+    const deposit = Number(f.elements.namedItem('deposit')?.value) || 0;
+    const online = Math.round(q.base * 10) / 100;
+    out.innerHTML = q.error ? `<p class="rt-warn">${esc(q.error)}</p>` : `
+      <div class="rt-line"><span>Location ${q.days} jour${q.days > 1 ? 's' : ''}${q.applied ? ` (tarif ${q.applied} jours appliqué)` : ` × ${fmtE(q.perDay)}`}${q.seasonal ? ' · saison comprise' : ''}</span><b>${fmtE(q.base)}</b></div>
+      <div class="rt-line total"><span>Total TTC</span><b>${fmtE(q.base)}</b></div>
+      <div class="rt-line"><span>Payé en ligne par le client à la réservation (10 %)</span><b>${fmtE(online)}</b></div>
+      <div class="rt-line strong"><span>À encaisser à l’agence au retrait</span><b>${fmtE(Math.round((q.base - online) * 100) / 100)}</b></div>
+      ${deposit ? `<div class="rt-line muted"><span>Dépôt de garantie (non facturé)</span><b>${fmtE(deposit)}</b></div>` : ''}
+      <p class="muted rt-note">Hors options choisies par le client (elles s’ajoutent au total).</p>`;
+  }
+  document.addEventListener('input', (e) => { const f = e.target.closest?.('form'); if (f?.querySelector('[data-rates]') && (e.target.closest('[data-rates]') || e.target.name === 'deposit')) paintRates(f); });
+  document.addEventListener('change', (e) => { const f = e.target.closest?.('form'); if (f?.querySelector('[data-rates]') && e.target.closest('[data-rates]')) paintRates(f); });
+  document.addEventListener('click', (e) => {
+    const f = e.target.closest?.('form');
+    if (!f) return;
+    if (e.target.closest('[data-rt-generate]')) {
+      const base = Number(f.querySelector('[data-rt-base]').value), pct = Number(f.querySelector('[data-rt-pct]').value) || 0;
+      if (!(base > 0)) { f.querySelector('[data-rt-base]').focus(); return; }
+      P().generate(base, pct).forEach((v, i) => { f.querySelector(`[data-tier="${i}"]`).value = v; });
+      paintRates(f);
+    } else if (e.target.closest('[data-season-add]')) {
+      f.querySelector('[data-season-rows]').insertAdjacentHTML('beforeend', seasonRow({ coef: 1.3 }));
+      f.querySelector('[data-season-rows] [data-season]:last-child [data-sf=name]').focus();
+    } else if (e.target.closest('[data-season-remove]')) {
+      e.target.closest('[data-season]').remove();
+      paintRates(f);
+    }
+  });
+
   function html(v = null, { lessor = false, availability = null } = {}) {
     const x = v || {};
     const unlimited = Boolean(x.unlimitedKm);
@@ -108,14 +211,7 @@
       ${hint('Indiquez les dates entre lesquelles votre véhicule peut être loué : 30 jours au maximum, à partir d’aujourd’hui. Il n’apparaît sur le site que pour des locations comprises dans cette période, et vous pourrez la prolonger ensuite.')}
       ${input('Disponible à partir du', `name="availableFrom" type="date" required ${fromMin} value="${esc(x.availableFrom || '')}"`)}
       ${input('Disponible jusqu’au (30 jours maximum)', `name="availableUntil" type="date" required min="${esc(x.availableFrom && x.availableFrom > todayIso() ? x.availableFrom : todayIso())}" value="${esc(x.availableUntil || '')}"`)}
-      ${section('Tarifs')}
-      ${hint('Les prix par jour, par semaine et par mois sont obligatoires. Le site retient automatiquement la formule la moins chère pour la durée choisie. Chaque tranche de 24 h entamée est comptée : 24 h 01 = 2 jours.')}
-      ${hint('Ces prix sont ceux que le client paie au total. À la réservation, il règle en ligne un acompte de 10 % du total de sa location (options comprises) ; le solde vous est payé à l’agence lors du retrait du véhicule.')}
-      ${input('Prix par jour (€)', `name="priceDay" type="number" min="1" step="0.01" required value="${esc(num(x.priceDay))}"`)}
-      ${input('Prix par semaine (€)', `name="priceWeek" type="number" min="1" step="0.01" required value="${esc(num(x.priceWeek))}"`)}
-      ${input('Prix par mois (€)', `name="priceMonth" type="number" min="1" step="0.01" required value="${esc(num(x.priceMonth))}"`)}
-      ${input('Ancien prix par jour barré (€, facultatif)', `name="oldPriceDay" type="number" min="1" step="0.01" placeholder="Affiche une remise sur le site" value="${esc(num(x.oldPriceDay))}"`)}
-      ${input('Dépôt de garantie (€, facultatif)', `name="deposit" type="number" min="0" step="1" placeholder="500" value="${esc(num(x.deposit))}"`)}
+      ${ratesHtml(x)}
       ${section('Lieu de retrait')}
       ${input('Ville', `name="city" required data-geo="city" data-geo-country="country" placeholder="Rechercher une ville…" value="${esc(x.city && x.city !== x.pickupAddress ? x.city : '')}"`)}
       ${input('Pays', `name="country" required readonly data-code="FR" value="France" title="Les locations sont pour l’instant disponibles uniquement en France"`)}
@@ -190,6 +286,10 @@
     if (val('availableUntil') < val('availableFrom')) throw new Error('La fin de la période de location doit suivre son début.');
     if (val('availableUntil') < todayIso()) throw new Error('La période de location ne peut pas se terminer dans le passé.');
     if (new Date(`${val('availableUntil')}T00:00:00Z`) - new Date(`${val('availableFrom')}T00:00:00Z`) > 30 * 864e5) throw new Error('Un véhicule peut être mis en ligne pour 30 jours au maximum.');
+    const rates = readRates(f);
+    if (!rates.tiers.every((t) => t > 0)) throw new Error('Indiquez un prix par jour pour chaque palier de la grille de tarifs.');
+    if (rates.seasons.some((z) => !z.name || !z.from || !z.to || !(z.coef >= 0.5 && z.coef <= 3))) throw new Error('Vérifiez vos saisons : un nom, des dates au format jj/mm et un coefficient entre 0,5 et 3.');
+    if (rates.minDays > rates.maxDays) throw new Error('La durée minimale doit être inférieure à la durée maximale.');
     const extras = [...f.querySelectorAll('.extra-row')].map((row) => {
       const v = (k) => row.querySelector(`[data-ef=${k}]`).value.trim();
       return { key: row.dataset.extraKey, name: v('name'), description: v('desc') || undefined, pricePerDay: Number(v('price')), pricing: v('pricing') || 'day', maxQty: Number(v('max')) || 1 };
@@ -198,7 +298,7 @@
     return {
       model: val('model'), category: val('category'), passengers: n('passengers'), doors: n('doors'), bags: n('bags') ?? 0, transmission: val('transmission'), fuelType: val('fuelType') || undefined,
       volumeM3: util ? n('volumeM3') : undefined, payloadKg: util ? n('payloadKg') : undefined, airConditioning: g('airConditioning').checked,
-      availableFrom: val('availableFrom'), availableUntil: val('availableUntil'), priceDay: n('priceDay'), priceWeek: n('priceWeek'), priceMonth: n('priceMonth'), oldPriceDay: n('oldPriceDay'), deposit: n('deposit'), excess: g('excess') ? n('excess') : undefined,
+      availableFrom: val('availableFrom'), availableUntil: val('availableUntil'), rates, oldPriceDay: n('oldPriceDay'), deposit: n('deposit'), excess: g('excess') ? n('excess') : undefined,
       city: val('city'), country: 'France', pickupAddress: val('pickupAddress'),
       officeHoursWeek: Object.fromEntries(DAYS.map(([k]) => [k, f.querySelector(`[data-hd=${k}]`).checked ? { open: f.querySelector(`[data-ho=${k}]`).value || '08:00', close: f.querySelector(`[data-hc=${k}]`).value || '18:00' } : null])),
       includedCustom: customIncl,
@@ -258,7 +358,7 @@
     if (star) star.hidden = !control.required;
   });
   document.addEventListener('change', (e) => { if (e.target.matches?.('select[name=returnPolicy], select[name=youngDriverAge], select[name=category], input[name=unlimitedKm]')) syncConditional(e.target.form); });
-  new MutationObserver((muts) => { for (const m of muts) for (const n of m.addedNodes) if (n.nodeType === 1) { const f = n.matches?.('form') ? n : n.querySelector?.('form'); if (f) { syncConditional(f); capPeriod(f); f.querySelectorAll('[data-cat-preview]').forEach(paintCatPreview); } } }).observe(document.body, { childList: true, subtree: true });
+  new MutationObserver((muts) => { for (const m of muts) for (const n of m.addedNodes) if (n.nodeType === 1) { const f = n.matches?.('form') ? n : n.querySelector?.('form'); if (f) { syncConditional(f); capPeriod(f); f.querySelectorAll('[data-cat-preview]').forEach(paintCatPreview); paintRates(f); } } }).observe(document.body, { childList: true, subtree: true });
 
   document.addEventListener('change', (e) => {
     if (!e.target.matches?.('input[name=unlimitedKm]')) return;

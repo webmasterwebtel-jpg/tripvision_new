@@ -5,6 +5,8 @@
   const img = (slug) => `/assets/dest/${slug}.jpg`;
   const norm = (v) => String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const matches = (o, d) => { const n = norm(d.name); return norm(o.to_city).includes(n) || norm(o.from_city).includes(n); };
+  // Prix « à partir de » par jour : le palier le moins cher de la grille de l'annonce.
+  const fromDay = (v) => (window.TVPricing ? window.TVPricing.fromPrice(v) : Number(v.priceDay));
   const eur = (n) => `${Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €`;
   const day = (d) => (d ? new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
   const I = (n) => `<svg class="tv-icon" aria-hidden="true"><use href="#i-${n}"></use></svg>`;
@@ -88,7 +90,7 @@
       <div class="cm-body"><h4>${E(String(v.name || v.model || '').replace(/\s+ou similaire\s*$/i, ''))} <small>ou similaire</small></h4>
         <p class="cm-lessor">${I('pin')} ${E([v.partner_company || 'TripVision', v.city].filter(Boolean).join(' · '))}</p>
         <ul class="cm-specs">${[v.passengers && `${v.passengers} places`, v.transmission, v.bags != null && `${v.bags} bagage${v.bags > 1 ? 's' : ''}`, v.airConditioning && 'Clim.'].filter(Boolean).map((t) => `<li>${E(t)}</li>`).join('')}</ul></div>
-      <div class="cm-price"><small>à partir de</small><b>${eur(v.priceDay)}</b><em>/ jour</em><button class="btn small" type="button" data-dest-car="${E(v.id)}">Voir l’offre →</button></div>
+      <div class="cm-price"><small>à partir de</small><b>${eur(fromDay(v))}</b><em>/ jour</em><button class="btn small" type="button" data-dest-car="${E(v.id)}">Voir l’offre →</button></div>
     </article>`;
   async function mountCars(d, onlyCars) {
     const box = document.getElementById('dpCars'), none = document.getElementById('dpNone');
@@ -422,14 +424,14 @@
     if (!box || typeof state === 'undefined') return;
     const best = (list, key, price) => { const m = new Map(); for (const o of list) { const k = key(o); if (!k) continue; const c = m.get(k); if (!c || price(o) < price(c)) m.set(k, o); } return [...m.values()].sort((a, b) => price(a) - price(b)); };
     const flights = best(state.flights.filter((o) => o.flight?.bookingUrl), (o) => `${norm(o.from_city)}>${norm(o.to_city)}`, (o) => Number(o.price)).slice(0, 6);
-    const cars = best(state.vehicles || [], (v) => norm(v.city || ''), (v) => Number(v.priceDay)).slice(0, 4);
+    const cars = best(state.vehicles || [], (v) => norm(v.city || ''), fromDay).slice(0, 4);
     const packs = best(state.packs || [], (o) => norm(o.to_city || ''), (o) => Number(o.price)).slice(0, 4);
     const group = (title, icon, items, cls) => (items.length ? `<div class="bp-group ${cls}"><h3>${I(icon)} ${title}</h3><div class="bp-grid">${items.join('')}</div></div>` : '');
     box.innerHTML = group('Vols', 'plane', flights.map((o) => {
       const d = destOf(o.to_city), round = o.flight?.tripType !== 'oneway';
       return bpCard({ href: '#flights', link: 'flights', attrs: `data-route-from="${E(o.from_city || '')}" data-route-to="${E(o.to_city || '')}"`, pic: d ? img(d.slug) : (typeof offerImages === 'function' ? offerImages(o)[0] : o.image) || '', kicker: `${round ? 'Aller-retour' : 'Aller simple'} · ${E(o.flight?.airline || 'Vol')}`, title: `${E(o.from_city || '')} <i>→</i> ${E(o.to_city || '')}`, sub: '', price: o.price });
     }), 'bp-flights')
-      + group('Voitures', 'car', cars.map((v) => bpCard({ href: '#cars', link: 'cars', attrs: `data-car-research="${E(v.city || '')}"`, pic: v.image || '', kicker: 'Location de voiture', title: `Voitures à ${E(v.city || '')}`, sub: `${E(v.category || '')} · ${E(v.partner_company || '')}`, price: v.priceDay, unit: '/ jour' })), 'bp-cars')
+      + group('Voitures', 'car', cars.map((v) => bpCard({ href: '#cars', link: 'cars', attrs: `data-car-research="${E(v.city || '')}"`, pic: v.image || '', kicker: 'Location de voiture', title: `Voitures à ${E(v.city || '')}`, sub: `${E(v.category || '')} · ${E(v.partner_company || '')}`, price: fromDay(v), unit: '/ jour' })), 'bp-cars')
       + group('Week-ends', 'suitcase', packs.map((o) => { const d = destOf(o.to_city); return bpCard({ href: `#pack/${E(o.id)}`, link: `pack/${E(o.id)}`, attrs: '', pic: d ? img(d.slug) : (typeof offerImages === 'function' ? offerImages(o)[0] : o.image) || '', kicker: `Transport + hôtel · ${Number(o.hotel_nights) || 2} nuit${Number(o.hotel_nights) > 1 ? 's' : ''}`, title: `Week-end à ${E(o.to_city || '')}`, sub: E(o.hotel_name || ''), price: o.price, unit: '/ pers.' }); }), 'bp-packs');
     box.closest('section').hidden = !(flights.length || cars.length || packs.length);
     if (typeof bindLinks === 'function') bindLinks(box);

@@ -744,3 +744,32 @@ td.actions{min-width:280px}
 .rating-row{display:grid;grid-template-columns:120px 1fr 1fr;gap:12px;align-items:end}
 .rating-row>b{padding-bottom:12px;font-size:13.5px}
 @media(max-width:640px){.transport-pick{grid-template-columns:repeat(2,1fr)}.rating-row{grid-template-columns:1fr 1fr}.rating-row>b{grid-column:1/-1;padding:0}}
+/* Tarifs d'une annonce : grille par durée, saisons, règles, simulateur */
+.rates{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.rt-card{display:grid;gap:10px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.rt-card h5{margin:0;font-size:15px;font-weight:700;color:#14231d}
+.rt-card h5 small{font-weight:500;color:var(--muted);font-size:12.5px}
+.rt-card>.muted{margin:0}
+.rt-gen{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:12px;border-radius:12px;background:#eef4f1}
+.rt-gen label{display:grid;gap:4px;font-size:12px;font-weight:700}
+.rt-gen input{width:130px}
+.rt-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:8px 16px;align-items:center}
+.rt-grid>span{font-size:12px;font-weight:700;color:var(--muted)}
+.rt-grid>b{font-size:14px}
+.rt-in{position:relative;display:block}
+.rt-in input{width:100%;padding-right:28px}
+.rt-in em{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-style:normal;color:var(--muted)}
+.rt-grid>span[data-tier-ex]{font-size:13.5px;font-weight:500;color:#3a4540}
+.rt-warn{margin:0;padding:10px 12px;border-radius:10px;background:#fdf3d6;color:#7a5a0e;font-size:13px;line-height:1.5}
+.rt-season{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto;gap:10px;align-items:end;padding:10px 0;border-bottom:1px solid #f0eee8}
+.rt-rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.rt-check{display:flex!important;align-items:center;gap:10px;font-weight:600}
+.rt-check input{width:18px;height:18px;accent-color:#0d7a58}
+.rt-sim{border:2px solid #0d7a58;background:#fbfdfc}
+.rt-sim-dates{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rt-line{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #eef0ec;font-size:14px}
+.rt-line.total{border-top:2px solid #14231d;border-bottom:0;font-size:17px;font-weight:800}
+.rt-line.strong b{color:#0d7a58}
+.rt-line.muted{color:var(--muted)}
+.rt-note{margin:6px 0 0;font-size:12px}
+@media(max-width:720px){.rt-grid{grid-template-columns:1fr 1fr}.rt-grid>span:nth-child(3),.rt-grid>span[data-tier-ex]{display:none}.rt-season{grid-template-columns:1fr 1fr}.rt-rules,.rt-sim-dates{grid-template-columns:1fr}}

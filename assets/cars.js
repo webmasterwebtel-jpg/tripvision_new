@@ -163,21 +163,17 @@
     const m = Math.round((z - a) / 60000);
     return m > 0 ? m : 1440;
   }
-  // Chaque tranche de 24 h entamée est facturée : 24 h 01 = 2 jours.
-  const searchDays = () => Math.max(1, Math.ceil(searchMinutes() / 1440));
+  // Chaque tranche de 24 h entamée est facturée, après un retard toléré (59 min par défaut, réglé par l’enseigne).
+  const searchDays = () => Math.max(1, Math.ceil((searchMinutes() - 59) / 1440));
+  // Devis d'une annonce pour la recherche en cours : grille par durée, saisons, lissage (moteur partagé avec le serveur).
+  const span = () => { const s = S(); if (s.startDate && s.endDate) return [`${s.startDate}T${s.startTime}`, `${s.endDate}T${s.endTime}`]; const t = new Date(Date.now() + 864e5), iso = t.toISOString().slice(0, 10); return [`${iso}T10:00`, `${new Date(t.getTime() + 864e5).toISOString().slice(0, 10)}T10:00`]; };
+  const quoteOf = (v) => window.TVPricing.quote(v, ...span());
   function durationText() {
     const m = searchMinutes(), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mi = m % 60;
     return [d ? `${d} j` : '', h ? `${h} h` : '', mi ? `${String(mi).padStart(2, '0')} min` : ''].filter(Boolean).join(' ') || '24 h';
   }
-  // Paliers facultatifs (semaine, mois, an) : on retient la formule la moins chère (même règle que le serveur).
-  function rentalTotal(v, d) {
-    const pd = Number(v.priceDay);
-    const tiers = [[30, Number(v.priceMonth)], [7, Number(v.priceWeek)]].filter(([, p]) => p > 0);
-    let rest = d, greedy = 0;
-    for (const [len, p] of tiers) { const n = Math.floor(rest / len); greedy += n * p; rest -= n * len; }
-    greedy += rest * pd;
-    return Math.min(d * pd, greedy, ...tiers.map(([len, p]) => Math.ceil(d / len) * p));
-  }
+  // Prix de la location seule (hors options) pour les dates recherchées.
+  const rentalTotal = (v) => quoteOf(v).base;
   const euro = (n) => `${Number(n).toLocaleString('fr-FR', { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 })} €`;
   const dayLabel = (d) => `${d} jour${d > 1 ? 's' : ''}`;
   const cancelText = (h) => (h >= 168 ? `${Math.round(h / 24)} jours` : `${h} h`);
@@ -269,8 +265,8 @@
   }
   const payOn = () => { try { return Boolean(PAY.payments); } catch { return false; } };
   function card(v) {
-    const d = searchDays(), base = rentalTotal(v, d), fees = searchFees(v, d), total = base + fees, per = total / d;
-    const old = v.oldPriceDay && Number(v.oldPriceDay) > Number(v.priceDay) ? Number(v.oldPriceDay) * d : null;
+    const q = quoteOf(v), d = q.days, base = q.base, fees = searchFees(v, d), total = base + fees, per = total / d;
+    const old = v.oldPriceDay && Number(v.oldPriceDay) * d > base ? Number(v.oldPriceDay) * d : null;
     const lessor = lessorOf(v);
     const place = [v.city && v.city !== v.pickupAddress ? v.city : '', v.country].filter(Boolean).join(', ') || v.pickupAddress;
     const deposit = Math.round(total * (v.commissionPct || 10)) / 100;
@@ -282,7 +278,7 @@
         <ul class="rc-facts">${keyFacts(v)}</ul>
         <footer class="rc-foot"><span class="rc-lessor"><span class="lessor-av">${E(initialsOf(lessor))}</span><span><small>Enseigne</small><b>${E(lessor)}</b></span></span><span class="rc-place">${I.pin}<span><small>Retrait</small><b>${E(place)}</b></span></span>${v.rentalConditions ? `<button class="rent-link" type="button" data-car-terms="${v.id}">Conditions de location</button>` : ''}</footer>
       </div>
-      <aside class="rc-price"><small>Prix pour ${dayLabel(d)}</small>${old ? `<s>${euro(old)}</s>` : ''}<strong>${euro(total)}</strong><span>soit ${euro(per)} / jour</span>${fees ? `<span class="rent-fees">dont ${euro(fees)} de frais</span>` : ''}${payOn() ? `<span class="rc-online">Seulement <b>${euro(deposit)}</b> à payer en ligne</span>` : ''}<button class="btn" type="button" data-book="${v.id}">Voir l’offre ${I.arrow}</button>${v.freeCancelHours > 0 ? '<em class="rc-free">Annulation gratuite</em>' : ''}</aside>
+      <aside class="rc-price"><small>Prix pour ${dayLabel(d)}</small>${old ? `<s>${euro(old)}</s>` : ''}<strong>${euro(total)}</strong><span>soit ${euro(Math.round(per * 100) / 100)} / jour</span>${q.applied ? `<span class="rc-tier">Tarif ${q.applied} jours appliqué</span>` : ''}${fees ? `<span class="rent-fees">dont ${euro(fees)} de frais</span>` : ''}${payOn() ? `<span class="rc-online">Seulement <b>${euro(deposit)}</b> à payer en ligne</span>` : ''}<button class="btn" type="button" data-book="${v.id}">Voir l’offre ${I.arrow}</button>${v.freeCancelHours > 0 ? '<em class="rc-free">Annulation gratuite</em>' : ''}</aside>
     </article>`;
   }
 
@@ -292,6 +288,7 @@
     const sr = S();
     const rows = state.vehicles.filter((v) => {
       if (!sr.sameReturn && v.returnPolicy === 'none') return false;
+      if (quoteOf(v).error) return false;
       if (v.minAge && Number(sr.age) < Number(v.minAge)) return false;
       if (F.cats.size && !F.cats.has(v.category)) return false;
       if (F.gear && v.transmission !== F.gear) return false;
@@ -459,10 +456,10 @@
   const flow = () => { const v = find(R.id); return v.protectionPricePerDay > 0 || (v.extras || []).length ? ['loc', 'opt', 'info'] : ['loc', 'info']; };
 
   function pricing() {
-    const v = find(R.id), d = searchDays();
-    const base = rentalTotal(v, d);
-    const old = v.oldPriceDay && Number(v.oldPriceDay) > Number(v.priceDay) ? Number(v.oldPriceDay) * d : null;
-    const lines = [{ label: `Location · ${dayLabel(d)}`, amount: base }];
+    const v = find(R.id), q = quoteOf(v), d = q.days;
+    const base = q.base;
+    const old = v.oldPriceDay && Number(v.oldPriceDay) * d > base ? Number(v.oldPriceDay) * d : null;
+    const lines = [{ label: `Location · ${dayLabel(d)}${q.applied ? ` (tarif ${q.applied} jours appliqué)` : ''}${q.seasonal ? ' · saison comprise' : ''}`, amount: base }];
     for (const x of v.extras || []) {
       const q = R.extras.get(x.key) || 0;
       if (q > 0) lines.push({ label: `${q > 1 ? `${q} × ` : ''}${x.name} · ${x.pricing === 'once' ? 'forfait' : dayLabel(d)}`, amount: Number(x.pricePerDay) * q * (x.pricing === 'once' ? 1 : d) });
@@ -553,7 +550,7 @@
   }
   // La franchise expliquée simplement, avec les montants de l'offre (comme sur un comparateur).
   function franchiseHtml(v) {
-    const prot = Number(v.protectionPricePerDay) > 0, d = searchDays();
+    const prot = Number(v.protectionPricePerDay) > 0, d = quoteOf(v).days;
     if (!v.excess && !prot) return '';
     const amount = v.excess ? euro(v.excess) : 'le montant prévu au contrat';
     return `<section class="rsv-card fr-explain"><h3>${I.shield}La franchise, simplement</h3>
@@ -805,7 +802,7 @@
       const row = qty.closest('.opt-row');
       const x = find(R.id).extras.find((y) => y.key === qty.dataset.rsvQty);
       row.classList.toggle('on', n > 0);
-      row.querySelector('.opt-price').textContent = n ? `+ ${euro(Number(x.pricePerDay) * n * (x.pricing === 'once' ? 1 : searchDays()))}` : '';
+      row.querySelector('.opt-price').textContent = n ? `+ ${euro(Number(x.pricePerDay) * n * (x.pricing === 'once' ? 1 : quoteOf(find(R.id)).days))}` : '';
       paintSide();
     }
   });

@@ -15,6 +15,9 @@ import ExcelJS from 'exceljs';
 import { bookingPdf, requestPdf } from './pdf.js';
 import { paymentsEnabled, testMode, createCheckout, retrieveSession, expireSession, refundPayment, constructEvent, webhookSecret } from './payments.js';
 import { listCountries, searchCities, searchAirports, searchPlaces, countryCodeByName } from './geo.js';
+// Moteur de prix partagé avec le site (grille par durée, saisons, retard toléré, lissage des seuils).
+import '../assets/pricing.js';
+const Pricing = globalThis.TVPricing;
 import { isLockedOut, recordFailedAttempt, clearAttempts, passwordProblem, audit, recordLogin, clientIp } from './security.js';
 
 const app = express();
@@ -256,7 +259,13 @@ const vehicleBase = z.object({
   model: z.string().min(2), category: z.string().min(2), passengers: z.coerce.number().int().positive(), transmission: z.string().min(2),
   doors: z.coerce.number().int().positive(), bags: z.coerce.number().int().min(0).max(30).default(0), airConditioning: z.boolean().default(true),
   fuelType: z.string().trim().min(2, 'Indiquez le carburant.').max(30), volumeM3: z.coerce.number().positive().max(60).optional(), payloadKg: z.coerce.number().positive().max(20000).optional(),
-  priceDay: z.coerce.number().positive(), priceWeek: z.coerce.number().positive({ message: 'Le prix par semaine est obligatoire.' }), priceMonth: z.coerce.number().positive({ message: 'Le prix par mois est obligatoire.' }),
+  // Tarifs TTC saisis une fois : 5 paliers de prix par jour selon la durée totale, saisons, règles.
+  rates: z.object({
+    tiers: z.array(z.coerce.number({ invalid_type_error: 'Indiquez un prix pour chaque palier.' }).positive('Indiquez un prix pour chaque palier.').max(5000)).length(5, 'Indiquez un prix pour chaque palier.'),
+    seasons: z.array(z.object({ name: z.string().trim().min(1, 'Nommez chaque saison.').max(40), from: z.string().regex(/^\d{2}-\d{2}$/, 'Date de début de saison invalide.'), to: z.string().regex(/^\d{2}-\d{2}$/, 'Date de fin de saison invalide.'), coef: z.coerce.number().min(0.5, 'Coefficient entre 0,5 et 3.').max(3, 'Coefficient entre 0,5 et 3.') })).max(8).default([]),
+    minDays: z.coerce.number().int().min(1).max(30).default(1), maxDays: z.coerce.number().int().min(1).max(30, 'La durée maximale est de 30 jours.').default(30),
+    grace: z.coerce.number().int().min(0).max(180).default(59), smoothing: z.boolean().default(true),
+  }, { required_error: 'Saisissez la grille de tarifs.' }).refine((r) => r.minDays <= r.maxDays, { message: 'La durée minimale doit être inférieure à la durée maximale.', path: ['minDays'] }),
   oldPriceDay: z.coerce.number().positive().optional(),
   pickupAddress: z.string().min(2), city: z.string().trim().max(120).optional(),
   country: z.string().trim().max(120).optional().refine((c) => !c || countryCodeByName(c) === 'FR', { message: 'Les locations de voitures sont pour l’instant disponibles uniquement en France.' }),
@@ -350,12 +359,15 @@ function weekText(w) {
   return groups.map(({ from, to, h }) => `${from === to ? DAY_LABELS[from] : `${DAY_LABELS[from]}-${DAY_LABELS[to]}`} ${h}`).join(' · ');
 }
 
+// Colonnes de prix déduites de la grille : prix par jour (1 à 2 jours), et prix de 7 et 30 jours.
+const priceCols = (v) => ({ priceDay: v.rates.tiers[0], priceWeek: Pricing.round2(v.rates.tiers[2] * 7), priceMonth: Pricing.round2(v.rates.tiers[4] * 30) });
+
 // Construit les détails stockés d'une annonce à partir du formulaire (même règle pour le back-office et l'espace partenaire).
 function buildVehicleDetails(v, old = {}) {
   return {
     ...old,
     passengers: v.passengers, doors: v.doors, bags: v.bags, transmission: v.transmission, airConditioning: v.airConditioning,
-    priceYear: null, fuelType: v.fuelType || null, volumeM3: v.volumeM3 ?? null, payloadKg: v.payloadKg ?? null, oldPriceDay: v.oldPriceDay ?? null,
+    priceYear: null, rates: v.rates, fuelType: v.fuelType || null, volumeM3: v.volumeM3 ?? null, payloadKg: v.payloadKg ?? null, oldPriceDay: v.oldPriceDay ?? null,
     officeHoursWeek: v.officeHoursWeek ?? old.officeHoursWeek ?? null, includedCustom: v.includedCustom !== undefined ? v.includedCustom : (old.includedCustom || []),
     officeHours: v.officeHoursWeek ? weekText(v.officeHoursWeek) : (v.officeHours || null), pickupInstructions: v.pickupInstructions || null,
     returnPolicy: v.returnPolicy, returnFee: v.returnPolicy === 'fee' ? Number(v.returnFee) : 0,
@@ -1145,21 +1157,6 @@ app.post('/api/stripe/webhook', h(async (req, res) => {
   res.json({ received: true });
 }));
 
-// Prix d'une location : on retient la formule la moins chère (jour, semaine, mois, ou combinaison).
-function rentalTotal(pd, pw, pm, py, days) {
-  const tiers = [[365, py], [30, pm], [7, pw]].filter(([, p]) => p > 0);
-  let rest = days, greedy = 0;
-  for (const [len, p] of tiers) { const n = Math.floor(rest / len); greedy += n * p; rest -= n * len; }
-  greedy += rest * pd;
-  return Math.min(days * pd, greedy, ...tiers.map(([len, p]) => Math.ceil(days / len) * p));
-}
-const rentalDays = (b) => {
-  if (!b.startDate || !b.endDate) return 1;
-  const a = new Date(`${b.startDate}T${b.startTime || '10:00'}:00`), z = new Date(`${b.endDate}T${b.endTime || '10:00'}:00`);
-  const minutes = Math.round((z - a) / 60000);
-  // Chaque tranche de 24 h entamée est facturée : 24 h 01 = 2 jours.
-  return Number.isFinite(minutes) && minutes > 0 ? Math.max(1, Math.ceil(minutes / 1440)) : 1;
-};
 // Ce qui se règle en ligne à la réservation : 10 % du total de la location, options, protection et frais compris. Le solde se paie à l’enseigne.
 const COMMISSION_PCT = 10;
 const commissionOf = (total) => Math.round(Number(total) * COMMISSION_PCT) / 100;
@@ -1186,7 +1183,9 @@ app.post('/api/bookings', auth('client'), h(async (req, res) => {
   if (d.minAge && b.driverAge && b.driverAge < d.minAge) return res.status(400).json({ error: 'VALIDATION_ERROR', message: `L’enseigne exige un conducteur d’au moins ${d.minAge} ans.` });
   const todayParis = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
   if (b.startDate && b.startDate < todayParis) return res.status(400).json({ error: 'VALIDATION_ERROR', message: 'La date de départ ne peut pas être dans le passé.' });
-  const days = rentalDays(b);
+  const q = Pricing.quote(mapVehicle(veh, veh.trade_name), from || `${todayParis}T10:00`, to || `${todayParis}T10:00`);
+  if (q.error) return res.status(400).json({ error: 'VALIDATION_ERROR', message: q.error });
+  const days = q.days;
   const wanted = new Map((b.extras || []).map(e => (typeof e === 'string' ? [e, 1] : [e.key, e.qty])));
   const chosen = (d.extras || []).filter(x => wanted.has(x.key)).map(x => {
     const qty = Math.min(Number(x.maxQty || 1), wanted.get(x.key));
@@ -1204,7 +1203,7 @@ app.post('/api/bookings', auth('client'), h(async (req, res) => {
   }
   // Protection de la franchise : prix fixe, le même pour toutes les voitures (réglé par TripVision).
   if (b.protection && settings.franchisePerDay > 0) chosen.push({ key: 'protection', name: 'Protection de la franchise', pricePerDay: settings.franchisePerDay, total: settings.franchisePerDay * days });
-  const baseRental = rentalTotal(Number(veh.price_day), Number(veh.price_week) || 0, Number(veh.price_month) || 0, Number(d.priceYear) || 0, days);
+  const baseRental = q.base;
   const total = baseRental + chosen.reduce((n, x) => n + x.total, 0);
   const snapshot = conditionsSnapshot(d, veh.trade_name || 'TripVision');
   const { rows } = await query(
@@ -1295,7 +1294,7 @@ app.post('/api/partner/vehicles', auth('partner'), h(async (req, res) => {
   const { rows: inserted } = await query(
     `INSERT INTO vehicles(partner_id, status, model, category, pickup_address, price_day, price_week, price_month, details, publish_at)
      VALUES ($1,'approved',$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-    [partner.id, /similaire/i.test(v.model) ? v.model : `${v.model} ou similaire`, v.category, v.pickupAddress, v.priceDay, v.priceWeek ?? null, v.priceMonth ?? null, details, publishAt]
+    [partner.id, /similaire/i.test(v.model) ? v.model : `${v.model} ou similaire`, v.category, v.pickupAddress, priceCols(v).priceDay, priceCols(v).priceWeek, priceCols(v).priceMonth, details, publishAt]
   );
   await saveBlocks(inserted[0].id, v.blocks);
   res.status(201).json(mapVehicle(inserted[0], partner.trade_name));
@@ -1508,7 +1507,7 @@ app.post('/api/admin/vehicles', auth(...BACKOFFICE_ROLES), can('vehicles.create'
   const { rows } = await query(
     `INSERT INTO vehicles(partner_id, status, model, category, pickup_address, price_day, price_week, price_month, details, publish_at)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
-    [partner?.id ?? null, status, v.model, v.category, v.pickupAddress, v.priceDay, v.priceWeek ?? null, v.priceMonth ?? null, details, v.draft ? null : (v.publishAt || null)]
+    [partner?.id ?? null, status, v.model, v.category, v.pickupAddress, priceCols(v).priceDay, priceCols(v).priceWeek, priceCols(v).priceMonth, details, v.draft ? null : (v.publishAt || null)]
   );
   await saveBlocks(rows[0].id, v.blocks);
   await audit(req.user.id, v.publishAt ? 'schedule_vehicle' : 'create_vehicle', 'vehicle', rows[0].id, clientIp(req));
@@ -1530,7 +1529,7 @@ app.patch('/api/admin/vehicles/:id', auth(...BACKOFFICE_ROLES), can('vehicles.ed
   const { rows } = await query(
     `UPDATE vehicles SET partner_id = $1, model = $2, category = $3, pickup_address = $4, price_day = $5, price_week = $6, price_month = $7, details = $8, updated_at = now()
      WHERE id = $9 AND deleted_at IS NULL RETURNING *`,
-    [partner?.id ?? null, v.model, v.category, v.pickupAddress, v.priceDay, v.priceWeek ?? null, v.priceMonth ?? null, details, req.params.id]
+    [partner?.id ?? null, v.model, v.category, v.pickupAddress, priceCols(v).priceDay, priceCols(v).priceWeek, priceCols(v).priceMonth, details, req.params.id]
   );
   await saveBlocks(req.params.id, v.blocks);
   await audit(req.user.id, 'update_vehicle', 'vehicle', req.params.id, clientIp(req));
@@ -1682,7 +1681,7 @@ app.patch('/api/partner/vehicles/:id', auth('partner'), h(async (req, res) => {
   const publishAt = reschedule ? futurePublishAt(req.body) : current.publish_at;
   const { rows } = await query(
     `UPDATE vehicles SET model = $1, category = $2, pickup_address = $3, price_day = $4, price_week = $5, price_month = $6, details = $7, publish_at = $9, updated_at = now() WHERE id = $8 RETURNING *`,
-    [v.model, v.category, v.pickupAddress, v.priceDay, v.priceWeek ?? null, v.priceMonth ?? null, details, req.params.id, publishAt]);
+    [v.model, v.category, v.pickupAddress, priceCols(v).priceDay, priceCols(v).priceWeek, priceCols(v).priceMonth, details, req.params.id, publishAt]);
   await saveBlocks(req.params.id, v.blocks);
   await audit(req.user.id, 'partner_update_vehicle', 'vehicle', req.params.id, clientIp(req));
   res.json(mapVehicle(rows[0], current.trade_name));
