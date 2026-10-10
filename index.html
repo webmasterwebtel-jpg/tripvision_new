@@ -7,7 +7,7 @@
   <meta name="description" content="TripVision sélectionne des bons plans vols, locations de voiture et packs week-end depuis la France." />
   <link rel="stylesheet" href="styles.css?v=20260927-admin-1" />
   <script src="assets/boot.js"></script>
-  <link rel="stylesheet" href="premium.css?v=20261020-v65" />
+  <link rel="stylesheet" href="premium.css?v=20261020-v67" />
 </head>
 <body>
   <svg class="tv-icon-sprite" aria-hidden="true" focusable="false">
@@ -27,7 +27,7 @@
   <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
   <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 0 0 4v5h18v-5a2 2 0 0 0 0-4V3H3v5Z"/><path d="M13 7h4m-4 4h4m-4 4h4M8 7v8"/></symbol>
   <symbol id="i-booking" viewBox="0 0 24 24"><path d="M8 4h8M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1Z"/><rect x="5" y="4" width="14" height="18" rx="2"/><path d="m9 13 2 2 4-4"/></symbol>
-  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></symbol>
   <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z"/></symbol>
@@ -139,51 +139,34 @@
     </section>
 
     <section class="page service-page flights-page" id="flights">
-      <section class="flight-premium-hero travel-photo-hero">
-        <div class="wrap flight-premium-grid">
-          <div class="flight-intro-card travel-hero-copy">
-            
-            <h1>Les vols les moins chers,<br><em>trouvés pour vous.</em></h1>
-            <p>Chaque jour, notre équipe compare les compagnies et publie les meilleurs tarifs, partout dans le monde. Indiquez votre trajet : tous nos bons plans s’affichent, quelle que soit la date.</p>
-            <div class="flight-benefits">
-              <div><span>01</span><strong>Tarifs dénichés</strong><small>Comparés par notre équipe</small></div>
-              <div><span>02</span><strong>Partout dans le monde</strong><small>De Paris à Douala, et bien plus</small></div>
-              <div><span>03</span><strong>Réservation directe</strong><small>Sur le site de la compagnie</small></div>
-            </div>
+      <section class="flight-premium-hero travel-photo-hero fv-hero">
+        <div class="wrap fv-wrap">
+          <div class="fv-copy">
+            <h1>Les vols les moins chers,<br><em>sélectionnés par notre équipe.</em></h1>
+            <p>Chaque offre est repérée, vérifiée et datée avant d’être publiée. Vous réservez ensuite directement sur le site de la compagnie.</p>
           </div>
-
-          <form class="flight-search-panel" id="flightSimulator">
-            <div class="flight-search-top">
-              <div>
-                <span>Rechercher un vol</span>
-                <strong>D’où partez-vous, où allez-vous ?</strong>
-              </div>
-              <div class="flight-trip-toggle" role="group" aria-label="Type de trajet">
-                <label><input type="radio" name="tripType" value="roundtrip" checked><span>Aller-retour</span></label>
-                <label><input type="radio" name="tripType" value="oneway"><span>Aller simple</span></label>
-              </div>
+          <form class="fv-search" id="flightSimulator" autocomplete="off">
+            <div class="fv-opts" role="group" aria-label="Options du trajet">
+              <label class="fv-opt"><input type="radio" name="tripType" value="roundtrip" checked><span>Aller-retour</span></label>
+              <label class="fv-opt"><input type="radio" name="tripType" value="oneway"><span>Aller simple</span></label>
+              <label class="fv-chk"><input type="checkbox" name="direct" value="1"><span>Vols directs uniquement</span></label>
             </div>
-
-            <div class="flight-route-row">
-              <label class="flight-route-field">
-                <span>Départ</span>
-                <div class="flight-input-line"><b>DE</b><input name="fromCity" placeholder="Aéroport de départ" autocomplete="off" data-geo="place" data-geo-only="offers"></div>
-              </label>
-              <button type="button" class="flight-swap" id="flightSwap" aria-label="Inverser départ et destination">⇄</button>
-              <label class="flight-route-field">
-                <span>Destination</span>
-                <div class="flight-input-line"><b>À</b><input name="toCity" placeholder="Aéroport d’arrivée" autocomplete="off" data-geo="place" data-geo-only="offers"></div>
-              </label>
+            <div class="fv-fields">
+              <label class="fv-field fv-from"><span>Départ</span><input name="fromCity" placeholder="Ville ou aéroport" autocomplete="off" data-geo="place" data-geo-only="offers"></label>
+              <button type="button" class="flight-swap fv-swap" id="flightSwap" aria-label="Inverser départ et destination">⇄</button>
+              <label class="fv-field fv-to"><span>Destination</span><input name="toCity" placeholder="Ville ou aéroport" autocomplete="off" data-geo="place" data-geo-only="offers"></label>
+              <label class="fv-field fv-trav"><span>Voyageurs</span><select name="travelers"><option value="1">1 adulte</option><option value="2">2 adultes</option><option value="3">3 adultes</option><option value="4">4 adultes</option><option value="5">5 adultes et +</option></select></label>
+              <label class="fv-field fv-cabin flight-cabin-field"><span>Classe</span><div class="cabin-pick" data-cabin-pick><input type="hidden" name="cabin" value="all"></div></label>
+              <button class="btn fv-go" type="submit"><svg class="tv-icon" aria-hidden="true"><use href="#i-search"></use></svg> Rechercher</button>
             </div>
-
-            <div class="flight-meta-row no-dates">
-              <label><span>Voyageurs</span><select name="travelers"><option value="1">1 voyageur</option><option value="2">2 voyageurs</option><option value="3">3 voyageurs</option><option value="4">4 voyageurs</option><option value="5">5+ voyageurs</option></select></label>
-              <label class="flight-cabin-field"><span>Classe</span><div class="cabin-pick" data-cabin-pick><input type="hidden" name="cabin" value="all"></div></label>
-            </div>
-
-            <button class="btn flight-primary-cta" type="submit">Afficher les vols disponibles <span>→</span></button>
-            <div class="flight-form-foot"><span><svg class="tv-icon" aria-hidden="true"><use href="#i-check"></use></svg> Aucune date à saisir</span><span><svg class="tv-icon" aria-hidden="true"><use href="#i-check"></use></svg> Vos options réunies au même endroit</span></div>
           </form>
+        </div>
+      </section>
+
+      <section class="fv-latest" id="flightLatest" hidden>
+        <div class="wrap">
+          <div class="fv-sec-head"><h2>Derniers bons plans <em>ajoutés</em></h2><span>Repérés et vérifiés par notre équipe</span></div>
+          <div class="fv-latest-grid" id="flightLatestGrid"></div>
         </div>
       </section>
 
@@ -196,16 +179,26 @@
         </div>
       </section>
 
-      <section class="service-results flight-results-premium">
+      <section class="service-results flight-results-premium fv-results">
         <div class="wrap">
-          <div class="service-info-strip"><span>ⓘ</span><p>Ces tarifs ont été trouvés par TripVision sur les sites des compagnies. Le billet se réserve directement chez la compagnie, qui confirme le prix final.</p></div>
-          <div class="service-results-head">
-            <div><div class="eyebrow">Résultats</div><h2>Vols disponibles <small class="result-count" id="flightResultCount"></small></h2></div>
-            <div class="flight-sortbar"><div class="service-filter-pills pills" data-filter-group="flights"><button class="pill active" data-sort="price" type="button">Le moins cher</button><button class="pill" data-sort="fast" type="button">Le plus rapide</button><button class="pill" data-sort="early" type="button">Départ le plus tôt</button></div><label class="flight-direct"><input type="checkbox" id="flightDirect"> Vols directs</label></div>
+          <div class="fv-toolbar">
+            <div class="fv-filters" id="flightFilters">
+              <details class="fv-dd" data-dd="price"><summary>Prix max <i></i></summary><div class="fv-pop"><b>Prix maximum par personne</b><input type="range" id="fvPrice" min="0" max="2000" step="10" value="2000"><output id="fvPriceOut">Tous les prix</output></div></details>
+              <details class="fv-dd" data-dd="stops"><summary>Escales <i></i></summary><div class="fv-pop"><label><input type="radio" name="fvStops" value="all" checked> Toutes</label><label><input type="radio" name="fvStops" value="0"> Direct uniquement</label><label><input type="radio" name="fvStops" value="1"> 1 escale maximum</label></div></details>
+              <details class="fv-dd" data-dd="air"><summary>Compagnie <i></i></summary><div class="fv-pop" id="fvAirlines"></div></details>
+              <details class="fv-dd" data-dd="time"><summary>Horaires <i></i></summary><div class="fv-pop"><b>Heure de départ</b><label><input type="checkbox" name="fvSlot" value="night"> Nuit (0 h – 6 h)</label><label><input type="checkbox" name="fvSlot" value="morning"> Matin (6 h – 12 h)</label><label><input type="checkbox" name="fvSlot" value="afternoon"> Après-midi (12 h – 18 h)</label><label><input type="checkbox" name="fvSlot" value="evening"> Soir (18 h – 24 h)</label></div></details>
+              <button type="button" class="fv-reset" id="fvReset" hidden>Réinitialiser</button>
+            </div>
+            <label class="fv-sort">Trier par<select id="fvSort"><option value="price">Prix le plus bas</option><option value="early">Départ le plus tôt</option><option value="fast">Durée la plus courte</option><option value="recent">Ajoutés récemment</option></select></label>
           </div>
-          <div class="service-search-inline"><span><svg class="tv-icon" aria-hidden="true"><use href="#i-search"></use></svg></span><input id="flightSearch" placeholder="Filtrer par destination, compagnie ou ville de départ..." /></div>
-          <div class="service-empty" id="flightEmpty"><div class="service-empty-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-plane"></use></svg></div><h3>Aucun vol ne correspond à votre recherche</h3><p>Modifiez votre trajet ou vos dates pour découvrir d’autres options.</p><div class="empty-actions"><button class="btn" type="button" data-clear-search="flight">Afficher tous les vols</button></div></div>
-          <div class="grid service-grid flight-list" id="flightGrid"></div>
+          <p class="fv-summary" id="flightResultCount"></p>
+          <div class="service-empty" id="flightEmpty"><div class="service-empty-icon"><svg class="tv-icon" aria-hidden="true"><use href="#i-plane"></use></svg></div><h3>Aucun vol ne correspond à votre recherche</h3><p>Modifiez votre trajet ou vos filtres pour découvrir d’autres options.</p><div class="empty-actions"><button class="btn" type="button" data-clear-search="flight">Afficher tous les vols</button><button class="btn ghost" type="button" data-alert-create>Créer une alerte prix</button></div></div>
+          <div class="grid service-grid flight-list fv-list" id="flightGrid"></div>
+          <div class="fv-alert">
+            <div><h3>Pas le vol qu’il vous faut ?</h3><p>Créez une alerte prix : nous vous prévenons par e-mail dès qu’une offre correspond à votre trajet.</p></div>
+            <button class="btn ghost" type="button" data-alert-create><svg class="tv-icon" aria-hidden="true"><use href="#i-bell"></use></svg> Créer une alerte prix</button>
+          </div>
+          <p class="fv-disclaimer">TripVision n’est pas une agence de voyages : nous sélectionnons des vols et vous redirigeons vers le site de la compagnie pour réserver. Le prix final est celui affiché par la compagnie.</p>
         </div>
       </section>
     </section>
@@ -530,15 +523,16 @@
   <script src="assets/gallery.js?v=5"></script>
   <script src="assets/spin.js?v=5"></script>
   <script src="assets/guest-auth.js?v=4"></script>
-  <script src="assets/destinations.js?v=10"></script>
+  <script src="assets/price-alert.js?v=1"></script>
+  <script src="assets/destinations.js?v=11"></script>
   <script src="assets/scene.js?v=1"></script>
   <script src="assets/fx.js?v=10"></script>
   <script src="assets/fx2.js?v=8"></script>
-  <script src="assets/pages.js?v=17"></script>
+  <script src="assets/pages.js?v=18"></script>
   <script src="assets/pricing.js?v=1"></script>
   <script src="assets/range-picker.js?v=4"></script>
   <script src="assets/cars.js?v=43"></script>
-  <script src="script.js?v=20261020-v44"></script>
+  <script src="script.js?v=20261020-v45"></script>
   <script src="assets/flight-gate.js?v=4"></script>
 </body>
 </html>

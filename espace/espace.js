@@ -406,6 +406,7 @@ const SECTIONS = {
   client: [
     { id: 'overview', label: 'Vue d’ensemble', icon: 'overview' },
     { id: 'orders', label: 'Mes réservations', icon: 'orders' },
+    { id: 'alerts', label: 'Mes alertes', icon: 'bell' },
     { id: 'chat', label: 'Messagerie', icon: 'chat' },
     { id: 'notifications', label: 'Notifications', icon: 'bell', nav: false },
     { id: 'account', label: 'Mon compte', icon: 'account', nav: false, mobile: true },
@@ -475,7 +476,7 @@ const ago = (iso) => {
   if (m < 10080) return `il y a ${Math.round(m / 1440)} j`;
   return fmtDay(iso);
 };
-const NOTIF_ICON = { booking: 'bookings', request: 'orders', chat: 'chat', vehicle: 'fleet' };
+const NOTIF_ICON = { booking: 'bookings', request: 'orders', chat: 'chat', vehicle: 'fleet', alert: 'bell' };
 async function notificationsPage() {
   const list = await api('/notifications');
   DATA.notifications = list;
@@ -803,6 +804,31 @@ const CLIENT_PAGES = {
   chat: chatPage,
   notifications: notificationsPage,
 
+  // Alertes prix : le client suit un trajet, TripVision le prévient dès qu'une offre correspond.
+  async alerts() {
+    const list = await api('/client/alerts');
+    const TRIP = { any: 'Aller-retour ou aller simple', roundtrip: 'Aller-retour', oneway: 'Aller simple' };
+    const flightsUrl = (a) => `/?${new URLSearchParams({ ...(a.from_city ? { from: a.from_city } : {}), to: a.to_city }).toString()}#flights`;
+    const card = (a) => `
+      <article class="al-card ${a.active ? '' : 'off'}">
+        <div class="al-top">
+          <span class="al-ic">${icon('plane')}</span>
+          <div class="al-route"><b>${a.from_city ? `${esc(a.from_city)} <i>→</i> ` : '<small>Toutes villes de départ</small> <i>→</i> '}${esc(a.to_city)}</b>
+            <span class="al-tags"><span>${esc(TRIP[a.trip_type] || TRIP.any)}</span>${a.max_price ? `<span>Jusqu’à ${money(a.max_price)}</span>` : '<span>Tous les prix</span>'}${a.direct_only ? '<span>Vols directs</span>' : ''}</span></div>
+          ${badge(a.active ? 'ok' : 'warn', a.active ? 'Active' : 'En pause')}
+        </div>
+        <div class="al-now">${a.matches ? `<div><b>${a.matches} offre${a.matches > 1 ? 's' : ''} en ce moment</b><span>dès <strong>${money(a.best)}</strong> par personne</span></div><a class="btn small primary" href="${esc(flightsUrl(a))}" target="_blank" rel="noopener">Voir les vols ${icon('external')}</a>` : `<div><b>Aucune offre pour l’instant</b><span>Nous vous prévenons par e-mail dès qu’un vol correspond.</span></div>`}</div>
+        <footer class="al-foot"><small>Créée le ${esc(fmtDay(String(a.created_at).slice(0, 10)))}${a.hits ? ` · ${a.hits} offre${a.hits > 1 ? 's' : ''} signalée${a.hits > 1 ? 's' : ''}` : ''}</small>
+          <span>${actionBtn('alert-price', a.id, 'Prix maximum')}${actionBtn('alert-toggle', a.id, a.active ? 'Mettre en pause' : 'Réactiver')}${actionBtn('alert-delete', a.id, 'Supprimer', 'danger')}</span></footer>
+      </article>`;
+    DATA.alerts = list;
+    return pageHead('Alertes prix', 'Mes <em>alertes</em>', 'Suivez un trajet : dès qu’une offre correspond, vous êtes prévenu par e-mail et dans votre espace.', `<button class="btn primary small" type="button" data-action="alert-new">${icon('plus')} Créer une alerte</button>`) + `
+      ${list.length ? `<div class="al-list">${list.map(card).join('')}</div>` : `
+      <section class="card al-empty">${icon('bell')}<h3>Aucune alerte pour le moment</h3><p>Choisissez une destination et un prix maximum : nous surveillons les offres pour vous et vous écrivons dès qu’un vol correspond.</p>
+        <div class="al-empty-act"><button class="btn primary" type="button" data-action="alert-new">${icon('plus')} Créer ma première alerte</button><a class="btn" href="/#flights" target="_blank" rel="noopener">Parcourir les vols</a></div></section>`}
+      <p class="muted al-note">Jusqu’à 20 alertes. Chaque offre ne vous est signalée qu’une fois.</p>`;
+  },
+
   async help() {
     const faq = [
       ['Comment annuler une réservation ?', 'Une demande de vol ou de pack encore « en attente » s’annule depuis « Mes réservations ». Une location de voiture s’annule depuis « Mes réservations » : gratuitement dans la période fixée par l’enseigne, sinon avec les frais d’annulation indiqués avant de confirmer.'],
@@ -956,9 +982,36 @@ function openBookingModal(b) {
       ${b.status === 'pending' || b.status === 'confirmed' ? `<div class="modal-actions">${bookingActions(b)}</div>` : ''}` });
 }
 
+/* ---------- Alerte prix : création ---------- */
+function openAlertModal(pre = {}) {
+  openModal({
+    eyebrow: 'Alerte prix', title: 'Créer une alerte', confirmLabel: 'Créer l’alerte', loadingText: 'Création…',
+    bodyHtml: `<p class="modal-text">Indiquez votre trajet : nous vous prévenons dès qu’une offre correspond.</p>
+      <div class="form-grid tight">
+        ${field('Ville de départ (facultatif)', `name="fromCity" maxlength="80" value="${esc(pre.fromCity || '')}" placeholder="Ex. Paris"`)}
+        ${field('Destination', `name="toCity" required minlength="2" maxlength="80" value="${esc(pre.toCity || '')}" placeholder="Ex. Dakar"`)}
+        <label>Type de billet<select name="tripType"><option value="any">Aller-retour ou aller simple</option><option value="roundtrip" ${pre.tripType === 'roundtrip' ? 'selected' : ''}>Aller-retour</option><option value="oneway" ${pre.tripType === 'oneway' ? 'selected' : ''}>Aller simple</option></select></label>
+        ${field('Prix maximum par personne (€, facultatif)', `name="maxPrice" type="number" min="1" max="20000" step="1" inputmode="numeric" value="${esc(pre.maxPrice || '')}" placeholder="Ex. 350"`)}
+        <div class="full">${toggle('directOnly', 'Vols directs uniquement', pre.directOnly)}</div>
+      </div>`,
+    run: async (f) => {
+      const d = Object.fromEntries(new FormData(f));
+      await api('/client/alerts', { method: 'POST', body: JSON.stringify({ fromCity: d.fromCity || '', toCity: d.toCity, tripType: d.tripType, maxPrice: d.maxPrice ? Number(d.maxPrice) : null, directOnly: Boolean(d.directOnly) }) });
+      if (location.hash !== '#alerts') location.hash = 'alerts';
+      return { title: 'Alerte créée', text: 'Nous vous prévenons par e-mail dès qu’une offre correspond.' };
+    },
+  });
+}
+
 /* ---------- Actions ---------- */
 const find = (list, id) => DATA[list].find(x => x.id === id);
 const ACT = {
+  'alert-new': () => openAlertModal(),
+  'alert-toggle': (id) => { const a = find('alerts', id); return confirmCall({ eyebrow: 'Alerte prix', title: a.active ? 'Mettre cette alerte en pause ?' : 'Réactiver cette alerte ?', message: a.active ? 'Vous ne recevrez plus d’e-mail pour ce trajet tant qu’elle est en pause.' : 'Vous serez de nouveau prévenu des nouvelles offres sur ce trajet.', confirmLabel: a.active ? 'Mettre en pause' : 'Réactiver', loading: 'Enregistrement…', success: a.active ? 'Alerte en pause' : 'Alerte réactivée', method: 'PATCH', url: `/client/alerts/${id}`, body: { active: !a.active } }); },
+  'alert-delete': (id) => confirmCall({ eyebrow: 'Alerte prix', title: 'Supprimer cette alerte ?', message: 'Vous ne serez plus prévenu des offres sur ce trajet.', confirmLabel: 'Supprimer', tone: 'danger', loading: 'Suppression…', success: 'Alerte supprimée', method: 'DELETE', url: `/client/alerts/${id}` }),
+  'alert-price': (id) => { const a = find('alerts', id); openModal({ eyebrow: 'Alerte prix', title: 'Prix maximum', confirmLabel: 'Enregistrer', loadingText: 'Enregistrement…',
+    bodyHtml: `<p class="modal-text">Vous serez prévenu seulement pour les offres à ce prix ou moins. Laissez vide pour tous les prix.</p><div class="form-grid tight">${field('Prix maximum par personne (€)', `name="maxPrice" type="number" min="1" max="20000" step="1" inputmode="numeric" value="${a.max_price ? Math.round(a.max_price) : ''}" placeholder="Ex. 350"`, true)}</div>`,
+    run: async (f) => { const v = f.elements.maxPrice.value; await api(`/client/alerts/${id}`, { method: 'PATCH', body: JSON.stringify({ maxPrice: v ? Number(v) : null }) }); return { title: 'Prix maximum enregistré' }; } }); },
   'chat-open': (id) => { CH.id = id; CH.view = 'thread'; render(false); },
   'chat-back': () => { CH.view = 'list'; render(false); },
   'chat-new': () => openModal({

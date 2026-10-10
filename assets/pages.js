@@ -46,7 +46,7 @@
       </section>
       <section class="dp-section dp-places-wrap"><div class="wrap">
         <span class="eyebrow">À voir, à faire</span><h2>Les lieux <em>à ne pas manquer</em></h2>
-        <div class="dp-places">${d.places.map(([t, x], i) => `<article><figure class="dp-pic"><img src="/assets/dest/places/${E(d.slug)}-${i}.jpg?v=3" alt="${E(t)}" loading="lazy" decoding="async"></figure><div class="dp-ptxt"><b>${String(i + 1).padStart(2, '0')}</b><h3>${E(t)}</h3><p>${E(x)}</p></div></article>`).join('')}</div>
+        <div class="dp-places">${d.places.map(([t, x], i) => `<article><figure class="dp-pic"><img src="/assets/dest/places/${E(d.slug)}-${i}.jpg?v=4" alt="${E(t)}" loading="lazy" decoding="async"></figure><div class="dp-ptxt"><b>${String(i + 1).padStart(2, '0')}</b><h3>${E(t)}</h3><p>${E(x)}</p></div></article>`).join('')}</div>
       </div></section>
       <section class="dp-section wrap dp-tips"><span class="eyebrow">Avant de partir</span><h2>Conseils <em>pratiques</em></h2>
         <ul>${d.tips.map((t) => `<li>${E(t)}</li>`).join('')}</ul></section>

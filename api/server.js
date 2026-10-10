@@ -720,6 +720,98 @@ app.get('/api/client/bookings/:id/pdf', auth('client'), h(async (req, res) => {
   });
   sendPdf(res, doc, m.reference);
 }));
+/* ---------- Alertes prix (clients) ---------- */
+// Une offre de vol en ligne correspond à une alerte : même destination, même départ si précisé, prix sous le maximum.
+const LIVE_FLIGHT = `o.type = 'flight' AND o.status = 'active' AND o.deleted_at IS NULL AND (o.publish_at IS NULL OR o.publish_at <= now()) AND (o.start_date IS NULL OR o.start_date >= (now() AT TIME ZONE 'Europe/Paris')::date)`;
+const ALERT_PRICE = `(CASE WHEN a.trip_type = 'oneway' AND COALESCE(o.details->'flight'->>'tripType', 'roundtrip') <> 'oneway' THEN NULLIF(o.details->'flight'->>'oneWayPrice', '')::numeric ELSE o.price END)`;
+const ALERT_MATCH = `lower(o.to_city) LIKE '%' || lower(a.to_city) || '%'
+  AND (COALESCE(a.from_city, '') = '' OR lower(o.from_city) LIKE '%' || lower(a.from_city) || '%')
+  AND (NOT a.direct_only OR COALESCE(NULLIF(o.details->'flight'->>'stops', '')::numeric, 0) = 0)
+  AND (a.trip_type = 'any'
+       OR (a.trip_type = 'roundtrip' AND COALESCE(o.details->'flight'->>'tripType', 'roundtrip') <> 'oneway')
+       OR (a.trip_type = 'oneway' AND ${ALERT_PRICE} IS NOT NULL))
+  AND (a.max_price IS NULL OR ${ALERT_PRICE} <= a.max_price)`;
+const alertSchema = z.object({
+  fromCity: z.string().trim().max(80).optional().default(''),
+  toCity: z.string().trim().min(2, 'Indiquez une destination.').max(80),
+  maxPrice: z.coerce.number().positive().max(20000).nullable().optional(),
+  tripType: z.enum(['any', 'roundtrip', 'oneway']).default('any'),
+  directOnly: z.boolean().optional().default(false),
+});
+const alertRoute = (a) => `${a.from_city ? `${a.from_city} → ` : ''}${a.to_city}`;
+const euros = (n) => `${Number(n).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €`;
+
+app.get('/api/client/alerts', auth('client'), h(async (req, res) => {
+  const { rows } = await query(
+    `SELECT a.*, m.n::int AS matches, m.best FROM price_alerts a
+       LEFT JOIN LATERAL (SELECT count(*) AS n, min(${ALERT_PRICE}) AS best FROM offers o WHERE ${LIVE_FLIGHT} AND ${ALERT_MATCH}) m ON true
+      WHERE a.user_id = $1 ORDER BY a.active DESC, a.created_at DESC`, [req.user.id]);
+  res.json(rows);
+}));
+
+app.post('/api/client/alerts', auth('client'), h(async (req, res) => {
+  const b = alertSchema.parse(req.body);
+  const { rows: count } = await query('SELECT count(*)::int AS n FROM price_alerts WHERE user_id = $1', [req.user.id]);
+  if (count[0].n >= 20) return res.status(400).json({ error: 'LIMIT', message: 'Vous avez déjà 20 alertes : supprimez-en une pour en créer une nouvelle.' });
+  const { rows: dup } = await query('SELECT id FROM price_alerts WHERE user_id = $1 AND lower(coalesce(from_city, \'\')) = lower($2) AND lower(to_city) = lower($3) AND trip_type = $4 AND active', [req.user.id, b.fromCity, b.toCity, b.tripType]);
+  if (dup[0]) return res.status(409).json({ error: 'DUPLICATE', message: 'Vous suivez déjà ce trajet : retrouvez-le dans « Mes alertes ».' });
+  const { rows } = await query(
+    'INSERT INTO price_alerts(user_id, from_city, to_city, max_price, trip_type, direct_only) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
+    [req.user.id, b.fromCity || null, b.toCity, b.maxPrice || null, b.tripType, b.directOnly]);
+  // Les offres déjà en ligne sont visibles tout de suite dans « Mes alertes » : seules les nouvelles déclencheront un e-mail.
+  await query(`INSERT INTO price_alert_hits(alert_id, offer_id) SELECT a.id, o.id FROM price_alerts a JOIN offers o ON ${LIVE_FLIGHT} AND ${ALERT_MATCH} WHERE a.id = $1 ON CONFLICT DO NOTHING`, [rows[0].id]);
+  res.status(201).json(rows[0]);
+}));
+
+app.patch('/api/client/alerts/:id', auth('client'), h(async (req, res) => {
+  const b = z.object({ active: z.boolean().optional(), maxPrice: z.coerce.number().positive().max(20000).nullable().optional() }).parse(req.body);
+  const { rows } = await query(
+    `UPDATE price_alerts SET active = COALESCE($1, active), max_price = CASE WHEN $4 THEN $2 ELSE max_price END WHERE id = $3 AND user_id = $5 RETURNING *`,
+    [b.active ?? null, b.maxPrice ?? null, req.params.id, 'maxPrice' in b, req.user.id]);
+  if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
+  res.json(rows[0]);
+}));
+
+app.delete('/api/client/alerts/:id', auth('client'), h(async (req, res) => {
+  const { rowCount } = await query('DELETE FROM price_alerts WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
+  if (!rowCount) return res.status(404).json({ error: 'NOT_FOUND' });
+  res.json({ ok: true });
+}));
+
+// Nouvelles offres publiées (ou programmées qui arrivent en ligne) : chaque alerte concernée est prévenue une seule fois.
+let alertsRunning = false;
+async function checkPriceAlerts() {
+  if (alertsRunning) return; alertsRunning = true;
+  try {
+    const { rows } = await query(
+      `SELECT a.id AS alert_id, a.user_id, a.from_city, a.to_city, u.email, o.id AS offer_id, ${ALERT_PRICE} AS price
+         FROM price_alerts a
+         JOIN users u ON u.id = a.user_id AND u.active AND u.deleted_at IS NULL
+         JOIN offers o ON ${LIVE_FLIGHT} AND ${ALERT_MATCH}
+        WHERE a.active AND NOT EXISTS (SELECT 1 FROM price_alert_hits x WHERE x.alert_id = a.id AND x.offer_id = o.id)
+        LIMIT 1000`);
+    const byAlert = new Map();
+    for (const r of rows) { if (!byAlert.has(r.alert_id)) byAlert.set(r.alert_id, { ...r, offers: [] }); byAlert.get(r.alert_id).offers.push(r); }
+    for (const a of byAlert.values()) {
+      for (const o of a.offers) await query('INSERT INTO price_alert_hits(alert_id, offer_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [a.alert_id, o.offer_id]);
+      const n = a.offers.length, best = Math.min(...a.offers.map((o) => Number(o.price)));
+      await query('UPDATE price_alerts SET hits = hits + $1, last_hit_at = now() WHERE id = $2', [n, a.alert_id]);
+      await pushNotification(a.user_id, { kind: 'alert', title: `Alerte prix : ${alertRoute(a)}`, body: `${n} nouvelle${n > 1 ? 's' : ''} offre${n > 1 ? 's' : ''} dès ${euros(best)}`, link: 'alerts', refId: a.alert_id });
+      notify(a.email, notificationEmail({
+        subject: `[TripVision] Alerte prix : ${alertRoute(a)} dès ${euros(best)}`,
+        title: 'Une offre correspond à votre alerte',
+        intro: `Bonne nouvelle : ${n > 1 ? `${n} nouvelles offres correspondent` : 'une nouvelle offre correspond'} à votre alerte prix.`,
+        details: [['Trajet', alertRoute(a)], ['Prix', `dès ${euros(best)} par personne`]],
+        buttonLabel: 'Voir les offres', url: `${APP_URL}/#flights`,
+        outro: 'Vous recevez cet e-mail car vous avez créé une alerte prix. Mettez-la en pause ou supprimez-la depuis « Mes alertes » dans votre espace.',
+      }));
+    }
+  } catch (err) { console.error('Alertes prix :', err.message); }
+  finally { alertsRunning = false; }
+}
+setInterval(checkPriceAlerts, 10 * 60 * 1000);
+setTimeout(checkPriceAlerts, 45000);
+
 app.get('/api/client/requests/:id/pdf', auth('client'), h(async (req, res) => {
   const { rows } = await query('SELECT * FROM offer_requests WHERE id = $1 AND lower(customer_email) = lower($2)', [req.params.id, req.user.email]);
   const r = rows[0];
@@ -1447,6 +1539,7 @@ app.post('/api/admin/offers', auth(...BACKOFFICE_ROLES), can('offers.create'), h
     [o.type, o.title, o.fromCity || '', o.toCity, o.country || '', o.badge || (o.type === 'flight' ? 'Bon plan' : (o.hotelNights >= 4 ? 'Escapade' : o.hotelNights === 3 ? 'Week-end prolongé' : 'Week-end')), o.price, o.oldPrice || null, o.partnerName || 'TripVision', o.startDate || null, o.endDate || null, offerCover(o) || DEFAULT_OFFER_IMAGE, o.description || '', o.publishAt || null, o.type === 'pack' ? o.hotelName : null, o.type === 'pack' ? (o.hotelStars || null) : null, o.type === 'pack' ? o.hotelNights : null, o.type === 'pack' ? (o.hotelBoard || null) : null, offerDetails(o)]
   );
   await audit(req.user.id, o.publishAt ? 'schedule_offer' : 'create_offer', 'offer', rows[0].id, clientIp(req));
+  if (o.type === 'flight') checkPriceAlerts();
   res.status(201).json(withAbsImage(rows[0]));
 }));
 
@@ -1475,6 +1568,7 @@ app.patch('/api/admin/offers/:id/status', auth(...BACKOFFICE_ROLES), can('offers
     : await query('UPDATE offers SET status = $1 WHERE id = $2 AND deleted_at IS NULL RETURNING *', [status, req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
   await audit(req.user.id, `offer_${status}`, 'offer', req.params.id, clientIp(req));
+  if (status === 'active' && rows[0].type === 'flight') checkPriceAlerts();
   res.json(rows[0]);
 }));
 
