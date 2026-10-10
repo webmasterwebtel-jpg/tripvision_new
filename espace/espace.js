@@ -1,5 +1,7 @@
 /* Mon espace TripVision : espace partenaire et espace client (même socle visuel que le back-office). */
 const ICONS = {
+  send: '<path d="M21.5 2.5 10.6 13.4"/><path d="M21.5 2.5 14.6 21.5l-4-8.1-8.1-4z"/>',
+  paperclip: '<path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/>',
   logout: '<path d="M10 17l5-5-5-5M15 12H3M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/>',
   download: '<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',
   overview: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
@@ -404,12 +406,12 @@ const SECTIONS = {
     { id: 'account', label: 'Mon compte', icon: 'account' },
   ],
   client: [
-    { id: 'overview', label: 'Vue d’ensemble', icon: 'overview' },
-    { id: 'orders', label: 'Mes réservations', icon: 'orders' },
-    { id: 'alerts', label: 'Mes alertes', icon: 'bell' },
-    { id: 'chat', label: 'Messagerie', icon: 'chat' },
+    { id: 'overview', label: 'Vue d’ensemble', short: 'Accueil', icon: 'overview' },
+    { id: 'orders', label: 'Mes réservations', short: 'Réservations', icon: 'orders' },
+    { id: 'alerts', label: 'Mes alertes', short: 'Alertes', icon: 'bell' },
+    { id: 'chat', label: 'Messagerie', short: 'Messages', icon: 'chat' },
     { id: 'notifications', label: 'Notifications', icon: 'bell', nav: false },
-    { id: 'account', label: 'Mon compte', icon: 'account', nav: false, mobile: true },
+    { id: 'account', label: 'Mon compte', short: 'Compte', icon: 'account', nav: false, mobile: true },
     { id: 'help', label: 'Aide & contact', icon: 'help', nav: false },
   ],
 };
@@ -441,7 +443,7 @@ setInterval(() => { if (!document.hidden && user) refreshBadges(); }, 25000);
 
 function renderNav() {
   const current = currentSection();
-  $('#nav').innerHTML = sections().filter(s => s.nav !== false || s.mobile).map(s => `<a href="#${s.id}" title="${esc(s.label)}" ${NAV_BADGE[s.id] ? `data-badge="${NAV_BADGE[s.id]}"` : ''} class="${s.id === current ? 'active' : ''}${s.nav === false ? ' m-only' : ''}" ${s.id === current ? 'aria-current="page"' : ''}>${icon(s.icon)}<span>${esc(s.label)}</span>${BADGES[NAV_BADGE[s.id]] ? `<em class="nav-count">${BADGES[NAV_BADGE[s.id]] > 99 ? '99+' : BADGES[NAV_BADGE[s.id]]}</em>` : ''}</a>`).join('');
+  $('#nav').innerHTML = sections().filter(s => s.nav !== false || s.mobile).map(s => `<a href="#${s.id}" title="${esc(s.label)}" ${NAV_BADGE[s.id] ? `data-badge="${NAV_BADGE[s.id]}"` : ''} class="${s.id === current ? 'active' : ''}${s.nav === false ? ' m-only' : ''}" ${s.id === current ? 'aria-current="page"' : ''}>${icon(s.icon)}<span${s.short ? ` data-short="${esc(s.short)}"` : ''}>${esc(s.label)}</span>${BADGES[NAV_BADGE[s.id]] ? `<em class="nav-count">${BADGES[NAV_BADGE[s.id]] > 99 ? '99+' : BADGES[NAV_BADGE[s.id]]}</em>` : ''}</a>`).join('');
   const client = user.role === 'client';
   const bell = $('#bellLink');
   if (bell) { bell.hidden = !client; bell.innerHTML = icon('bell'); bell.classList.toggle('active', currentSection() === 'notifications'); }
@@ -533,10 +535,19 @@ async function chatPage() {
   chatSig = threads.map(t => `${t.id}${t.updated_at}${t.status}`).join('|');
   refreshBadges();
   const closed = d?.thread.status === 'closed';
-  const bubbles = (list) => list.map(m => m.sender === 'system'
-    ? `<div class="bubble system">${esc(m.body)}<small>${fmtDate(m.created_at)}</small></div>`
-    : `<div class="bubble ${m.sender === 'partner' ? 'admin' : 'partner'}">${m.body ? esc(m.body) : ''}${m.attachments?.length ? `<div class="atts">${attHtml(m.attachments)}</div>` : ''}<small>${m.sender === 'partner' ? 'Vous' : `TripVision${m.author ? ` · ${esc(String(m.author).split(' ')[0])}` : ''}`} · ${fmtDate(m.created_at)}</small></div>`).join('');
-  const list = threads.map(t => `<button type="button" class="thread ${t.id === CH.id ? 'on' : ''} ${t.status === 'closed' ? 'is-closed' : ''}" data-action="chat-open" data-id="${esc(t.id)}">
+  const hm = (v) => new Date(v).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  const dayOf = (v) => { const x = new Date(v), t = new Date(); const diff = Math.round((new Date(t.toDateString()) - new Date(x.toDateString())) / 864e5); return diff === 0 ? 'Aujourd’hui' : diff === 1 ? 'Hier' : x.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', ...(x.getFullYear() !== t.getFullYear() ? { year: 'numeric' } : {}) }); };
+  const bubbles = (list) => { let day = '', prev = ''; return list.map((m) => {
+    const dk = new Date(m.created_at).toDateString(), sep = dk !== day ? `<div class="chat-day"><span>${esc(dayOf(m.created_at))}</span></div>` : '';
+    if (dk !== day) prev = '';
+    day = dk;
+    if (m.sender === 'system') { prev = ''; return `${sep}<div class="msg sys"><div class="bubble system">${esc(m.body)}<small>${hm(m.created_at)}</small></div></div>`; }
+    const me = m.sender === 'partner', who = me ? 'me' : 'them', cont = prev === who;
+    prev = who;
+    return `${sep}<div class="msg ${who} ${cont ? 'cont' : ''}">${me ? '' : `<span class="msg-av" aria-hidden="true">${cont ? '' : icon('plane')}</span>`}<div class="bubble ${me ? 'admin' : 'partner'}">${!me && !cont ? `<b class="msg-who">TripVision${m.author ? ` · ${esc(String(m.author).split(' ')[0])}` : ''}</b>` : ''}${m.body ? `<span class="msg-txt">${esc(m.body)}</span>` : ''}${m.attachments?.length ? `<div class="atts">${attHtml(m.attachments)}</div>` : ''}<small>${hm(m.created_at)}${me ? ' · Vous' : ''}</small></div></div>`;
+  }).join(''); };
+  const list = threads.map(t => `<button type="button" class="thread ${t.id === CH.id ? 'on' : ''} ${t.status === 'closed' ? 'is-closed' : ''} ${t.unread ? 'unread' : ''}" data-action="chat-open" data-id="${esc(t.id)}">
+      <span class="thread-av" aria-hidden="true">${icon(t.status === 'closed' ? 'check' : 'chat')}</span>
       <span class="thread-top"><strong>${esc(t.subject)}</strong><time>${shortDate(t.updated_at)}</time></span>
       <span class="thread-sub">${esc(String(t.last_message || '').slice(0, 70))}</span>
       <span class="thread-tags">${chatState(t)}${t.unread ? `<em class="dot">${t.unread}</em>` : ''}</span></button>`).join('');
@@ -544,18 +555,30 @@ async function chatPage() {
     ? `<div class="chat-rated"><span class="stars on">${'★'.repeat(d.thread.rating)}${'☆'.repeat(5 - d.thread.rating)}</span><span>Merci pour votre avis !</span></div>`
     : `<form class="chat-rate" id="rateForm" data-thread="${esc(d.thread.id)}"><strong>Votre avis sur cette conversation</strong><div class="stars" role="radiogroup" aria-label="Note de 1 à 5">${[1, 2, 3, 4, 5].map(n => `<label><input type="radio" name="rating" value="${n}" required><span aria-hidden="true">★</span><i class="sr">${n} sur 5</i></label>`).join('')}</div><input name="comment" maxlength="500" placeholder="Un commentaire ? (facultatif)"><button class="btn small primary" type="submit">Envoyer mon avis</button></form>`) : '';
   const pane = d ? `
-      <header class="chat-head"><button class="icon-btn chat-back" type="button" data-action="chat-back" aria-label="Retour aux conversations">${icon('back')}</button><div><strong>${esc(d.thread.subject)}</strong><span class="muted">${closed ? `Clôturée${d.thread.auto_closed ? ' automatiquement (sans réponse)' : ''}${d.thread.closed_at ? ` le ${fmtDay(d.thread.closed_at)}` : ''}` : d.thread.status === 'pending' ? 'L’équipe a répondu : à vous de jouer' : `Ouverte le ${fmtDay(d.thread.created_at)} · nous vous répondons au plus vite`}</span></div></header>
+      <header class="chat-head"><button class="icon-btn chat-back" type="button" data-action="chat-back" aria-label="Retour aux conversations">${icon('back')}</button><span class="chat-av" aria-hidden="true">${icon('plane')}</span><div class="chat-title"><strong>${esc(d.thread.subject)}</strong><span class="muted">${closed ? `Clôturée${d.thread.auto_closed ? ' automatiquement (sans réponse)' : ''}${d.thread.closed_at ? ` le ${fmtDay(d.thread.closed_at)}` : ''}` : d.thread.status === 'pending' ? 'L’équipe a répondu : à vous de jouer' : `Ouverte le ${fmtDay(d.thread.created_at)} · nous vous répondons au plus vite`}</span></div></header>
       <div class="chat-body chat-scroll" id="chatBody">${bubbles(d.messages)}</div>
       ${closed
         ? `${rate}<div class="chat-closed-note"><span>Cette conversation est clôturée. Pour une nouvelle question, démarrez une autre conversation.</span><button class="btn primary small" type="button" data-action="chat-new">Nouvelle conversation</button></div>`
-        : `<form id="chatForm" class="chat-form" data-thread="${esc(d.thread.id)}"><div class="chat-files" id="chatFiles">${chatChips()}</div><div class="chat-row"><textarea name="message" rows="2" maxlength="2000" placeholder="Votre message…" aria-label="Votre message"></textarea><label class="btn small file-btn" title="Joindre une image (JPG, PNG) ou un PDF">${icon('upload')}<span>Joindre</span><input type="file" id="chatFile" accept="${CHAT_ACCEPT}" multiple hidden></label><button class="btn primary" type="submit">Envoyer</button></div></form>`}`
+        : `<form id="chatForm" class="chat-form chat-composer" data-thread="${esc(d.thread.id)}"><div class="chat-files" id="chatFiles">${chatChips()}</div><div class="cmp"><label class="cmp-att" title="Joindre une image (JPG, PNG) ou un PDF" aria-label="Joindre un fichier">${icon('paperclip')}<input type="file" id="chatFile" accept="${CHAT_ACCEPT}" multiple hidden></label><textarea name="message" rows="1" maxlength="2000" placeholder="Écrivez votre message…" aria-label="Votre message"></textarea><button class="btn primary cmp-send" type="submit" aria-label="Envoyer">${icon('send')}<span>Envoyer</span></button></div><p class="cmp-hint">Entrée pour envoyer · Maj + Entrée pour aller à la ligne · JPG, PNG ou PDF (8 Mo max.)</p></form>`}`
     : `<div class="empty">${icon('chat')}<strong>Aucune conversation</strong><span>Posez votre question à l’équipe TripVision : nous répondons dès que possible.</span><button class="btn primary" type="button" data-action="chat-new">Nouvelle conversation</button></div>`;
   return pageHead('Assistance', '<em>Messagerie</em>', 'Une conversation par sujet : suivez-les toutes ici. Vous recevez un e-mail à chaque réponse, et vous pouvez joindre des images (JPG, PNG) ou des PDF.', `<button class="btn primary small" type="button" data-action="chat-new">${icon('plus')} Nouvelle conversation</button>`) + `
     <section class="card chat-card chat-layout" data-view="${CH.view}">
-      <aside class="chat-list">${list || '<p class="muted pad">Aucune conversation pour le moment.</p>'}</aside>
+      <aside class="chat-list"><div class="chat-list-head"><b>Conversations</b><span>${threads.length}</span></div>${list || '<p class="muted pad">Aucune conversation pour le moment.</p>'}</aside>
       <div class="chat-pane">${pane}</div>
     </section>`;
 }
+document.addEventListener('keydown', (e) => {
+  const ta = e.target.closest?.('#chatForm textarea');
+  if (!ta || e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+  e.preventDefault();
+  if (ta.value.trim() || CH.files.length) ta.form.requestSubmit();
+});
+document.addEventListener('input', (e) => {
+  const ta = e.target.closest?.('#chatForm textarea');
+  if (!ta) return;
+  ta.style.height = 'auto';
+  ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`;
+});
 document.addEventListener('change', async (e) => {
   if (e.target.id !== 'chatFile') return;
   const list = [...e.target.files];

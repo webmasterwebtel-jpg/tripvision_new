@@ -267,3 +267,9 @@ body[data-theme="client"] #logoutBtn { display: none; }
   body[data-theme="client"] .c-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
   body[data-theme="client"] .c-stats span{font-size:10px;letter-spacing:.06em;overflow-wrap:anywhere}
 }
+
+/* Onglets du bas : libellés courts */
+@media (max-width:860px){
+  body[data-theme="client"] #nav a > span[data-short]{font-size:0!important}
+  body[data-theme="client"] #nav a > span[data-short]::before{content:attr(data-short);font-size:10.5px}
+}

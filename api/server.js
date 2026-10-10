@@ -937,7 +937,7 @@ app.get('/api/public/offers', h(async (req, res) => {
   const params = [];
   let sql = `SELECT * FROM offers WHERE status = 'active' AND deleted_at IS NULL AND (publish_at IS NULL OR publish_at <= now()) AND ${LIVE_DATES}`;
   if (req.query.type) { params.push(req.query.type); sql += ` AND type = $${params.length}`; }
-  sql += ' ORDER BY created_at DESC';
+  sql += ' ORDER BY COALESCE(publish_at, created_at) DESC';
   const { rows } = await query(sql, params);
   res.json(rows.map(withAbsImage));
 }));
@@ -1564,7 +1564,7 @@ app.patch('/api/admin/offers/:id/status', auth(...BACKOFFICE_ROLES), can('offers
   const { status, publishAt } = statusWithSchedule(['active', 'inactive']).parse(req.body);
   const { rows } = status === 'active'
     // Publier une offre en brouillon la valide : elle n'est plus marquée « à vérifier ».
-    ? await query(`UPDATE offers SET status = $1, publish_at = $2, details = COALESCE(details, '{}'::jsonb) - 'draft' - 'toVerify' WHERE id = $3 AND deleted_at IS NULL RETURNING *`, [status, publishAt || null, req.params.id])
+    ? await query(`UPDATE offers SET status = $1, publish_at = COALESCE($2, now()), details = COALESCE(details, '{}'::jsonb) - 'draft' - 'toVerify' WHERE id = $3 AND deleted_at IS NULL RETURNING *`, [status, publishAt || null, req.params.id])
     : await query('UPDATE offers SET status = $1 WHERE id = $2 AND deleted_at IS NULL RETURNING *', [status, req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
   await audit(req.user.id, `offer_${status}`, 'offer', req.params.id, clientIp(req));

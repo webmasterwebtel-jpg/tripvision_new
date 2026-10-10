@@ -820,3 +820,7 @@ td strong + .row-link{display:flex;width:max-content}
 .drawer .chat-formats{font-size:11px}
 @media(max-height:700px){.drawer:has(.chat-body) .chat-meta{display:none}.drawer .chat-form textarea{min-height:48px}}
 @media(max-width:560px){.drawer:has(.chat-body) .drawer-head h3{font-size:20px}.drawer .chat-body{padding:14px}}
+
+/* Menu latéral : les liens restent groupés en haut ; sur mobile, l en-tete garde sa hauteur */
+#nav{align-content:start}
+.app{align-content:start}
