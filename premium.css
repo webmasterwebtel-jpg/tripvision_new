@@ -3802,15 +3802,15 @@ html.fx .page.active{animation:fxPage .5s ease backwards}
 /* Les cartes de recherche laissent voir l'image ou la vidéo ; elles redeviennent pleines au survol */
 .flight-search-panel,.car-configurator,.weekend-planner{transition:background-color .4s ease,border-color .4s ease,box-shadow .4s ease,backdrop-filter .4s ease}
 @media (hover:hover) and (min-width:1121px){
-  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)){
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)):not(:has(.rp-pop)){
     background:rgba(7,32,26,.30)!important;border-color:rgba(255,255,255,.34)!important;box-shadow:0 24px 60px -34px rgba(0,0,0,.55)!important;
     -webkit-backdrop-filter:blur(5px) saturate(1.15);backdrop-filter:blur(5px) saturate(1.15);color-scheme:dark;
   }
-  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)) :is(span,strong,b,small,input,select,.car-config-badge,.weekend-step,.flight-form-foot){color:#fff!important}
-  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)) :is(.flight-input-line,.flight-meta-row>label,.car-route-box,.car-config-grid>label,.weekend-fields>label,.flight-swap,.flight-trip-toggle){background:rgba(255,255,255,.12)!important;border-color:rgba(255,255,255,.34)!important}
-  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)) .flight-trip-toggle input:checked+span{background:rgba(255,255,255,.92)!important;color:#0b7358!important}
-  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)) ::placeholder{color:rgba(255,255,255,.72)!important;opacity:1}
-  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)) .flight-form-foot svg{color:#fff!important}
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)):not(:has(.rp-pop)) :is(span,strong,b,small,input,select,.car-config-badge,.weekend-step,.flight-form-foot){color:#fff!important}
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)):not(:has(.rp-pop)) :is(.flight-input-line,.flight-meta-row>label,.car-route-box,.car-config-grid>label,.weekend-fields>label,.flight-swap,.flight-trip-toggle){background:rgba(255,255,255,.12)!important;border-color:rgba(255,255,255,.34)!important}
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)):not(:has(.rp-pop)) .flight-trip-toggle input:checked+span{background:rgba(255,255,255,.92)!important;color:#0b7358!important}
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)):not(:has(.rp-pop)) ::placeholder{color:rgba(255,255,255,.72)!important;opacity:1}
+  :is(.flight-search-panel,.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)):not(:has(.rp-pop)) .flight-form-foot svg{color:#fff!important}
 }
 
 /* Champ à compléter */
@@ -3873,7 +3873,7 @@ html.fx .page.active{animation:fxPage .5s ease backwards}
 .cabin-list li[aria-selected="true"] .tv-icon{opacity:1}
 .cabin-list li[aria-selected="true"]{font-weight:700}
 .cabin-list li:hover{background:#eef3f0}
-@media (hover:hover) and (min-width:1121px){:is(.flight-search-panel):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)) .cabin-btn{color:#fff}}
+@media (hover:hover) and (min-width:1121px){:is(.flight-search-panel):not(:hover):not(:focus-within):not(:has(.cabin-pick.open)):not(:has(.rp-pop)) .cabin-btn{color:#fff}}
 @media(max-width:1120px){.flight-meta-row{grid-template-columns:repeat(2,minmax(0,1fr))}.cabin-list{right:0;left:0;min-width:0}}
 @media(max-width:560px){.flight-meta-row{grid-template-columns:1fr!important}}
 
@@ -4088,3 +4088,213 @@ img,video,iframe{max-width:100%}
 .dp-nocars b{font:600 21px "Cormorant Garamond",Georgia,serif;color:#0f3b2e}
 .dp-nocars span{color:#6b7570;font-size:14px}
 
+
+/* ===== Lot 20 : fond blanc, bons plans, nouvelles cartes ===== */
+body,main,.page,.premium-home,.service-page,.hh-section,.premium-discover,.dest-band,.service-results,.dp-section.dp-places-wrap,.contact-premium-final,.contact-final-trust{background:#fff!important}
+.topbar,.site-header{background:rgba(255,255,255,.96)!important}
+.hh-section+.hh-section{border-top:1px solid #f0efeb}
+.partner-showcase{background:#f6f7f4}
+.dp-cta{display:flex;flex-wrap:wrap;gap:10px}
+.dp-cta .dp-again{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.55);backdrop-filter:blur(6px);display:inline-flex;align-items:center;gap:8px}
+.dp-cta .dp-again:hover{background:#fff;color:#0f3b2e}
+.dp-cta .dp-again svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* Bons plans de l'accueil : « Paris → Douala, à partir de 120 € » */
+#homeDeals,#homeDeals.deal-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:34px}
+.bp-group h3{display:flex;align-items:center;gap:10px;margin:0 0 14px;font:600 13px/1 Inter,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#0f3b2e}
+.bp-group h3 .tv-icon{width:18px;height:18px;fill:none;stroke:#c6a76b;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.bp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.bp-cars .bp-grid,.bp-packs .bp-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.bp-card{position:relative;display:grid;grid-template-columns:96px 1fr auto;align-items:center;gap:14px;padding:10px 16px 10px 10px;border:1px solid #ebe8e1;border-radius:16px;background:#fff;color:inherit;text-decoration:none;box-shadow:0 12px 26px -24px rgba(15,59,46,.55);transition:transform .25s,box-shadow .25s,border-color .25s}
+.bp-card:hover{transform:translateY(-3px);border-color:#c6a76b;box-shadow:0 22px 40px -26px rgba(15,59,46,.6)}
+.bp-img{width:96px;height:76px;border-radius:12px;overflow:hidden;background:#f1efe9}
+.bp-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s}
+.bp-card:hover .bp-img img{transform:scale(1.07)}
+.bp-cars .bp-img{background:#fff}.bp-cars .bp-img img{object-fit:contain}
+.bp-body{display:grid;gap:4px;min-width:0}
+.bp-body small{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a38848;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bp-body b{font:600 20px/1.15 'Cormorant Garamond',Georgia,serif;color:#0f3b2e}
+.bp-body b i{font-style:normal;color:#c6a76b;margin:0 2px}
+.bp-body em{font-style:normal;font-size:12.5px;color:#6b7570;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bp-price{display:grid;justify-items:end;line-height:1.1}
+.bp-price small{font-size:11px;color:#6b7570}
+.bp-price strong{font:700 24px/1.1 Inter,sans-serif;color:#0d7a58;letter-spacing:-.02em}
+.bp-price i{font-style:normal;font-size:11.5px;color:#6b7570}
+.bp-cars .bp-card,.bp-packs .bp-card{grid-template-columns:1fr;padding:0 0 14px;align-items:start;overflow:hidden}
+.bp-cars .bp-img,.bp-packs .bp-img{width:100%;height:150px;border-radius:0}
+.bp-cars .bp-body,.bp-packs .bp-body{padding:0 16px}
+.bp-cars .bp-price,.bp-packs .bp-price{justify-items:start;padding:0 16px;grid-auto-flow:column;align-items:baseline;justify-content:start;gap:6px}
+@media(max-width:1000px){.bp-grid,.bp-cars .bp-grid,.bp-packs .bp-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.bp-grid{grid-template-columns:1fr}.bp-cars .bp-grid,.bp-packs .bp-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.bp-cars .bp-img,.bp-packs .bp-img{height:110px}.bp-body b{font-size:18px}.bp-price strong{font-size:20px}}
+/* Carte de vol : compacte, prix en avant */
+.flight-card.fc2{display:grid;grid-template-columns:220px minmax(0,1fr) 250px;border:1px solid #ebe8e1;border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 14px 30px -28px rgba(15,59,46,.6)}
+.flight-card.fc2:hover{border-color:#c6a76b;box-shadow:0 24px 44px -30px rgba(15,59,46,.65)}
+.fc-photo{position:relative;min-height:100%;background:#eef0ec}
+.fc-photo .tv-gal,.fc-photo .gal,.fc-photo>div:first-child{height:100%}
+.fc-photo img{object-fit:cover}
+.fc-deal{position:absolute;top:12px;left:12px;z-index:3;padding:5px 10px;border-radius:999px;background:#e8463a;color:#fff;font-size:11.5px;font-weight:800;letter-spacing:.04em;box-shadow:0 6px 14px -6px rgba(232,70,58,.7)}
+.fc-dest{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:30px 14px 12px;background:linear-gradient(180deg,transparent,rgba(6,24,19,.82));color:#fff;display:grid;pointer-events:none}
+.fc-dest b{font:600 22px/1.05 'Cormorant Garamond',Georgia,serif}.fc-dest small{font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+.fc-main{display:grid;align-content:center;gap:12px;padding:18px 22px}
+.fc-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.fc-air{display:inline-flex;align-items:center;gap:10px;font-weight:700;color:#14231d}
+.fc-air i{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:#0f3b2e;color:#f1d9a0;font-style:normal;font-size:12px;letter-spacing:.04em}
+.fc-route{font-size:12.5px;color:#6b7570}
+.fc-leg{display:grid;grid-template-columns:118px auto minmax(90px,1fr) auto;align-items:center;gap:14px}
+.fc-when{display:grid;font-size:12.5px;color:#4b5651}.fc-when b{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#a38848}
+.fc-pt{display:grid;text-align:center}.fc-pt strong{font-size:17px;color:#14231d}.fc-pt small{font-size:11.5px;color:#6b7570}
+.fc-line{position:relative;display:grid;justify-items:center;gap:4px;font-size:11px;color:#6b7570}
+.fc-line i{display:block;width:100%;height:2px;background:linear-gradient(90deg,#cfc7b5 0 50%,transparent 0) 0 0/8px 2px repeat-x;position:relative}
+.fc-line i::after{content:"✈";position:absolute;right:-4px;top:50%;transform:translateY(-55%);font-size:13px;color:#0f3b2e;font-style:normal}
+.fc-line em{font-style:normal;font-weight:700;color:#0d7a58}.fc-line em.has{color:#b26b1b}
+.fc-tags{display:flex;flex-wrap:wrap;gap:6px}
+.fc-tags span{padding:4px 10px;border-radius:999px;background:#f3f4f1;font-size:11.5px;font-weight:600;color:#3f4a45}
+.fc-tags .fc-found{background:#fbf3df;color:#8a6a1e}
+.fc-buy{display:grid;align-content:center;justify-items:end;gap:4px;padding:18px 20px;border-left:1px dashed #e2ddd2;background:#fcfcfa;text-align:right}
+.fc-buy s{color:#9aa29e;font-size:13px}.fc-buy small{font-size:11.5px;color:#6b7570}
+.fc-buy strong{font:700 32px/1 Inter,sans-serif;letter-spacing:-.03em;color:#0d7a58}
+.fc-per{font-size:12px;color:#4b5651}.fc-alt{font-size:12px;color:#6b7570}
+.fc-buy .btn{margin-top:10px;width:100%;justify-content:center;white-space:normal;line-height:1.25}
+.fc-note{font-size:11px;color:#8b938f}
+@media(max-width:1100px){.flight-card.fc2{grid-template-columns:180px minmax(0,1fr) 220px}.fc-leg{grid-template-columns:92px auto minmax(60px,1fr) auto;gap:10px}}
+@media(max-width:860px){.flight-card.fc2{grid-template-columns:1fr}.fc-photo{height:170px}.fc-buy{border-left:0;border-top:1px dashed #e2ddd2;justify-items:stretch;text-align:left;grid-template-columns:1fr auto;align-items:end}.fc-buy .btn{grid-column:1/-1;width:100%}}
+@media(max-width:520px){.fc-main{padding:14px}.fc-leg{grid-template-columns:auto minmax(40px,1fr) auto;row-gap:4px}.fc-when{grid-column:1/-1;display:flex;gap:6px}.fc-pt strong{font-size:15px}}
+/* Carte voiture : image sur fond blanc, faits clés, prix à droite */
+.rent-card.rc2{display:grid;grid-template-columns:250px minmax(0,1fr) 230px;gap:0;padding:0;border:1px solid #ebe8e1;border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 14px 30px -28px rgba(15,59,46,.6);transition:border-color .25s,box-shadow .25s}
+.rent-card.rc2:hover{border-color:#c6a76b;box-shadow:0 24px 44px -30px rgba(15,59,46,.65)}
+.rc-media{position:relative;display:grid;place-items:center;padding:34px 18px 18px;background:#fff;border-right:1px solid #f0eee8}
+.rc-media img{width:100%;height:150px;object-fit:contain;display:block}
+.rc-cat{position:absolute;top:12px;left:12px;padding:4px 10px;border-radius:999px;background:#0f3b2e;color:#fff;font-size:11.5px;font-weight:700}
+.rc-deal{position:absolute;top:12px;right:12px;padding:4px 9px;border-radius:999px;background:#e8463a;color:#fff;font-size:11.5px;font-weight:800}
+.rc-body{display:grid;align-content:start;gap:12px;padding:18px 22px}
+.rc-body h3{margin:0;font:600 24px/1.1 'Cormorant Garamond',Georgia,serif;color:#0f3b2e}
+.rc-body h3 small{font:500 13px Inter,sans-serif;color:#7b857f}
+.rc-specs{gap:6px 14px}
+.rc-facts{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 16px}
+.rc-facts li{display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.35;color:#36423d}
+.rc-facts svg{flex:0 0 16px;width:16px;height:16px;margin-top:1px;fill:none;stroke:#7b857f;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rc-facts li.ok{color:#0b6b4d;font-weight:600}.rc-facts li.ok svg{stroke:#0d7a58}
+.rc-facts li.warn{color:#8a5a12}.rc-facts li.warn svg{stroke:#c48a2c}
+.rc-foot{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;padding-top:12px;border-top:1px solid #f0eee8}
+.rc-lessor,.rc-place{display:inline-flex;align-items:center;gap:8px}
+.rc-lessor span:last-child,.rc-place span{display:grid;line-height:1.2}
+.rc-foot small{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#8b938f}
+.rc-foot b{font-size:13px;color:#14231d}
+.rc-place svg{width:16px;height:16px;fill:none;stroke:#c6a76b;stroke-width:1.8}
+.rc-foot .rent-link{margin-left:auto}
+.rc-price{display:grid;align-content:center;justify-items:end;gap:4px;padding:18px 20px;border-left:1px dashed #e2ddd2;background:#fcfcfa;text-align:right}
+.rc-price small{font-size:11.5px;color:#6b7570}.rc-price s{color:#9aa29e;font-size:13px}
+.rc-price strong{font:700 32px/1 Inter,sans-serif;letter-spacing:-.03em;color:#0d7a58}
+.rc-price>span{font-size:12.5px;color:#4b5651}
+.rc-online{margin-top:4px;padding:5px 9px;border-radius:8px;background:#eef7f2;color:#0b6b4d!important;font-size:12px!important}
+.rc-price .btn{margin-top:10px;width:100%;justify-content:center}
+.rc-free{font-style:normal;font-size:11.5px;font-weight:700;color:#0d7a58}
+@media(max-width:1100px){.rent-card.rc2{grid-template-columns:200px minmax(0,1fr) 210px}}
+@media(max-width:860px){.rent-card.rc2{grid-template-columns:1fr}.rc-media{border-right:0;border-bottom:1px solid #f0eee8;padding:36px 18px 10px}.rc-media img{height:160px}.rc-price{border-left:0;border-top:1px dashed #e2ddd2;justify-items:stretch;text-align:left}}
+@media(max-width:520px){.rc-facts{grid-template-columns:1fr}.rc-body{padding:16px}}
+/* La franchise expliquée */
+.fr-explain h3 svg{width:20px;height:20px}
+.fr-top{display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start}
+.fr-amount{display:grid;gap:4px;padding:18px;border-radius:14px;background:linear-gradient(160deg,#0f3b2e,#0b5a43);color:#fff}
+.fr-amount small{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#f1d9a0}
+.fr-amount strong{font:700 34px/1 Inter,sans-serif;letter-spacing:-.02em}
+.fr-amount span{font-size:12.5px;opacity:.85;line-height:1.4}
+.fr-steps{list-style:none;counter-reset:fr;margin:0;padding:0;display:grid;gap:12px}
+.fr-steps li{counter-increment:fr;position:relative;display:grid;gap:2px;padding-left:40px;font-size:14px;line-height:1.5;color:#44505a}
+.fr-steps li::before{content:counter(fr);position:absolute;left:0;top:0;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#fbf3df;color:#8a6a1e;font-weight:800;font-size:13px}
+.fr-steps b{color:#14231d}
+.fr-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+.fr-compare>div{position:relative;display:grid;gap:3px;padding:16px;border:1px solid #ebe8e1;border-radius:14px;background:#fff}
+.fr-compare .best{border-color:#0d7a58;background:#f2faf6}
+.fr-compare i{position:absolute;top:-10px;right:12px;padding:3px 9px;border-radius:999px;background:#0d7a58;color:#fff;font-style:normal;font-size:11px;font-weight:700}
+.fr-compare b{font-size:14px;color:#14231d}
+.fr-compare .bad{font-size:18px;font-weight:800;color:#b5402f}.fr-compare .good{font-size:18px;font-weight:800;color:#0d7a58}
+.fr-compare small{font-size:12px;color:#6b7570}
+.fr-note{display:flex;gap:8px;align-items:flex-start;margin:16px 0 0;padding:12px 14px;border-radius:12px;background:#f6f7f4;font-size:13px;color:#4b5651;line-height:1.5}
+.fr-note svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:#7b857f;stroke-width:1.8}
+@media(max-width:720px){.fr-top,.fr-compare{grid-template-columns:1fr}}
+/* Sélecteur de période */
+.rp-hidden{display:none!important}
+.rp-field{position:relative;display:grid;gap:6px;grid-column:span 2;min-width:0}
+.rp-lbl{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:inherit;opacity:.85}
+.rp-btn{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:0 14px;border:1px solid #d9d4c8;border-radius:12px;background:#fff;color:#14231d;font:inherit;font-size:14px;cursor:pointer;text-align:left;transition:border-color .2s,box-shadow .2s}
+.rp-btn:hover,.rp-btn[aria-expanded=true]{border-color:#0d7a58;box-shadow:0 0 0 3px rgba(13,122,88,.12)}
+.rp-btn svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:#0d7a58;stroke-width:1.8;stroke-linecap:round}
+.rp-val{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.rp-val b{font-weight:700;text-transform:capitalize}.rp-val i{font-style:normal;color:#c6a76b}
+.rp-val em{font-style:normal;margin-left:auto;padding:3px 9px;border-radius:999px;background:#eef7f2;color:#0b6b4d;font-size:12px;font-weight:700}
+.rp-ph{color:#8b938f}
+.rp-pop{position:fixed;z-index:9000;top:0;left:0;width:min(640px,92vw);padding:16px 18px;border:1px solid #e6e2d8;border-radius:18px;background:#fff;color:#14231d;box-shadow:0 30px 70px -24px rgba(8,30,23,.45);animation:rpIn .18s ease}
+@keyframes rpIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.rp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.rp-head b{font:600 20px 'Cormorant Garamond',Georgia,serif;color:#0f3b2e}
+.rp-x{width:34px;height:34px;border:0;border-radius:50%;background:#f3f4f1;font-size:20px;cursor:pointer;color:#14231d}
+.rp-quick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.rp-quick button{padding:6px 12px;border:1px solid #e3dfd4;border-radius:999px;background:#fff;font:inherit;font-size:12.5px;font-weight:600;color:#0f3b2e;cursor:pointer}
+.rp-quick button:hover{border-color:#0d7a58;background:#f2faf6}
+.rp-cal{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.rp-month h4{margin:0 0 8px;text-align:center;font-size:14px;font-weight:700;text-transform:capitalize;color:#14231d}
+.rp-dow,.rp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.rp-dow span{text-align:center;font-size:11px;font-weight:700;color:#8b938f;text-transform:uppercase;padding:4px 0}
+.rp-days button{height:38px;border:0;border-radius:10px;background:none;font:inherit;font-size:13.5px;color:#14231d;cursor:pointer}
+.rp-days button:hover:not(:disabled){background:#eef7f2}
+.rp-days button.today{font-weight:800;text-decoration:underline;text-underline-offset:3px}
+.rp-days button.in{background:#e3f2ea;border-radius:0}
+.rp-days button.from,.rp-days button.to{background:#0d7a58;color:#fff;font-weight:700}
+.rp-days button.from{border-radius:10px 0 0 10px}.rp-days button.to{border-radius:0 10px 10px 0}
+.rp-days button.from.to{border-radius:10px}
+.rp-days button:disabled{color:#c9cdca;cursor:not-allowed}
+.rp-nav{position:absolute;top:-4px;width:30px;height:30px;border:0;border-radius:50%;background:#f3f4f1;font-size:20px;line-height:1;cursor:pointer;color:#14231d}
+.rp-nav.prev{left:0}.rp-nav.next{right:0}.rp-nav:disabled{opacity:.3;cursor:default}
+.rp-foot{display:flex;align-items:center;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid #f0eee8}
+.rp-hint{flex:1;font-size:13px;color:#4b5651}
+.rp-clear{border:0;background:none;font:inherit;font-size:13px;color:#6b7570;text-decoration:underline;cursor:pointer}
+.rp-ok{min-height:40px;padding:0 20px}
+.weekend-fields .rp-field{grid-column:span 2}
+@media(max-width:700px){.rp-field{grid-column:1/-1}.rp-pop{position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;animation:rpUp .22s ease}.rp-cal{grid-template-columns:1fr}.rp-cal .rp-month+.rp-month{display:none}@keyframes rpUp{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}}
+/* Packs : transport, notes des hôtels, ventes croisées */
+.pk-rates{list-style:none;margin:6px 0 10px;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.pk-rates li{display:inline-flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border:1px solid #ebe8e1;border-radius:999px;background:#fff;font-size:12px;color:#4b5651}
+.pk-rates b{display:inline-flex;align-items:baseline;gap:1px;padding:3px 7px;border-radius:999px;background:#0f3b2e;color:#fff;font-size:12.5px}
+.pk-rates b small{font-size:10px;opacity:.75}
+.pk-rates.big li{font-size:13px;padding:5px 12px 5px 5px}.pk-rates.big b{font-size:14px}
+.pack-facts i .tv-icon,.pd-glance .tv-icon{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.xsell{border:1px solid #ebe8e1;border-radius:20px;padding:24px;background:#fff}
+.xsell-head h2{margin:4px 0 6px}.xsell-head p{margin:0 0 16px;color:#5c6660}
+.xsell-packs{margin-top:22px}.xsell-packs h3{margin:6px 0 4px}.xsell-packs .pack-grid{margin-top:14px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+/* Cartes de week-end façon Verytrain : grande photo, accroche, prix « dès » */
+.pack-card.pk2{display:flex;flex-direction:column;border:1px solid #ebe8e1;border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 14px 30px -28px rgba(15,59,46,.6)}
+.pack-card.pk2:hover{border-color:#c6a76b;box-shadow:0 24px 44px -30px rgba(15,59,46,.65)}
+.pk2 .pack-media{position:relative;aspect-ratio:16/11;overflow:hidden}
+.pk2 .pack-media::after{content:"";position:absolute;inset:40% 0 0;background:linear-gradient(180deg,transparent,rgba(6,24,19,.78));pointer-events:none;z-index:1}
+.pk-hook{position:absolute;left:16px;right:16px;bottom:14px;z-index:2;font:800 24px/1.05 Inter,sans-serif;letter-spacing:-.01em;text-transform:uppercase;color:#fff;pointer-events:none;text-shadow:0 2px 12px rgba(0,0,0,.35)}
+.pk-from{position:absolute;top:12px;right:12px;z-index:3;padding:6px 11px;border-radius:10px;background:#fff;color:#4b5651;font-size:12px;box-shadow:0 6px 16px -8px rgba(0,0,0,.4)}
+.pk-from b{color:#14231d;font-size:14px}
+.pk2 .pack-promo{left:12px;right:auto;z-index:3}
+.pk2 .pack-body{padding:16px 18px 6px;display:grid;gap:6px}
+.pk-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:700;color:#14231d}
+.pk-kind{padding:3px 9px;border-radius:999px;background:#fbf3df;color:#8a6a1e;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.pk2 h3{margin:0;font:500 15px/1.35 Inter,sans-serif;color:#36423d}
+.pk2 .pack-buy{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:auto;padding:14px 18px 18px;border-top:1px solid #f0eee8}
+.pk2 .pack-buy strong{display:block;font:800 22px/1.1 Inter,sans-serif;color:#14231d}
+.pk2 .pack-buy strong small{font-size:12px;font-weight:600;color:#6b7570}
+.pk-incl{font-size:12px;color:#6b7570}
+.pd-todo-h{margin:14px 0 6px;font:700 12px Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#f1d9a0}
+.pd-todo{margin:0 0 16px;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.pd-todo li{padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);font-size:12.5px}
+.fc-photo{overflow:hidden;min-width:0}
+.fc-photo>*:not(.fc-deal):not(.fc-dest){width:100%!important;height:100%!important;min-width:0!important;max-width:100%!important}
+.fc-photo img{width:100%;height:100%}
+.fc-main{min-width:0}
+.rp-btn,.rp-btn .rp-val b{color:#14231d!important}
+.rp-btn .rp-ph{color:#8b938f!important}
+.car-config-grid .rp-field{grid-column:1/-1}
+.rp-pop,.rp-pop *{text-shadow:none}
+.rp-pop .rp-head b,.rp-pop h4{color:#0f3b2e!important}
+.rp-pop .rp-days button{color:#14231d}.rp-pop .rp-days button.from,.rp-pop .rp-days button.to{color:#fff}.rp-pop .rp-days button:disabled{color:#c9cdca}
+@media (hover:hover) and (min-width:1121px){
+  :is(.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.rp-pop)) .rp-btn{background:rgba(255,255,255,.12)!important;border-color:rgba(255,255,255,.34)!important}
+  :is(.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.rp-pop)) .rp-btn svg{stroke:#fff}
+  :is(.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.rp-pop)) .rp-val em{background:rgba(255,255,255,.18)!important}
+  :is(.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.rp-pop)) .rp-val i{color:#f1d9a0!important}
+}
+@media (hover:hover) and (min-width:1121px){:is(.car-configurator,.weekend-planner):not(:hover):not(:focus-within):not(:has(.rp-pop)) .rp-val em{color:#fff!important}}

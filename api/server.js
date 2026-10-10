@@ -14,7 +14,7 @@ import { canManageRole, hasPermission, effectivePermissions, sanitizePermissions
 import ExcelJS from 'exceljs';
 import { bookingPdf, requestPdf } from './pdf.js';
 import { paymentsEnabled, testMode, createCheckout, retrieveSession, expireSession, refundPayment, constructEvent, webhookSecret } from './payments.js';
-import { listCountries, searchCities, searchAirports, searchPlaces, countryCodeByName, AFRICA } from './geo.js';
+import { listCountries, searchCities, searchAirports, searchPlaces, countryCodeByName } from './geo.js';
 import { isLockedOut, recordFailedAttempt, clearAttempts, passwordProblem, audit, recordLogin, clientIp } from './security.js';
 
 const app = express();
@@ -191,7 +191,7 @@ const cleanImages = (list, max = 10) => (Array.isArray(list) ? list.map(normaliz
 const withAbsImage = (row) => {
   const details = row.details || {};
   const images = cleanImages(details.images).map(absImage);
-  return { ...row, image: images[0] || absImage(row.image), images: images.length ? images : (row.image ? [absImage(row.image)] : []), flight: details.flight || null };
+  return { ...row, image: images[0] || absImage(row.image), images: images.length ? images : (row.image ? [absImage(row.image)] : []), flight: details.flight || null, transport: details.transport || null, ratings: details.ratings || [] };
 };
 
 // ---------- Images importées (stockées en base, servies publiquement) ----------
@@ -251,7 +251,7 @@ const extraSchema = z.object({
   key: z.string().trim().min(1).max(40), name: z.string().trim().min(1).max(60), description: z.string().trim().max(300).optional(),
   pricePerDay: z.coerce.number().positive().max(10000), pricing: z.enum(['day', 'once']).default('day'), maxQty: z.coerce.number().int().min(1).max(10).default(1),
 });
-// Les informations de l'annonce sont saisies par le back-office ou le loueur ; TripVision n'impose que l'essentiel pour publier.
+// Les informations de l'annonce sont saisies par le back-office ou l’enseigne ; TripVision n'impose que l'essentiel pour publier.
 const vehicleBase = z.object({
   model: z.string().min(2), category: z.string().min(2), passengers: z.coerce.number().int().positive(), transmission: z.string().min(2),
   doors: z.coerce.number().int().positive(), bags: z.coerce.number().int().min(0).max(30).default(0), airConditioning: z.boolean().default(true),
@@ -262,9 +262,9 @@ const vehicleBase = z.object({
   country: z.string().trim().max(120).optional().refine((c) => !c || countryCodeByName(c) === 'FR', { message: 'Les locations de voitures sont pour l’instant disponibles uniquement en France.' }),
   officeHours: z.string().trim().max(200).optional(), pickupInstructions: z.string().trim().max(500).optional(),
   officeHoursWeek: z.record(z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']), z.object({ open: z.string().regex(/^\d{2}:\d{2}$/), close: z.string().regex(/^\d{2}:\d{2}$/) }).nullable()).refine((w) => Object.values(w).some(Boolean), { message: 'Indiquez les horaires d’ouverture de l’agence (au moins un jour).' }),
-  availableFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Indiquez la date à partir de laquelle le véhicule est louable.'), availableUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Indiquez la date jusqu’à laquelle le véhicule est louable.'),
+  availableFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Indiquez la date à partir de laquelle le véhicule est disponible.'), availableUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Indiquez la date jusqu’à laquelle le véhicule est louable.'),
   includedCustom: z.array(z.string().trim().min(1).max(120)).max(12).optional(),
-  // Restitution dans un autre lieu que le retrait : impossible, possible sans frais, ou avec un montant fixé par le loueur.
+  // Restitution dans un autre lieu que le retrait : impossible, possible sans frais, ou avec un montant fixé par l’enseigne.
   returnPolicy: z.enum(['none', 'free', 'fee'], { errorMap: () => ({ message: 'Indiquez si le véhicule peut être rendu dans un autre lieu.' }) }), returnFee: z.coerce.number().min(0).max(5000).optional(),
   returnLocations: z.array(z.object({ key: z.string().trim().min(1).max(40), name: z.string().trim().min(1).max(120), address: z.string().trim().max(200).optional() })).max(15).optional(),
   youngDriverAge: z.coerce.number().int().min(19).max(30).optional(), youngDriverFee: z.coerce.number().min(0).max(1000).optional(), youngDriverPricing: z.enum(['day', 'once']).default('day'),
@@ -273,11 +273,11 @@ const vehicleBase = z.object({
   deposit: z.coerce.number().min(0).max(100000).optional(), excess: z.coerce.number().min(0).max(100000).optional(), minAge: z.coerce.number().int({ message: 'Indiquez l’âge minimum du conducteur.' }).min(18).max(99),
   unlimitedKm: z.boolean().default(false), kmPerDay: z.coerce.number().int().positive().max(5000).optional(), extraKmPrice: z.coerce.number().min(0).max(100).optional(),
   fuelPolicy: z.string().trim().min(2, 'Indiquez la politique carburant.').max(80),
-  // Annulation : période gratuite éventuelle, puis frais d'annulation fixés par le loueur.
+  // Annulation : période gratuite éventuelle, puis frais d'annulation fixés par l’enseigne.
   freeCancelHours: z.coerce.number().int().min(0).max(720), cancelFee: z.coerce.number().positive({ message: 'Indiquez les frais d’annulation.' }).max(5000), freeModification: z.boolean().default(false),
   theftProtection: z.boolean().default(false), fullInsurance: z.boolean().default(false), insuranceType: z.string().trim().max(120).optional(),
   taxesIncluded: z.boolean().default(true),
-  rentalConditions: z.string().trim().min(10, 'Les conditions de location du loueur sont obligatoires.').max(3000), tips: z.string().trim().max(600).optional(),
+  rentalConditions: z.string().trim().min(10, 'Les conditions de location de l’enseigne sont obligatoires.').max(3000), tips: z.string().trim().max(600).optional(),
   extras: z.array(extraSchema).max(8).optional(),
 });
 const untilAfterFrom = [(v) => v.availableUntil >= v.availableFrom, { message: 'La fin de la période de location doit suivre son début.', path: ['availableUntil'] }];
@@ -290,7 +290,7 @@ const returnFeeRule = [(v) => v.returnPolicy !== 'fee' || Number(v.returnFee) > 
 const youngRule = [(v) => !(Number(v.youngDriverFee) > 0) || Boolean(v.youngDriverAge), { message: 'Indiquez en dessous de quel âge les frais jeune conducteur s’appliquent.', path: ['youngDriverAge'] }];
 const vehicleSchema = vehicleBase.refine(...untilAfterFrom).refine(...maxPeriodRule).refine(...returnRule).refine(...returnFeeRule).refine(...youngRule).refine(...kmRule).refine(...utilityRule).refine(...inclusionRule);
 
-// Dès qu'une réservation est faite, l'annonce quitte le site jusqu'à la fin de la location ; ensuite elle passe en brouillon et le loueur la republie.
+// Dès qu'une réservation est faite, l'annonce quitte le site jusqu'à la fin de la location ; ensuite elle passe en brouillon et l’enseigne la republie.
 async function reserveVehicle(vehicleId, bookingId, endDate, endTime) {
   if (!endDate) return;
   await query(`UPDATE vehicles SET status = 'inactive', details = details || $2::jsonb, updated_at = now() WHERE id = $1 AND status = 'approved'`,
@@ -317,7 +317,7 @@ async function expireUnpaid() {
 }
 setInterval(() => { endRentals().catch((e) => console.error('Fin de location :', e.message)); if (paymentsEnabled) expireUnpaid().catch((e) => console.error('Paiements expirés :', e.message)); }, 60000);
 
-// Disponibilité : une voiture indisponible (période saisie par le loueur) ou déjà louée (réservation confirmée) n'est pas proposée sur ces dates.
+// Disponibilité : une voiture indisponible (période saisie par l’enseigne) ou déjà louée (réservation confirmée) n'est pas proposée sur ces dates.
 const isoLocal = (x) => (typeof x === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(x) ? x.slice(0, 16) : null);
 const unavailableSql = (a, b) => ` AND (v.details->>'availableFrom' IS NULL OR (v.details->>'availableFrom')::date <= $${a}::timestamp) AND (v.details->>'availableUntil' IS NULL OR $${b}::timestamp < ((v.details->>'availableUntil')::date + 1))
   AND NOT EXISTS (SELECT 1 FROM vehicle_blocks vb WHERE vb.vehicle_id = v.id AND vb.start_at < $${b}::timestamp AND vb.end_at > $${a}::timestamp)
@@ -394,23 +394,33 @@ const flightSchema = z.object({
   returnDayOffset: z.coerce.number().int().min(0).max(2).default(0), returnDurationMin: z.coerce.number().int().min(10).max(2400).optional(),
   stops: z.coerce.number().int().min(0).max(3).default(0), cabin: z.string().trim().max(40).optional(), baggage: z.string().trim().max(80).optional(),
 });
+const PACK_TRANSPORTS = ['avion', 'train', 'bus', 'voiture'];
+const RATING_SOURCES = ['TripAdvisor', 'Booking.com', 'Google', 'Expedia', 'Hotels.com'];
+const ratingMax = (src) => (['Booking.com', 'Expedia', 'Hotels.com'].includes(src) ? 10 : 5);
 const offerSchema = z.object({
   type: z.enum(['flight', 'pack']), title: z.string().min(2), fromCity: z.string().optional(), toCity: z.string().min(2), country: z.string().optional(),
   badge: z.string().optional(), price: z.coerce.number().positive(), oldPrice: z.coerce.number().optional(), partnerName: z.string().optional(), startDate: z.string().optional(), endDate: z.string().optional(), image: z.string().optional(), description: z.string().optional(), publishAt: publishAtSchema,
   hotelName: z.string().trim().max(160).optional(), hotelStars: z.coerce.number().int().min(1).max(5).optional(),
   hotelNights: z.coerce.number().int().min(1).max(60).optional(), hotelBoard: z.string().trim().max(80).optional(),
   images: z.array(z.string().max(500)).max(10).optional(), flight: flightSchema.optional(),
+  // Pack week-end : un seul mode de transport jusqu'à l'hôtel, et les notes de l'hôtel relevées sur les sites d'avis.
+  transport: z.object({ mode: z.enum(PACK_TRANSPORTS), details: z.string().trim().max(160).optional() }).optional(),
+  ratings: z.array(z.object({ source: z.enum(RATING_SOURCES), score: z.coerce.number().min(0).max(10), count: z.coerce.number().int().min(0).max(1000000).optional() })).max(5).optional(),
 }).superRefine((o, ctx) => {
   if (o.type === 'pack') {
     if (!o.hotelName) ctx.addIssue({ code: 'custom', path: ['hotelName'], message: 'Hôtel obligatoire pour un pack' });
     if (!o.hotelNights) ctx.addIssue({ code: 'custom', path: ['hotelNights'], message: 'Nombre de nuits obligatoire pour un pack' });
+    // Nos packs sont des week-ends (1 ou 2 nuits) ou des week-ends prolongés (3 nuits), en France.
+    if (o.hotelNights > 3) ctx.addIssue({ code: 'custom', path: ['hotelNights'], message: 'Un pack est un week-end (1 ou 2 nuits) ou un week-end prolongé (3 nuits).' });
+    if (countryCodeByName(o.country || 'France') !== 'FR') ctx.addIssue({ code: 'custom', path: ['country'], message: 'Les packs week-end sont proposés en France uniquement.' });
+    if (!o.transport?.mode) ctx.addIssue({ code: 'custom', path: ['transport'], message: 'Choisissez le mode de transport jusqu’à l’hôtel.' });
+    for (const r of o.ratings || []) if (r.score > ratingMax(r.source)) ctx.addIssue({ code: 'custom', path: ['ratings'], message: `La note ${r.source} va jusqu’à ${ratingMax(r.source)}.` });
   }
   if (o.type === 'flight') {
     const f = o.flight;
     if (!f) return ctx.addIssue({ code: 'custom', path: ['flight'], message: 'Détails du vol obligatoires' });
     if (!o.startDate) ctx.addIssue({ code: 'custom', path: ['startDate'], message: 'Date de départ obligatoire' });
-    const from = countryCodeByName(f.fromCountry), to = countryCodeByName(o.country);
-    if (!((from === 'FR' && AFRICA.has(to)) || (to === 'FR' && AFRICA.has(from)))) ctx.addIssue({ code: 'custom', path: ['country'], message: 'Les vols relient uniquement la France et un pays africain (ex. Paris → Dakar ou Abidjan → Lyon). Un vol entre deux pays africains n’est pas possible.' });
+    if (!f.fromCountry) ctx.addIssue({ code: 'custom', path: ['fromCountry'], message: 'Pays de départ obligatoire' });
     if (f.tripType === 'roundtrip') {
       if (!o.endDate) ctx.addIssue({ code: 'custom', path: ['endDate'], message: 'Date de retour obligatoire' });
       if (o.startDate && o.endDate && o.endDate < o.startDate) ctx.addIssue({ code: 'custom', path: ['endDate'], message: 'Le retour doit suivre le départ' });
@@ -464,7 +474,7 @@ loadSettings(); loadCategoryImages();
 setInterval(() => { loadSettings(); loadCategoryImages(); }, 60000);
 const categoryImageOf = (name) => absImage(categoryImageByName.get(String(name || '').toLowerCase())) || categoryImages[name] || null;
 
-// Restitution dans un autre lieu : le loueur choisit « impossible », « sans frais » ou « avec frais » (un seul montant).
+// Restitution dans un autre lieu : l’enseigne choisit « impossible », « sans frais » ou « avec frais » (un seul montant).
 function returnOptionsOf(d, pickupAddress) {
   const same = { key: 'same', name: 'À l’agence de retrait', address: pickupAddress || null, fee: 0, same: true };
   if (d.returnPolicy) {
@@ -726,7 +736,7 @@ app.get('/api/geo/cities', (req, res) => {
 });
 
 // ---------- Annulation d'une location par le client ----------
-// Gratuite jusqu'à la limite fixée par le loueur ; ensuite, frais d'annulation du loueur, déduits de l'acompte déjà réglé en ligne.
+// Gratuite jusqu'à la limite fixée par l’enseigne ; ensuite, frais d'annulation de l’enseigne, déduits de l'acompte déjà réglé en ligne.
 const r2 = (n) => Math.round(Number(n) * 100) / 100;
 async function cancelQuote(booking) {
   const { rows } = await query('SELECT details FROM vehicles WHERE id = $1', [booking.vehicle_id]);
@@ -964,7 +974,7 @@ app.post('/api/public/partner-applications', h(async (req, res) => {
   res.status(201).json(rows[0]);
 }));
 
-// Prévient le loueur, l'équipe et le client d'une nouvelle réservation (après paiement quand le paiement en ligne est actif).
+// Prévient l’enseigne, l'équipe et le client d'une nouvelle réservation (après paiement quand le paiement en ligne est actif).
 async function announceBooking(row) {
   const ctx = await vehicleContext(row.vehicle_id);
   const details = bookingDetails(row, ctx.name);
@@ -975,7 +985,7 @@ async function announceBooking(row) {
   notify(STAFF_EMAIL, notificationEmail({ subject: `[TripVision] Nouvelle réservation ${bookingRef(row.id)}`, title: 'Nouvelle réservation', intro: confirmed ? 'Une réservation vient d’être payée et confirmée automatiquement.' : 'Une demande de réservation vient d’être enregistrée.', details, buttonLabel: 'Ouvrir le back-office', url: staffLink('bookings') }), row.customer_email);
   // Le client est prévenu directement (message dans son espace + e-mail).
   pushNotification(await clientUserId(row.customer_email), { kind: 'booking', title: confirmed ? 'Réservation confirmée' : 'Réservation enregistrée', body: `${bookingRef(row.id)} · ${ctx.name}`, link: 'orders', refId: row.id });
-  notify(row.customer_email, notificationEmail({ subject: confirmed ? 'Votre réservation TripVision est confirmée' : 'Votre réservation TripVision est enregistrée', title: confirmed ? 'Réservation confirmée' : 'Réservation enregistrée', intro: confirmed ? 'Merci, votre réservation est confirmée ! Votre paiement est bien enregistré. Il vous reste à régler le solde directement au loueur lors du retrait du véhicule.' : 'Merci ! Votre réservation est enregistrée.', details: details.filter(([k]) => k !== 'Client'), buttonLabel: 'Voir ma réservation', url: espaceLink('orders') }));
+  notify(row.customer_email, notificationEmail({ subject: confirmed ? 'Votre réservation TripVision est confirmée' : 'Votre réservation TripVision est enregistrée', title: confirmed ? 'Réservation confirmée' : 'Réservation enregistrée', intro: confirmed ? 'Merci, votre réservation est confirmée ! Votre paiement est bien enregistré. Il vous reste à régler le solde directement à l’enseigne lors du retrait du véhicule.' : 'Merci ! Votre réservation est enregistrée.', details: details.filter(([k]) => k !== 'Client'), buttonLabel: 'Voir ma réservation', url: espaceLink('orders') }));
 }
 
 // ---------- Réservation d'un pack avec paiement en ligne ----------
@@ -1150,7 +1160,7 @@ const rentalDays = (b) => {
   // Chaque tranche de 24 h entamée est facturée : 24 h 01 = 2 jours.
   return Number.isFinite(minutes) && minutes > 0 ? Math.max(1, Math.ceil(minutes / 1440)) : 1;
 };
-// Ce qui se règle en ligne à la réservation : 10 % du total de la location, options, protection et frais compris. Le solde se paie au loueur.
+// Ce qui se règle en ligne à la réservation : 10 % du total de la location, options, protection et frais compris. Le solde se paie à l’enseigne.
 const COMMISSION_PCT = 10;
 const commissionOf = (total) => Math.round(Number(total) * COMMISSION_PCT) / 100;
 const conditionsSnapshot = (d, lessor) => ({
@@ -1173,7 +1183,7 @@ app.post('/api/bookings', auth('client'), h(async (req, res) => {
     const { rows: busy } = await query(`SELECT 1 FROM vehicles v WHERE v.id = $1 ${unavailableSql(2, 3)}`, [veh.id, from, to]);
     if (!busy.length) return res.status(409).json({ error: 'UNAVAILABLE', message: 'Ce véhicule n’est plus disponible sur cette période. Choisissez d’autres dates ou un autre véhicule.' });
   }
-  if (d.minAge && b.driverAge && b.driverAge < d.minAge) return res.status(400).json({ error: 'VALIDATION_ERROR', message: `Le loueur exige un conducteur d’au moins ${d.minAge} ans.` });
+  if (d.minAge && b.driverAge && b.driverAge < d.minAge) return res.status(400).json({ error: 'VALIDATION_ERROR', message: `L’enseigne exige un conducteur d’au moins ${d.minAge} ans.` });
   const todayParis = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
   if (b.startDate && b.startDate < todayParis) return res.status(400).json({ error: 'VALIDATION_ERROR', message: 'La date de départ ne peut pas être dans le passé.' });
   const days = rentalDays(b);
@@ -1187,7 +1197,7 @@ app.post('/api/bookings', auth('client'), h(async (req, res) => {
   const loc = options.find(l => l.key === (b.returnKey || 'same')) || options[0];
   const returnAddr = loc ? [loc.name, loc.address].filter(Boolean).join(' · ') : (b.returnAddress || null);
   if (loc && loc.fee > 0) chosen.push({ key: 'return', name: `Restitution dans un autre lieu : ${loc.name}`, qty: 1, pricePerDay: Number(loc.fee), pricing: 'once', total: Number(loc.fee) });
-  // Frais jeune conducteur, fixés par le loueur : par jour ou en forfait unique.
+  // Frais jeune conducteur, fixés par l’enseigne : par jour ou en forfait unique.
   if (d.youngDriverFee > 0 && d.youngDriverAge && b.driverAge && b.driverAge < d.youngDriverAge) {
     const once = d.youngDriverPricing === 'once', fee = Number(d.youngDriverFee);
     chosen.push({ key: 'young', name: `Conducteur de moins de ${d.youngDriverAge} ans`, qty: 1, pricePerDay: fee, pricing: once ? 'once' : 'day', total: once ? fee : fee * days });
@@ -1209,7 +1219,7 @@ app.post('/api/bookings', auth('client'), h(async (req, res) => {
   }
   // Paiement en ligne : la réservation attend le paiement ; l'annonce est retenue pendant ce temps.
   const reference = bookingRef(rows[0].id);
-  // Seul l'acompte se règle en ligne ; le solde est payé au loueur au retrait du véhicule.
+  // Seul l'acompte se règle en ligne ; le solde est payé à l’enseigne au retrait du véhicule.
   const lines = [{ label: `Acompte de réservation · ${String(veh.model).replace(/ ou similaire$/i, '')} (${days} jour${days > 1 ? 's' : ''})`, amount: Number(rows[0].commission_amount) }];
   try {
     const session = await createCheckout({ bookingId: rows[0].id, reference, cancelToken: rows[0].cancel_token, email: rows[0].customer_email, lines, appUrl: APP_URL });
@@ -1428,14 +1438,14 @@ setInterval(() => checkFreshness().catch((e) => console.error('Rythme de publica
 setTimeout(() => checkFreshness().catch(() => {}), 30000);
 
 const offerCover = (o) => cleanImages(o.images)[0] || normalizeImage(o.image) || null;
-const offerDetails = (o) => ({ images: cleanImages(o.images), ...(o.type === 'flight' && o.flight ? { flight: o.flight } : {}) });
+const offerDetails = (o) => ({ images: cleanImages(o.images), ...(o.type === 'flight' && o.flight ? { flight: o.flight } : {}), ...(o.type === 'pack' ? { transport: o.transport || null, ratings: o.ratings || [] } : {}) });
 
 app.post('/api/admin/offers', auth(...BACKOFFICE_ROLES), can('offers.create'), h(async (req, res) => {
   const o = offerSchema.parse(req.body);
   const { rows } = await query(
     `INSERT INTO offers(type, title, from_city, to_city, country, badge, price, old_price, partner_name, start_date, end_date, image, description, publish_at, hotel_name, hotel_stars, hotel_nights, hotel_board, details)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
-    [o.type, o.title, o.fromCity || '', o.toCity, o.country || '', o.badge || (o.type === 'flight' ? 'Bon plan' : 'Pack week-end'), o.price, o.oldPrice || null, o.partnerName || 'TripVision', o.startDate || null, o.endDate || null, offerCover(o) || DEFAULT_OFFER_IMAGE, o.description || '', o.publishAt || null, o.type === 'pack' ? o.hotelName : null, o.type === 'pack' ? (o.hotelStars || null) : null, o.type === 'pack' ? o.hotelNights : null, o.type === 'pack' ? (o.hotelBoard || null) : null, offerDetails(o)]
+    [o.type, o.title, o.fromCity || '', o.toCity, o.country || '', o.badge || (o.type === 'flight' ? 'Bon plan' : (o.hotelNights >= 3 ? 'Week-end prolongé' : 'Week-end')), o.price, o.oldPrice || null, o.partnerName || 'TripVision', o.startDate || null, o.endDate || null, offerCover(o) || DEFAULT_OFFER_IMAGE, o.description || '', o.publishAt || null, o.type === 'pack' ? o.hotelName : null, o.type === 'pack' ? (o.hotelStars || null) : null, o.type === 'pack' ? o.hotelNights : null, o.type === 'pack' ? (o.hotelBoard || null) : null, offerDetails(o)]
   );
   await audit(req.user.id, o.publishAt ? 'schedule_offer' : 'create_offer', 'offer', rows[0].id, clientIp(req));
   res.status(201).json(withAbsImage(rows[0]));
@@ -1447,7 +1457,7 @@ app.patch('/api/admin/offers/:id', auth(...BACKOFFICE_ROLES), can('offers.edit')
     `UPDATE offers SET title = $1, from_city = $2, to_city = $3, country = $4, badge = $5, price = $6, old_price = $7, start_date = $8, end_date = $9,
             image = COALESCE($10, image), description = $11, hotel_name = $12, hotel_stars = $13, hotel_nights = $14, hotel_board = $15, details = $17
      WHERE id = $16 AND deleted_at IS NULL RETURNING *`,
-    [o.title, o.fromCity || '', o.toCity, o.country || '', o.badge || (o.type === 'flight' ? 'Bon plan' : 'Pack week-end'), o.price, o.oldPrice || null, o.startDate || null, o.endDate || null,
+    [o.title, o.fromCity || '', o.toCity, o.country || '', o.badge || (o.type === 'flight' ? 'Bon plan' : (o.hotelNights >= 3 ? 'Week-end prolongé' : 'Week-end')), o.price, o.oldPrice || null, o.startDate || null, o.endDate || null,
      (o.images ? (offerCover(o) || DEFAULT_OFFER_IMAGE) : (normalizeImage(o.image) || null)), o.description || '', o.type === 'pack' ? o.hotelName : null, o.type === 'pack' ? (o.hotelStars || null) : null, o.type === 'pack' ? o.hotelNights : null, o.type === 'pack' ? (o.hotelBoard || null) : null, req.params.id, offerDetails(o)]
   );
   if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
@@ -1555,8 +1565,8 @@ app.delete('/api/admin/vehicles/:id', auth(...BACKOFFICE_ROLES), can('vehicles.d
   res.json({ ok: true });
 }));
 
-// TripVision garde la trace des réservations faites auprès des loueurs et des compagnies : c'est à eux de les annuler.
-const NO_CANCEL_TEXT = 'TripVision n’annule pas les réservations faites auprès d’un loueur ou d’une compagnie : nous en gardons la trace.';
+// TripVision garde la trace des réservations faites auprès des enseignes et des compagnies : c'est à eux de les annuler.
+const NO_CANCEL_TEXT = 'TripVision n’annule pas les réservations faites auprès d’une enseigne ou d’une compagnie : nous en gardons la trace.';
 app.patch('/api/admin/bookings/:id/status', auth(...BACKOFFICE_ROLES), can('bookings.manage'), h(async (req, res) => {
   const { status } = statusSchema(['pending', 'confirmed', 'inactive']).parse(req.body);
   if (status === 'inactive') return res.status(403).json({ error: 'NO_CANCEL', message: NO_CANCEL_TEXT });

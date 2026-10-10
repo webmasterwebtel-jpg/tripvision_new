@@ -2,7 +2,7 @@
    TVVehicleForm.html(v, { gallery })  → balisage des sections
    TVVehicleForm.read(form)            → objet prêt à être envoyé à l'API
    Tout ce qui s'affiche sur le site (inclus dans le prix, protection, options, conditions de location) est saisi ici
-   par le loueur ou le back-office : TripVision n'écrit aucune condition à leur place. */
+   par l’enseigne ou le back-office : TripVision n'écrit aucune condition à leur place. */
 (() => {
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const CATEGORIES = ['Mini (A)', 'Économique (B)', 'Compacte (C)', 'Intermédiaire (D)', 'Routière (E)', 'SUV et Break', 'Monospace ou Minibus', 'Utilitaire / Van'];
@@ -14,7 +14,7 @@
     l.forEach((c) => { CAT_IMAGE[c.name] = c.image || ''; });
     document.querySelectorAll('[data-cat-preview]').forEach((box) => paintCatPreview(box));
   }).catch(() => {});
-  // L'image de l'annonce est l'image type de la catégorie choisie : ni le loueur ni le back-office ne téléversent de photo par véhicule.
+  // L'image de l'annonce est l'image type de la catégorie choisie : ni l’enseigne ni le back-office ne téléversent de photo par véhicule.
   const paintCatPreview = (box) => {
     const sel = box.closest('form')?.elements.namedItem('category');
     const name = sel?.value || '';
@@ -47,7 +47,7 @@
 
   const num = (x) => (x === null || x === undefined ? '' : x);
   const input = (label, attrs, full = false) => `<label class="${full ? 'full' : ''}">${esc(label)}<input ${attrs}></label>`;
-  // Une liste obligatoire commence par « Choisir… » : le loueur doit faire un choix explicite.
+  // Une liste obligatoire commence par « Choisir… » : l’enseigne doit faire un choix explicite.
   const select = (label, name, list, current, { required = false, full = false, choose = false } = {}) => `<label class="${full ? 'full' : ''}">${esc(label)}<select name="${name}" ${required ? 'required' : ''}>${choose ? `<option value="" disabled ${String(current ?? '') === '' ? 'selected' : ''}>Choisir…</option>` : ''}${list.map((x) => { const [val, text] = Array.isArray(x) ? x : [x, x]; return `<option value="${esc(val)}" ${String(val) === String(current ?? '') ? 'selected' : ''}>${esc(text)}</option>`; }).join('')}</select></label>`;
   const toggle = (name, label, checked) => `<label class="switch"><input type="checkbox" name="${name}" ${checked ? 'checked' : ''}><span class="track" aria-hidden="true"></span><span class="switch-label">${esc(label)}</span></label>`;
   const section = (title) => `<h4 class="form-section full">${esc(title)}</h4>`;
@@ -85,7 +85,7 @@
     const fromMin = x.availableFrom && x.availableFrom < todayIso() ? '' : `min="${todayIso()}"`;
     return `
       ${section('Le véhicule')}
-      ${lessor ? input('Nom du loueur (affiché sur le site)', `name="lessorName" maxlength="120" placeholder="Ex. Sixt Paris Gare de Lyon (annonce sans partenaire)" value="${esc(x.lessorName || '')}"`, true) : ''}
+      ${lessor ? input('Nom de l’enseigne (affiché sur le site)', `name="lessorName" maxlength="120" placeholder="Ex. Sixt Paris Gare de Lyon (annonce sans partenaire)" value="${esc(x.lessorName || '')}"`, true) : ''}
       ${input('Modèle', `name="model" required minlength="2" placeholder="Ex. Peugeot 208 ou similaire" value="${esc(String(x.model || '').replace(/ ou similaire$/i, ''))}"`)}
       ${select('Catégorie', 'category', x.category && !CATEGORIES.includes(x.category) ? [...CATEGORIES, x.category] : CATEGORIES, x.category, { required: true })}
       ${input('Places', `name="passengers" type="number" min="1" required placeholder="5" value="${esc(num(x.passengers))}"`)}
@@ -106,8 +106,8 @@
       </div>` : ''}
       ${section('Période de location')}
       ${hint('Indiquez les dates entre lesquelles votre véhicule peut être loué : 30 jours au maximum, à partir d’aujourd’hui. Il n’apparaît sur le site que pour des locations comprises dans cette période, et vous pourrez la prolonger ensuite.')}
-      ${input('Louable à partir du', `name="availableFrom" type="date" required ${fromMin} value="${esc(x.availableFrom || '')}"`)}
-      ${input('Louable jusqu’au (30 jours maximum)', `name="availableUntil" type="date" required min="${esc(x.availableFrom && x.availableFrom > todayIso() ? x.availableFrom : todayIso())}" value="${esc(x.availableUntil || '')}"`)}
+      ${input('Disponible à partir du', `name="availableFrom" type="date" required ${fromMin} value="${esc(x.availableFrom || '')}"`)}
+      ${input('Disponible jusqu’au (30 jours maximum)', `name="availableUntil" type="date" required min="${esc(x.availableFrom && x.availableFrom > todayIso() ? x.availableFrom : todayIso())}" value="${esc(x.availableUntil || '')}"`)}
       ${section('Tarifs')}
       ${hint('Les prix par jour, par semaine et par mois sont obligatoires. Le site retient automatiquement la formule la moins chère pour la durée choisie. Chaque tranche de 24 h entamée est comptée : 24 h 01 = 2 jours.')}
       ${hint('Ces prix sont ceux que le client paie au total. À la réservation, il règle en ligne un acompte de 10 % du total de sa location (options comprises) ; le solde vous est payé à l’agence lors du retrait du véhicule.')}
@@ -163,8 +163,8 @@
         <div class="extras-add"><span>Ajouter :</span>${Object.entries(PRESETS).map(([k, p]) => `<button type="button" class="chip-btn" data-extra-preset="${k}" ${(x.extras || []).some((e) => e.key === k) ? 'hidden' : ''}>+ ${esc(p.name)}</button>`).join('')}<button type="button" class="chip-btn" data-extra-new>+ Autre option</button></div>
       </div>
       ${section('Conditions de location')}
-      ${hint('Ce texte est celui du loueur : il s’affiche tel quel sous « Conditions de location » sur le site.')}
-      <label class="full">Conditions de location du loueur<textarea name="rentalConditions" rows="4" required minlength="10" placeholder="Conditions générales de location du loueur…">${esc(x.rentalConditions || '')}</textarea></label>
+      ${hint('Ce texte est celui de l’enseigne : il s’affiche tel quel sous « Conditions de location » sur le site.')}
+      <label class="full">Conditions de location de l’enseigne<textarea name="rentalConditions" rows="4" required minlength="10" placeholder="Conditions générales de location de l’enseigne…">${esc(x.rentalConditions || '')}</textarea></label>
       <label class="full">Conseils au voyageur (facultatif)<textarea name="tips" rows="2" maxlength="600" placeholder="Ex. Prévoyez un document d’identité et votre permis de conduire.">${esc(x.tips || '')}</textarea></label>`;
   }
 

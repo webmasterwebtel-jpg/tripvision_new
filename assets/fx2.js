@@ -193,7 +193,7 @@
     try { last = sessionStorage.getItem('tvSurprise') || ''; } catch { /* rien */ }
     const pool = list.filter((d) => d.slug !== last);
     const pick = pool[Math.floor(Math.random() * pool.length)] || list[0];
-    try { sessionStorage.setItem('tvSurprise', pick.slug); } catch { /* rien */ }
+    try { sessionStorage.setItem('tvSurprise', pick.slug); sessionStorage.setItem('tvSurpriseOn', pick.slug); } catch { /* rien */ }
     const go = () => { page(`destination/${pick.slug}`); location.hash = `destination/${pick.slug}`; };
     if (reduce) { go(); return; }
     const ov = document.createElement('div');
@@ -212,7 +212,11 @@
     ov.remove();
     go();
   }
-  document.addEventListener('click', (e) => { if (e.target.closest('#hhSurprise')) { e.preventDefault(); surprise(); } });
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#hhSurprise, [data-surprise-again]')) { e.preventDefault(); surprise(); return; }
+    // Quitter la destination tirée au sort par un autre lien : le bouton « Choisir encore » disparaît.
+    if (e.target.closest('a[data-page-link], a[href^="#"]')) { try { sessionStorage.removeItem('tvSurpriseOn'); } catch { /* rien */ } }
+  });
 
   /* ---------- Voir plus : on ne montre que les premières destinations ---------- */
   // Cinq cartes en haut, cinq en bas, qui défilent doucement en sens inverse : aucune place vide.

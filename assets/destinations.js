@@ -73,7 +73,7 @@ window.TV_DEST = [
   {
     slug: 'paris', name: 'Paris', country: 'France', tag: 'La ville lumière, du Louvre à Montmartre',
     intro: ['Paris est l’une des villes les plus visitées au monde : musées de renommée mondiale, cafés, grands boulevards, monuments et gastronomie en font une destination qui se redécouvre à chaque séjour.', 'Pour les voyageurs venus d’Afrique comme pour les Parisiens, un week-end suffit à enchaîner Seine, Louvre, Montmartre et quartiers à explorer.'],
-    best: 'Avril à octobre', lang: 'Français', money: 'Euro (EUR)', flight: 'Depuis l’Afrique : 3 à 7 h selon la ville',
+    best: 'Avril à octobre', lang: 'Français', money: 'Euro (EUR)', flight: '2 aéroports internationaux : Roissy-CDG et Orly',
     places: [['Tour Eiffel', 'Le monument emblématique, à admirer de jour comme de nuit.'], ['Musée du Louvre', 'Le plus grand musée d’art du monde, avec la Joconde.'], ['Montmartre et le Sacré-Cœur', 'Ruelles, artistes et belle vue sur Paris.'], ['Notre-Dame et l’île de la Cité', 'Le berceau historique de la capitale.'], ['Croisière sur la Seine', 'La manière la plus douce de découvrir les quais.'], ['Le Marais', 'Hôtels particuliers, boutiques et pâtisseries.']],
     tips: ['Le pass de transport Navigo ou les carnets de tickets simplifient les trajets.', 'Réservez les musées à l’avance pour éviter les files.', 'Prévoyez un parapluie, même au printemps.'],
   },

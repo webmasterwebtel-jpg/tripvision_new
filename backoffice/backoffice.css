@@ -732,3 +732,15 @@ a.btn.block { text-decoration: none; }
 .fr-current{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border:1px dashed var(--line);border-radius:10px;background:#fbfaf6}
 td.actions{min-width:280px}
 .row-actions{max-width:340px}
+/* Packs : mode de transport et notes de l'hôtel */
+.transport-pick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.tp-opt{position:relative;cursor:pointer}
+.tp-opt input{position:absolute;opacity:0;pointer-events:none}
+.tp-opt span{display:grid;justify-items:center;gap:6px;padding:14px 8px;border:1.5px solid var(--line);border-radius:12px;background:#fff;transition:border-color .2s,background .2s}
+.tp-opt svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;color:#0f3b2e}
+.tp-opt b{font-size:13px}
+.tp-opt input:checked+span{border-color:#0d7a58;background:#eef7f2;box-shadow:0 0 0 3px rgba(13,122,88,.12)}
+.tp-opt input:focus-visible+span{outline:2px solid #0d7a58;outline-offset:2px}
+.rating-row{display:grid;grid-template-columns:120px 1fr 1fr;gap:12px;align-items:end}
+.rating-row>b{padding-bottom:12px;font-size:13.5px}
+@media(max-width:640px){.transport-pick{grid-template-columns:repeat(2,1fr)}.rating-row{grid-template-columns:1fr 1fr}.rating-row>b{grid-column:1/-1;padding:0}}

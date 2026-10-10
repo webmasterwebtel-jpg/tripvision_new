@@ -8,13 +8,15 @@
   const eur = (n) => `${Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €`;
   const day = (d) => (d ? new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
   const I = (n) => `<svg class="tv-icon" aria-hidden="true"><use href="#i-${n}"></use></svg>`;
-  const ICON = { cal: I('calendar'), globe: I('globe'), money: I('wallet'), plane: I('plane'), sun: I('sun') };
+  const ICON = { cal: I('calendar'), globe: I('globe'), money: I('wallet'), plane: I('plane'), sun: I('sun'), sparkle: I('sparkle') };
   // Le paiement en ligne est-il actif ? (sinon le séjour se réserve par simple demande)
   let payOn = null;
   const payConfig = () => (typeof api === 'function' ? api('/public/config').then((c) => { payOn = Boolean(c?.payments); return payOn; }).catch(() => { payOn = false; return false; }) : Promise.resolve(false));
   const loaded = () => typeof state !== 'undefined' && (state.flights.length || state.packs.length || state.vehicles.length || window.__tvLoaded);
 
   /* ---------- Guide d'une destination ---------- */
+  // Arrivé ici par « Choisir pour moi » : on propose de relancer le tirage.
+  const surprised = (slug) => { try { return sessionStorage.getItem('tvSurpriseOn') === slug; } catch { return false; } };
   function destination(slug) {
     const root = document.getElementById('destRoot');
     if (!root) return;
@@ -31,7 +33,7 @@
           <h1>${E(d.name)}</h1>
           <p class="dp-tag">${E(d.tag)}</p>
           <div class="dp-chips"><span>${ICON.plane} ${E(d.flight)}</span><span>${ICON.sun} ${E(d.best)}</span></div>
-          <div class="dp-cta"><button class="btn gold" type="button" data-scroll="dpDeals">Voir les offres pour ${E(d.name)}</button></div>
+          <div class="dp-cta"><button class="btn gold" type="button" data-scroll="dpDeals">Voir les offres pour ${E(d.name)}</button>${surprised(d.slug) ? `<button class="btn dp-again" type="button" data-surprise-again>${ICON.sparkle || ''} Choisir encore pour moi</button>` : ''}</div>
         </div>
       </header>
       <section class="dp-section wrap dp-presentation">
@@ -48,9 +50,9 @@
       <section class="dp-section wrap dp-tips"><span class="eyebrow">Avant de partir</span><h2>Conseils <em>pratiques</em></h2>
         <ul>${d.tips.map((t) => `<li>${E(t)}</li>`).join('')}</ul></section>
       <section class="dp-section dp-deals" id="dpDeals"><div class="wrap">
-        <span class="eyebrow">Offres</span><h2>Vols, séjours et voitures à <em>${E(d.name)}</em></h2>
+        <span class="eyebrow">Offres</span><h2>${/^france$/i.test(d.country || '') ? 'Vols, week-ends et voitures à' : 'Les vols pour'} <em>${E(d.name)}</em></h2>
         ${flights.length ? `<h3 class="dp-sub">Vols disponibles</h3>${limited(flights.map((o) => flightCard(o)), 3, 'vols', 'grid service-grid flight-list')}` : ''}
-        ${packs.length ? `<h3 class="dp-sub">Séjours (vol + hôtel)</h3>${limited(packs.map((o) => packCard(o)), 3, 'séjours', 'pack-grid')}` : ''}
+        ${packs.length ? `<h3 class="dp-sub">Week-ends (transport + hôtel)</h3>${limited(packs.map((o) => packCard(o)), 3, 'séjours', 'pack-grid')}` : ''}
         <div id="dpCars"></div>
         <div class="dp-none" id="dpNone" ${flights.length || packs.length ? 'hidden' : ''}><p>Aucune offre n’est publiée pour ${E(d.name)} en ce moment. De nouvelles offres arrivent régulièrement.</p><a class="btn" href="#flights" data-page-link="flights">Voir tous les vols</a> <a class="btn ghost" href="#packs" data-page-link="packs">Voir les week-ends</a> <a class="btn ghost" href="#cars" data-page-link="cars" data-dest-cars="${E(d.name)}">Voir les voitures</a></div>
       </div></section>
@@ -91,6 +93,8 @@
   async function mountCars(d, onlyCars) {
     const box = document.getElementById('dpCars'), none = document.getElementById('dpNone');
     if (!box || typeof api !== 'function') return;
+    // Les locations de voitures sont proposées en France uniquement.
+    if (!/^france$/i.test(d.country || '')) { if (none) none.hidden = !onlyCars; return; }
     let list = [];
     try { list = await api(`/public/vehicles?city=${encodeURIComponent(d.name)}`); } catch { list = []; }
     if (document.getElementById('dpCars') !== box) return;
@@ -184,8 +188,9 @@
     const images = typeof offerImages === 'function' ? offerImages(o) : [o.image];
     document.title = `${title} — ${o.to_city || ''} | TripVision`;
     window.TVFX?.track('pack_view', o.id, o.to_city, o.country, title);
+    const tp = typeof transportText === 'function' ? transportText(o) : '';
     const incl = [
-      o.from_city ? `Vols aller-retour au départ de ${o.from_city}` : 'Vols aller-retour',
+      tp ? `Transport aller-retour : ${tp}${o.transport?.details ? ` (${o.transport.details})` : ''}` : 'Transport aller-retour',
       nights ? `Hébergement ${nights} nuit${nights > 1 ? 's' : ''} à ${o.hotel_name || 'l’hôtel'}` : (o.hotel_name ? `Hébergement à ${o.hotel_name}` : ''),
       o.hotel_board ? `Formule : ${o.hotel_board}` : '',
     ].filter(Boolean);
@@ -195,18 +200,20 @@
         <div class="pd-grid">
           <div class="pd-main">
             <header class="pd-head">
-              <div class="pd-tags"><span class="pd-badge">${E(o.badge || 'Vol + hôtel')}</span>${old && pct > 0 ? `<span class="pd-promo">−${pct}%</span>` : ''}</div>
+              <div class="pd-tags"><span class="pd-badge">${E(o.badge || (typeof packFormula === 'function' ? packFormula(o) : 'Week-end'))}</span>${old && pct > 0 ? `<span class="pd-promo">−${pct}%</span>` : ''}</div>
               <h1>${E(title)} <span class="pack-stars">${stars}</span></h1>
               <p class="pd-loc">${I('pin')} ${E([o.to_city, o.country].filter(Boolean).join(', '))}</p>
+              ${typeof ratingsHtml === 'function' ? ratingsHtml(o, 'pk-rates big') : ''}
             </header>
             <div class="pd-gallery">${TVGallery.html(images, title)}</div>
-            <ul class="pd-glance">${o.start_date ? `<li><span>${I('calendar')}</span><div><b>Départ</b>${E(day(o.start_date))}</div></li>` : ''}${o.end_date ? `<li><span>${I('calendar')}</span><div><b>Retour</b>${E(day(o.end_date))}</div></li>` : ''}${nights ? `<li><span>${I('moon')}</span><div><b>Durée</b>${nights + 1} jours / ${nights} nuit${nights > 1 ? 's' : ''}</div></li>` : ''}${o.from_city ? `<li><span>${I('plane')}</span><div><b>Départ de</b>${E(o.from_city)}</div></li>` : ''}${o.hotel_board ? `<li><span>${I('utensils')}</span><div><b>Formule</b>${E(o.hotel_board)}</div></li>` : ''}${o.hotel_stars ? `<li><span>${I('star')}</span><div><b>Hôtel</b>${o.hotel_stars} étoile${Number(o.hotel_stars) > 1 ? 's' : ''}</div></li>` : ''}</ul>
+            <ul class="pd-glance">${o.start_date ? `<li><span>${I('calendar')}</span><div><b>Départ</b>${E(day(o.start_date))}</div></li>` : ''}${o.end_date ? `<li><span>${I('calendar')}</span><div><b>Retour</b>${E(day(o.end_date))}</div></li>` : ''}${nights ? `<li><span>${I('moon')}</span><div><b>Durée</b>${nights + 1} jours / ${nights} nuit${nights > 1 ? 's' : ''}</div></li>` : ''}${tp ? `<li><span>${typeof tpIcon === 'function' ? tpIcon(o) : I('plane')}</span><div><b>Transport</b>${E(tp)}</div></li>` : ''}${o.hotel_board ? `<li><span>${I('utensils')}</span><div><b>Formule</b>${E(o.hotel_board)}</div></li>` : ''}${o.hotel_stars ? `<li><span>${I('star')}</span><div><b>Hôtel</b>${o.hotel_stars} étoile${Number(o.hotel_stars) > 1 ? 's' : ''}</div></li>` : ''}</ul>
             <section class="pd-block pd-card pd-cols${o.description ? ' two' : ''}">
               ${o.description ? `<div><h2>À propos de ce séjour</h2><p class="pd-desc">${E(o.description)}</p></div>` : ''}
               <div><h2>Ce voyage comprend</h2><ul class="pd-incl">${incl.map((t) => `<li>${E(t)}</li>`).join('')}</ul>
               <p class="pd-note">Excursions, transferts et repas hors formule non inclus. Le détail vous est confirmé avant tout engagement.</p></div>
             </section>
-            ${dest ? `<section class="pd-block pd-guide" style="background-image:linear-gradient(90deg,rgba(6,24,19,.88),rgba(6,24,19,.3)),url('${img(dest.slug)}')"><div><span class="eyebrow">La destination</span><h2>${E(dest.name)}, ${E(dest.country)}</h2><p>${E(dest.intro[0])}</p><a class="btn gold" href="#destination/${dest.slug}" data-page-link="destination/${dest.slug}">Découvrir ${E(dest.name)} →</a></div></section>` : ''}
+            <div id="pdCars"></div>
+            ${dest ? `<section class="pd-block pd-guide" style="background-image:linear-gradient(90deg,rgba(6,24,19,.88),rgba(6,24,19,.3)),url('${img(dest.slug)}')"><div><span class="eyebrow">Pourquoi ${E(dest.name)} ?</span><h2>${E(dest.name)}, ${E(dest.country)}</h2><p>${E(dest.intro[0])}</p><h3 class="pd-todo-h">Que faire sur place</h3><ul class="pd-todo">${dest.places.slice(0, 4).map(([t]) => `<li>${E(t)}</li>`).join('')}</ul><a class="btn gold" href="#destination/${dest.slug}" data-page-link="destination/${dest.slug}">Tout savoir sur ${E(dest.name)} →</a></div></section>` : ''}
           </div>
           <aside class="pd-book" id="pdBook"><div class="pd-box">
             <small>par personne, dès</small>${old ? `<s>${eur(o.old_price)}</s>` : ''}<strong>${eur(o.price)}</strong>
@@ -223,6 +230,18 @@
           <div class="pack-grid">${state.packs.filter((x) => String(x.id) !== String(o.id)).slice(0, 3).map((x) => packCard(x)).join('')}</div></section>` : ''}
       </div>`;
     if (typeof bindLinks === 'function') bindLinks(root);
+    mountPackCars(o);
+  }
+  // Vente croisée : une voiture sur place pour compléter le week-end.
+  async function mountPackCars(o) {
+    const box = document.getElementById('pdCars');
+    if (!box || !o.to_city || typeof api !== 'function') return;
+    let list = [];
+    try { list = await api(`/public/vehicles?city=${encodeURIComponent(o.to_city)}`); } catch { list = []; }
+    if (document.getElementById('pdCars') !== box || !Array.isArray(list) || !list.length) return;
+    window.__destCars = new Map(list.map((v) => [String(v.id), v]));
+    box.innerHTML = `<section class="pd-block xsell"><div class="xsell-head"><span class="eyebrow">Sur place</span><h2>Une voiture pour profiter de <em>${E(o.to_city)}</em></h2><p>Récupérez une voiture en arrivant : vous êtes libre de vos mouvements tout le week-end.</p></div>${limited(list.slice(0, 6).map(carMini), 2, 'voitures', 'dp-cars')}</section>`;
+    if (typeof bindLinks === 'function') bindLinks(box);
   }
 
   /* ---------- Page de réservation d'un pack ---------- */
@@ -395,17 +414,48 @@
     const target = d ? `destination/${d.slug}` : 'flights';
     page(target); location.hash = target;
   });
+  // Bons plans dénichés par TripVision : le meilleur prix par trajet (vols), par ville (voitures) et par séjour.
+  const destOf = (city) => D().find((x) => norm(x.name) === norm(city));
+  const bpCard = ({ href, link, attrs, pic, kicker, title, sub, price, unit }) => `<a class="bp-card" href="${href}" data-page-link="${link}" ${attrs}><span class="bp-img"><img src="${E(pic)}" alt="" loading="lazy" decoding="async"></span><span class="bp-body"><small>${kicker}</small><b>${title}</b>${sub ? `<em>${sub}</em>` : ''}</span><span class="bp-price"><small>à partir de</small><strong>${eur(price)}</strong>${unit ? `<i>${unit}</i>` : ''}</span></a>`;
   function renderHomeDeals() {
     const box = document.getElementById('homeDeals');
     if (!box || typeof state === 'undefined') return;
-    const rows = [...state.flights].filter((o) => o.flight?.bookingUrl).sort((a, b) => Number(a.price) - Number(b.price)).slice(0, 4);
-    box.parentElement.hidden = !rows.length;
-    box.innerHTML = rows.map((o) => {
-      const ph = (typeof offerImages === 'function' ? offerImages(o)[0] : o.image) || '';
-      return `<a class="deal-card" href="#flights" data-page-link="flights"><span class="deal-img"><img src="${E(ph)}" alt="" loading="lazy" decoding="async"></span><span class="deal-body"><small>${E(o.flight?.airline || 'Vol')}</small><b>${E(o.from_city || '')} → ${E(o.to_city || '')}</b><em>${o.start_date ? E(day(o.start_date)) : ''}</em></span><span class="deal-price"><small>dès</small><strong>${eur(o.price)}</strong></span></a>`;
-    }).join('');
+    const best = (list, key, price) => { const m = new Map(); for (const o of list) { const k = key(o); if (!k) continue; const c = m.get(k); if (!c || price(o) < price(c)) m.set(k, o); } return [...m.values()].sort((a, b) => price(a) - price(b)); };
+    const flights = best(state.flights.filter((o) => o.flight?.bookingUrl), (o) => `${norm(o.from_city)}>${norm(o.to_city)}`, (o) => Number(o.price)).slice(0, 6);
+    const cars = best(state.vehicles || [], (v) => norm(v.city || ''), (v) => Number(v.priceDay)).slice(0, 4);
+    const packs = best(state.packs || [], (o) => norm(o.to_city || ''), (o) => Number(o.price)).slice(0, 4);
+    const group = (title, icon, items, cls) => (items.length ? `<div class="bp-group ${cls}"><h3>${I(icon)} ${title}</h3><div class="bp-grid">${items.join('')}</div></div>` : '');
+    box.innerHTML = group('Vols', 'plane', flights.map((o) => {
+      const d = destOf(o.to_city), round = o.flight?.tripType !== 'oneway';
+      return bpCard({ href: '#flights', link: 'flights', attrs: `data-route-from="${E(o.from_city || '')}" data-route-to="${E(o.to_city || '')}"`, pic: d ? img(d.slug) : (typeof offerImages === 'function' ? offerImages(o)[0] : o.image) || '', kicker: `${round ? 'Aller-retour' : 'Aller simple'} · ${E(o.flight?.airline || 'Vol')}`, title: `${E(o.from_city || '')} <i>→</i> ${E(o.to_city || '')}`, sub: '', price: o.price });
+    }), 'bp-flights')
+      + group('Voitures', 'car', cars.map((v) => bpCard({ href: '#cars', link: 'cars', attrs: `data-car-research="${E(v.city || '')}"`, pic: v.image || '', kicker: 'Location de voiture', title: `Voitures à ${E(v.city || '')}`, sub: `${E(v.category || '')} · ${E(v.partner_company || '')}`, price: v.priceDay, unit: '/ jour' })), 'bp-cars')
+      + group('Week-ends', 'suitcase', packs.map((o) => { const d = destOf(o.to_city); return bpCard({ href: `#pack/${E(o.id)}`, link: `pack/${E(o.id)}`, attrs: '', pic: d ? img(d.slug) : (typeof offerImages === 'function' ? offerImages(o)[0] : o.image) || '', kicker: `Transport + hôtel · ${Number(o.hotel_nights) || 2} nuit${Number(o.hotel_nights) > 1 ? 's' : ''}`, title: `Week-end à ${E(o.to_city || '')}`, sub: E(o.hotel_name || ''), price: o.price, unit: '/ pers.' }); }), 'bp-packs');
+    box.closest('section').hidden = !(flights.length || cars.length || packs.length);
     if (typeof bindLinks === 'function') bindLinks(box);
   }
+  // Un bon plan de vol ouvre la page des vols avec ce trajet déjà recherché.
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-route-from]');
+    if (!a || typeof serviceFilters === 'undefined') return;
+    serviceFilters.flight = { fromCity: a.dataset.routeFrom, toCity: a.dataset.routeTo, fromCode: '', toCode: '', departDate: '', returnDate: '', cabin: 'all', tripType: 'roundtrip', travelers: 1 };
+    const f = document.getElementById('flightSimulator');
+    if (f) { f.elements.fromCity.value = a.dataset.routeFrom; f.elements.toCity.value = a.dataset.routeTo; }
+    setTimeout(() => { if (typeof renderFlights === 'function') renderFlights(); document.querySelector('#flights .service-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+  });
+  // Un bon plan de voiture lance la recherche dans la ville, du lendemain pour trois jours si aucune date n'est choisie.
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('.bp-card[data-car-research]');
+    if (!a) return;
+    const f = document.getElementById('carSearchForm')?.elements;
+    if (!f) return;
+    const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const t = new Date(); t.setDate(t.getDate() + 1);
+    const r = new Date(t); r.setDate(r.getDate() + 3);
+    if (!f.startDate.value || f.startDate.value < iso(new Date())) f.startDate.value = iso(t);
+    if (!f.endDate.value || f.endDate.value <= f.startDate.value) f.endDate.value = iso(r);
+    f.startDate.dispatchEvent(new Event('change', { bubbles: true }));
+  }, true);
   function renderHomeStats() {
     const s = document.getElementById('hhStats');
     if (!s || typeof state === 'undefined') return;

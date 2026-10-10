@@ -703,7 +703,7 @@ function orderCard(o) {
     ? `<div class="t-dates"><div><small>Départ</small><b>${esc(fmtDay(x.start_date))}</b><span>${esc(hour(x.start_time))}</span></div><i class="arrow"></i><div><small>Retour</small><b>${esc(fmtDay(x.end_date))}</b><span>${esc(hour(x.end_time))}</span></div></div>
        <p class="t-sub">${esc(o.line)}</p>`
     : `<p class="t-sub">${esc(o.line)}</p><p class="t-sub strong">${esc(o.dates)}</p>`;
-  const note = cancelled ? 'Cette réservation n’est plus active.' : paid ? `Payé en ligne : ${money(x.paid_amount)}. Reste ${money(x.pay_on_pickup)} à régler au loueur lors du retrait.` : done ? 'Réservation confirmée.' : 'En cours de traitement : vous serez prévenu dès la confirmation.';
+  const note = cancelled ? 'Cette réservation n’est plus active.' : paid ? `Payé en ligne : ${money(x.paid_amount)}. Reste ${money(x.pay_on_pickup)} à régler à l’enseigne lors du retrait.` : done ? 'Réservation confirmée.' : 'En cours de traitement : vous serez prévenu dès la confirmation.';
   return `<article class="ticket kind-${esc(o.kind)} ${o.unseen ? 'is-new' : ''}" data-id="${esc(o.id)}" data-kind="${o.cancel}" data-action="order-open" tabindex="0">
     <div class="t-main">
       <div class="t-top"><span class="t-kind">${icon(ic)}${esc(kindLabel)}</span><span class="t-ref">${esc(o.ref)}${o.unseen ? ' · <b style="color:#d64541">Mis à jour</b>' : ''}</span></div>
@@ -749,7 +749,7 @@ const CLIENT_PAGES = {
       </section>
       <section class="c-block">
         <div class="c-block-head"><h3>Partir ailleurs</h3></div>
-        <div class="c-tiles"><a class="c-tile" href="/#flights" target="_blank" rel="noopener"><span class="ic">${icon('plane')}</span><strong>Vols</strong><span>France ↔ Afrique, au meilleur prix</span></a><a class="c-tile" href="/#cars" target="_blank" rel="noopener"><span class="ic">${icon('car')}</span><strong>Voitures</strong><span>Louez auprès de loueurs vérifiés</span></a><a class="c-tile" href="/#packs" target="_blank" rel="noopener"><span class="ic">${icon('pack')}</span><strong>Week-ends</strong><span>Vol et hôtel, tout compris</span></a></div>
+        <div class="c-tiles"><a class="c-tile" href="/#flights" target="_blank" rel="noopener"><span class="ic">${icon('plane')}</span><strong>Vols</strong><span>Les meilleurs tarifs, partout dans le monde</span></a><a class="c-tile" href="/#cars" target="_blank" rel="noopener"><span class="ic">${icon('car')}</span><strong>Voitures</strong><span>Louez auprès d’enseignes vérifiées</span></a><a class="c-tile" href="/#packs" target="_blank" rel="noopener"><span class="ic">${icon('pack')}</span><strong>Week-ends</strong><span>Vol et hôtel, tout compris</span></a></div>
       </section>
       <section class="c-block">
         <div class="c-block-head"><h3>Vos dernières réservations</h3><a href="#orders">Tout voir →</a></div>
@@ -774,9 +774,9 @@ const CLIENT_PAGES = {
 
   async help() {
     const faq = [
-      ['Comment annuler une réservation ?', 'Une demande de vol ou de pack encore « en attente » s’annule depuis « Mes réservations ». Une location de voiture s’annule depuis « Mes réservations » : gratuitement dans la période fixée par le loueur, sinon avec les frais d’annulation indiqués avant de confirmer.'],
+      ['Comment annuler une réservation ?', 'Une demande de vol ou de pack encore « en attente » s’annule depuis « Mes réservations ». Une location de voiture s’annule depuis « Mes réservations » : gratuitement dans la période fixée par l’enseigne, sinon avec les frais d’annulation indiqués avant de confirmer.'],
       ['Quand ma réservation est-elle confirmée ?', 'Une location de voiture est confirmée dès le paiement en ligne : vous recevez un e-mail et une notification. Les vols et packs sont confirmés par TripVision après vérification de la disponibilité.'],
-      ['Que paie-t-on en ligne pour une voiture ?', 'Un acompte de 10 % du total de votre location, options comprises. Le solde, ainsi que le dépôt de garantie éventuel, se règle directement au loueur lors du retrait du véhicule.'],
+      ['Que paie-t-on en ligne pour une voiture ?', 'Un acompte de 10 % du total de votre location, options comprises. Le solde, ainsi que le dépôt de garantie éventuel, se règle directement à l’enseigne lors du retrait du véhicule.'],
       ['Faut-il payer pour demander un vol ou un pack ?', 'Non : la demande est gratuite et sans engagement. Le prix et les conditions vous sont confirmés avant tout paiement.'],
     ];
     return pageHead('Assistance', 'Aide & <em>contact</em>', 'Une question sur une réservation ? Écrivez-nous, indiquez la référence concernée.') + `
@@ -1005,7 +1005,7 @@ const ACT = {
     if (q.started) { toast('La location a déjà commencé : elle ne peut plus être annulée en ligne.'); return; }
     const eur = (n) => money(n);
     const lines = q.free ? ['Annulation gratuite : votre réservation est annulée sans frais.', q.paid > 0 ? `Votre règlement de ${eur(q.paid)} vous est remboursé.` : '']
-      : [`La période d’annulation gratuite est passée : le loueur applique des frais d’annulation de ${eur(q.fee)}.`, q.paid > 0 ? `Vous avez déjà réglé ${eur(q.paid)} en ligne.` : '',
+      : [`La période d’annulation gratuite est passée : l’enseigne applique des frais d’annulation de ${eur(q.fee)}.`, q.paid > 0 ? `Vous avez déjà réglé ${eur(q.paid)} en ligne.` : '',
         q.toPay > 0 ? `Il vous reste ${eur(q.toPay)} à payer maintenant pour annuler.` : q.refund > 0 ? `Le reste, soit ${eur(q.refund)}, vous est remboursé.` : 'Aucun autre paiement n’est demandé.'];
     openModal({ eyebrow: 'Réservation', title: 'Annuler ma réservation ?', confirmLabel: q.toPay > 0 ? `Payer ${eur(q.toPay)} et annuler` : 'Confirmer l’annulation', tone: 'danger', loadingText: 'Annulation…',
       bodyHtml: `<div class="modal-text">${lines.filter(Boolean).map(l => `<p>${esc(l)}</p>`).join('')}</div>`,

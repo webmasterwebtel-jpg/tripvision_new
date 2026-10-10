@@ -62,7 +62,7 @@ const MANAGEABLE = { it: ['it', 'manager', 'admin'], manager: ['manager', 'admin
 const PERM_GROUPS = [
   ['Annonces véhicules', [['vehicles.create', 'Ajouter'], ['vehicles.edit', 'Valider, publier, masquer, programmer'], ['vehicles.delete', 'Supprimer'], ['franchise.manage', 'Fixer la franchise et le prix de sa protection (toutes les voitures)']]],
   ['Offres vols & packs', [['offers.create', 'Créer'], ['offers.edit', 'Activer, désactiver, programmer'], ['offers.delete', 'Supprimer']]],
-  ['Réservations', [['bookings.view', 'Voir les réservations et leurs chiffres'], ['bookings.manage', 'Confirmer les réservations (l’annulation reste au loueur)']]],
+  ['Réservations', [['bookings.view', 'Voir les réservations et leurs chiffres'], ['bookings.manage', 'Confirmer les réservations (l’annulation reste à l’enseigne)']]],
   ['Messagerie', [['chats.reply', 'Lire et répondre aux clients et partenaires'], ['chats.manage', 'Clôturer, rouvrir, attribuer, gérer les réponses types']]],
   ['Partenaires', [['partners.manage', 'Créer, valider, suspendre'], ['partners.delete', 'Supprimer']]],
   ['Clients', [['clients.view', 'Voir la liste des clients']]],
@@ -776,7 +776,7 @@ function detailContent(kind, id) {
         ['Client', esc(b.customer_name)], ['E-mail', esc(b.customer_email)], ['Téléphone', esc(b.customer_phone)], ['Véhicule', esc(b.vehicle_name)], ['Entreprise', esc(b.company)],
         ['Départ', `${fmtDay(b.start_date)} ${esc(b.start_time || '')}`], ['Retour', `${fmtDay(b.end_date)} ${esc(b.end_time || '')}`],
         ['Lieu de retrait', esc(b.pickup_address)], ['Lieu de retour', esc(b.return_address)], ['Âge du conducteur', b.driver_age ? `${esc(b.driver_age)} ans${b.young_driver_notice ? ' (jeune conducteur)' : ''}` : ''],
-        ['Total', money(b.total_estimate)], ['Paiement', b.payment_status === 'paid' ? `Payé en ligne : ${money(b.paid_amount)} · reste ${money(b.pay_on_pickup)} à régler au loueur` : b.payment_status === 'refunded' ? 'Remboursé' : ''], ['Options choisies', (b.extras || []).map(x => `${x.qty > 1 ? x.qty + ' × ' : ''}${esc(x.name)} (${money(x.total)})`).join(', ')], ['Total estimé', b.total_estimate == null ? '' : money(b.total_estimate)],
+        ['Total', money(b.total_estimate)], ['Paiement', b.payment_status === 'paid' ? `Payé en ligne : ${money(b.paid_amount)} · reste ${money(b.pay_on_pickup)} à régler à l’enseigne` : b.payment_status === 'refunded' ? 'Remboursé' : ''], ['Options choisies', (b.extras || []).map(x => `${x.qty > 1 ? x.qty + ' × ' : ''}${esc(x.name)} (${money(x.total)})`).join(', ')], ['Total estimé', b.total_estimate == null ? '' : money(b.total_estimate)],
         ['Message', esc(b.message)], ['Reçue le', fmtDate(b.created_at)],
       ]),
       actions: bookingActions(b),
@@ -855,8 +855,8 @@ function vehicleActions(v, withExtras = false) {
   ].filter(Boolean).join('');
 }
 function bookingActions(b) {
-  // TripVision garde la trace des réservations : elles se gèrent (et s'annulent) auprès du loueur, jamais ici.
-  if (b.partner_owned) return '<span class="muted">Géré par le loueur</span>';
+  // TripVision garde la trace des réservations : elles se gèrent (et s'annulent) auprès de l’enseigne, jamais ici.
+  if (b.partner_owned) return '<span class="muted">Géré par l’enseigne</span>';
   return [
     can('bookings.manage') && b.status === 'pending' && actionBtn('booking-confirm', b.id, 'Confirmer', 'primary'),
   ].filter(Boolean).join('') || '<span class="muted">Trace conservée</span>';
@@ -988,9 +988,9 @@ const RENDERERS = {
       <td class="actions"><span class="row-actions">${requestActions(r)}</span></td></tr>`).join('');
     return pageHead('Opérations', 'Suivi <em>des réservations</em>', 'Cliquez sur une réservation pour voir tous les détails.')
       + (st ? `<section class="card"><div class="card-head"><div><h3>Réservations enregistrées</h3><p>Nombre de réservations faites sur la période, tous services confondus.</p></div></div>${statsCards(st)}</section>` : '')
-      + `<div class="info-strip">${icon('alert')}<p>TripVision garde la <b>trace</b> de chaque réservation. Une réservation faite auprès d’un loueur ou d’une compagnie ne s’annule pas depuis le back-office : c’est au loueur ou à la compagnie de le faire.</p></div>`
-      + tableCard({ id: 'tblRequests', title: 'Demandes vols & packs', count: plural(DATA.requests.length, 'demande', 'demandes'), head: ['Référence', 'Client', 'Offre', 'Voyageurs · Total', 'Statut', ''], rows: reqRows, empty: 'Aucune demande de vol ou de pack', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['pending', 'En attente'], ['confirmed', 'Confirmée'], ['cancelled', 'Annulée par la compagnie ou le loueur']] }, { key: 'type', label: 'Type', options: [['flight', 'Vols'], ['pack', 'Packs']] }] })
-      + tableCard({ id: 'tblBookings', title: 'Réservations', count: plural(bookings.length, 'réservation', 'réservations'), head: ['Référence', 'Client', 'Véhicule', 'Dates', 'Statut', ''], rows, empty: 'Aucune réservation', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['pending', 'En attente'], ['confirmed', 'Confirmée'], ['inactive', 'Annulée par le loueur']] }] });
+      + `<div class="info-strip">${icon('alert')}<p>TripVision garde la <b>trace</b> de chaque réservation. Une réservation faite auprès d’une enseigne ou d’une compagnie ne s’annule pas depuis le back-office : c’est à l’enseigne ou à la compagnie de le faire.</p></div>`
+      + tableCard({ id: 'tblRequests', title: 'Demandes vols & packs', count: plural(DATA.requests.length, 'demande', 'demandes'), head: ['Référence', 'Client', 'Offre', 'Voyageurs · Total', 'Statut', ''], rows: reqRows, empty: 'Aucune demande de vol ou de pack', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['pending', 'En attente'], ['confirmed', 'Confirmée'], ['cancelled', 'Annulée par la compagnie ou l’enseigne']] }, { key: 'type', label: 'Type', options: [['flight', 'Vols'], ['pack', 'Packs']] }] })
+      + tableCard({ id: 'tblBookings', title: 'Réservations', count: plural(bookings.length, 'réservation', 'réservations'), head: ['Référence', 'Client', 'Véhicule', 'Dates', 'Statut', ''], rows, empty: 'Aucune réservation', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['pending', 'En attente'], ['confirmed', 'Confirmée'], ['inactive', 'Annulée par l’enseigne']] }] });
   },
 
   async notifications() {
@@ -1166,7 +1166,7 @@ const RENDERERS = {
       <td><div class="who">${c.image ? `<img class="cat-thumb" src="${esc(c.image)}" alt="">` : '<span class="avatar sm">—</span>'}<div><strong>${esc(c.name)}</strong><span class="muted">${c.image ? 'Image personnalisée' : 'Sans image : photo d’une annonce utilisée'}</span></div></div></td>
       <td class="num">${c.vehicles}</td><td class="num">${c.position}</td><td>${c.active ? badge('active', 'Affichée') : badge('inactive', 'Masquée')}</td>
       <td class="actions"><span class="row-actions">${actionBtn('category-edit', c.id, 'Modifier')}${actionBtn('category-delete', c.id, 'Supprimer', 'danger')}</span></td></tr>`).join('');
-    return pageHead('Opérations', '<em>Catégories</em> de voitures', 'Les catégories proposées aux loueurs et affichées sur le site public (nom et image). Une image claire sur fond blanc donne le meilleur rendu.', actionBtn('category-add', '', '+ Ajouter une catégorie', 'primary'))
+    return pageHead('Opérations', '<em>Catégories</em> de voitures', 'Les catégories proposées aux enseignes et affichées sur le site public (nom et image). Une image claire sur fond blanc donne le meilleur rendu.', actionBtn('category-add', '', '+ Ajouter une catégorie', 'primary'))
       + tableCard({ id: 'tblCategories', title: 'Catégories', count: plural(list.length, 'catégorie', 'catégories'), head: ['Catégorie', 'Annonces', 'Ordre', 'État', ''], rows, empty: 'Aucune catégorie', cols: 5, filters: [{ key: 'state', label: 'État', options: [['on', 'Affichées'], ['off', 'Masquées']] }] });
   },
 
@@ -1347,7 +1347,7 @@ function openVehicleModal(existing = null, availability = { blocks: [], rentals:
       const { draft, publishAt } = editing ? { draft: false, publishAt: null } : readSchedule(f);
       const g = (n) => f.elements.namedItem(n);
       const body = { ...TVVehicleForm.read(f), partnerId: g('partnerId').value || null };
-      if (!body.partnerId && !body.lessorName) throw new ApiError('Indiquez le nom du loueur : il est affiché sur le site avec ses conditions de location.');
+      if (!body.partnerId && !body.lessorName) throw new ApiError('Indiquez le nom de l’enseigne : il est affiché sur le site avec ses conditions de location.');
       if (!editing) { body.draft = draft; body.publishAt = publishAt; }
       await api(editing ? `/admin/vehicles/${v.id}` : '/admin/vehicles', { method: editing ? 'PATCH' : 'POST', body: JSON.stringify(body) });
       if (editing) return { title: 'Annonce modifiée', text: 'Les changements sont enregistrés et visibles sur le site.' };
@@ -1372,40 +1372,15 @@ function syncTripType(form) {
 }
 document.addEventListener('change', (e) => { if (e.target.matches?.('select[name=tripType]')) syncTripType(e.target.form); });
 
-/* Les vols relient la France et un pays africain : un côté est toujours « France », l'autre est limité à l'Afrique. */
+/* Un vol relie n'importe quels pays : TripVision publie les meilleurs tarifs qu'elle trouve, partout dans le monde. */
 function routeFields(o) {
   const f = o?.flight || {};
-  const dir = (o && o.country === 'France' && f.fromCountry !== 'France') ? 'af' : 'fa';
-  const fromFixed = dir === 'fa', toFixed = dir === 'af';
-  const fixed = ' readonly data-code="FR"';
-  const africa = ' data-geo="country" data-geo-region="africa" placeholder="Rechercher un pays africain…"';
   return `
-    <label class="full">Sens du trajet<select name="direction"><option value="fa" ${dir === 'fa' ? 'selected' : ''}>France → Afrique</option><option value="af" ${dir === 'af' ? 'selected' : ''}>Afrique → France</option></select></label>
-    <p class="muted full">Les vols relient uniquement la France et un pays africain (Paris → Dakar, Abidjan → Lyon…).</p>
-    ${field('Pays de départ', `name="fromCountry" required value="${fv(fromFixed ? 'France' : (f.fromCountry || ''))}"${fromFixed ? fixed : africa}`)}
-    ${field('Ville de départ', `name="fromCity" required data-geo="city" data-geo-country="fromCountry" ${fromFixed ? '' : 'data-geo-region="africa"'} placeholder="Rechercher une ville…" value="${fv(o?.from_city)}"`)}
-    ${field('Pays d’arrivée', `name="country" required value="${fv(toFixed ? 'France' : (o?.country || ''))}"${toFixed ? fixed : africa}`)}
-    ${field('Ville d’arrivée', `name="toCity" required minlength="2" data-geo="city" data-geo-country="country" ${toFixed ? '' : 'data-geo-region="africa"'} placeholder="Rechercher une ville…" value="${fv(o?.to_city)}"`)}`;
+    ${field('Pays de départ', `name="fromCountry" required data-geo="country" placeholder="Rechercher un pays…" value="${fv(f.fromCountry || '')}"`)}
+    ${field('Ville de départ', `name="fromCity" required data-geo="city" data-geo-country="fromCountry" placeholder="Rechercher une ville…" value="${fv(o?.from_city)}"`)}
+    ${field('Pays d’arrivée', `name="country" required data-geo="country" placeholder="Rechercher un pays…" value="${fv(o?.country || '')}"`)}
+    ${field('Ville d’arrivée', `name="toCity" required minlength="2" data-geo="city" data-geo-country="country" placeholder="Rechercher une ville…" value="${fv(o?.to_city)}"`)}`;
 }
-
-function syncDirection(form) {
-  const fa = form.elements.direction.value === 'fa';
-  const side = (country, city, airport, fixed) => {
-    if (fixed) {
-      country.value = 'France'; country.readOnly = true; country.dataset.code = 'FR';
-      delete country.dataset.geo; delete country.dataset.geoRegion; delete city.dataset.geoRegion;
-    } else {
-      country.readOnly = false; country.dataset.geo = 'country'; country.dataset.geoRegion = 'africa'; city.dataset.geoRegion = 'africa';
-      country.value = ''; delete country.dataset.code;
-    }
-    city.value = '';
-    if (airport) { airport.value = ''; if (fixed) delete airport.dataset.geoRegion; else airport.dataset.geoRegion = 'africa'; }
-  };
-  const e = form.elements;
-  side(e.fromCountry, e.fromCity, e.fromAirport, fa);
-  side(e.country, e.toCity, e.toAirport, !fa);
-}
-document.addEventListener('change', (ev) => { if (ev.target.matches?.('select[name=direction]')) syncDirection(ev.target.form); });
 
 function flightFields(o) {
   const f = o?.flight || {};
@@ -1443,6 +1418,15 @@ function flightFields(o) {
     <p class="muted full">Sur un vol aller-retour, renseignez ce prix pour qu’un autre voyageur puisse prendre uniquement l’aller sur le même vol.</p>`;
 }
 
+// Packs week-end : un seul mode de transport jusqu'à l'hôtel, et les notes de l'hôtel sur les sites d'avis.
+const PACK_TRANSPORTS = [['avion', 'Avion'], ['train', 'Train'], ['bus', 'Bus'], ['voiture', 'Voiture']];
+const TP_ICON = {
+  avion: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2l-1.1 1.1 6.4 3.6-3.3 3.3-2.7-.5L3 14.8l3.2 1.4 1.4 3.2 1.1-1.1-.5-2.7 3.3-3.3 3.6 6.4z"/></svg>',
+  train: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 11h14M9 21l-2-4M15 21l2-4"/><circle cx="9" cy="14" r=".8"/><circle cx="15" cy="14" r=".8"/></svg>',
+  bus: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="15" rx="2"/><path d="M4 11h16M8 21v-3M16 21v-3"/><circle cx="8" cy="14.5" r=".8"/><circle cx="16" cy="14.5" r=".8"/></svg>',
+  voiture: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17h14M3 13l2-6a2 2 0 0 1 1.9-1.4h10.2A2 2 0 0 1 19 7l2 6v4h-2M3 13v4h2M3 13h18"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="16.5" cy="17" r="1.8"/></svg>',
+};
+const RATING_SITES = [['TripAdvisor', 5], ['Booking.com', 10], ['Google', 5]];
 function openOfferModal(type, existing = null) {
   const o = existing;
   const editing = Boolean(o);
@@ -1454,22 +1438,28 @@ function openOfferModal(type, existing = null) {
     confirmLabel: editing ? 'Enregistrer les modifications' : 'Publier', loadingText: editing ? 'Enregistrement…' : 'Création en cours…', wide: true,
     bodyHtml: `
       <div class="form-grid tight">
-        ${field(isPack ? 'Titre' : 'Titre (facultatif)', `name="title" ${isPack ? 'required' : ''} minlength="2" placeholder="${isPack ? 'Pack week-end Barcelone' : 'Auto : Paris → Rome'}" value="${fv(o?.title)}"`, true)}
+        ${field(isPack ? 'Titre' : 'Titre (facultatif)', `name="title" ${isPack ? 'required' : ''} minlength="2" placeholder="${isPack ? 'Week-end gourmand à Bordeaux' : 'Auto : Paris → Rome'}" value="${fv(o?.title)}"`, true)}
         ${isPack ? `
-        ${field('Ville de départ', `name="fromCity" data-geo="city" placeholder="Rechercher une ville…" value="${fv(o?.from_city)}"`)}
-        ${field('Destination', `name="toCity" required minlength="2" data-geo="city" data-geo-country="country" placeholder="Rechercher une ville…" value="${fv(o?.to_city)}"`)}
-        ${field('Pays de destination', `name="country" data-geo="country" placeholder="Rechercher un pays…" value="${fv(o?.country)}"`)}` : routeFields(o)}
-        ${field('Étiquette', `name="badge" placeholder="${isPack ? 'Pack week-end' : 'Bon plan'}" value="${fv(o?.badge)}"`)}
+        ${field('Ville de départ', `name="fromCity" required data-geo="city" placeholder="Rechercher une ville…" value="${fv(o?.from_city)}"`)}
+        ${field('Destination (en France)', `name="toCity" required minlength="2" data-geo="city" data-geo-country="country" placeholder="Rechercher une ville…" value="${fv(o?.to_city)}"`)}
+        ${field('Pays', `name="country" readonly data-code="FR" value="France" title="Les packs week-end sont proposés en France uniquement"`)}
+        <h4 class="form-section full">Transport jusqu’à l’hôtel</h4>
+        <div class="full transport-pick" role="radiogroup" aria-label="Mode de transport">${PACK_TRANSPORTS.map(([k, t]) => `<label class="tp-opt"><input type="radio" name="transportMode" value="${k}" required ${(o?.transport?.mode || '') === k ? 'checked' : ''}><span>${TP_ICON[k]}<b>${t}</b></span></label>`).join('')}</div>
+        ${field('Précision sur le transport (facultatif)', `name="transportDetails" maxlength="160" placeholder="Ex. TGV direct Paris → Bordeaux, aller-retour" value="${fv(o?.transport?.details)}"`, true)}` : routeFields(o)}
+        ${field('Étiquette', `name="badge" placeholder="${isPack ? 'Week-end' : 'Bon plan'}" value="${fv(o?.badge)}"`)}
         ${field(isPack ? 'Prix par voyageur (€)' : 'Prix par voyageur (€)', `name="price" type="number" min="1" step="0.01" required placeholder="129" value="${fv(o?.price)}"`)}
         ${field('Ancien prix barré (€, facultatif)', `name="oldPrice" type="number" min="1" step="0.01" value="${fv(o?.old_price)}"`)}
         ${isPack ? `
         ${field('Début du séjour', `name="startDate" type="date" value="${fv(dateOnly(o?.start_date))}"`)}
         ${field('Fin du séjour', `name="endDate" type="date" value="${fv(dateOnly(o?.end_date))}"`)}
         <h4 class="form-section full">Hôtel inclus dans le pack</h4>
-        ${field('Nom de l’hôtel', `name="hotelName" required maxlength="160" placeholder="Ex. Hôtel Arts Barcelona" value="${fv(o?.hotel_name)}"`, true)}
+        ${field('Nom de l’hôtel', `name="hotelName" required maxlength="160" placeholder="Ex. Hôtel de la Cité, Bordeaux" value="${fv(o?.hotel_name)}"`, true)}
         <label>Catégorie de l’hôtel<select name="hotelStars">${[1, 2, 3, 4, 5].map(n => `<option value="${n}" ${(o?.hotel_stars ? Number(o.hotel_stars) : 3) === n ? 'selected' : ''}>${'★'.repeat(n)} ${n} étoile${n > 1 ? 's' : ''}</option>`).join('')}</select></label>
-        ${field('Nombre de nuits', `name="hotelNights" type="number" min="1" max="60" required placeholder="3" value="${fv(o?.hotel_nights)}"`)}
-        <label>Formule repas<select name="hotelBoard">${options(HOTEL_BOARDS, o?.hotel_board || HOTEL_BOARDS[0])}</select></label>` : flightFields(o)}
+        <label>Formule<select name="hotelNights" required>${[[1, 'Week-end · 1 nuit'], [2, 'Week-end · 2 nuits'], [3, 'Week-end prolongé · 3 nuits']].map(([n, t]) => `<option value="${n}" ${Number(o?.hotel_nights || 2) === n ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+        <label>Formule repas<select name="hotelBoard">${options(HOTEL_BOARDS, o?.hotel_board || HOTEL_BOARDS[0])}</select></label>
+        <h4 class="form-section full">Notes de l’hôtel sur les sites d’avis (facultatif)</h4>
+        <p class="muted full">Recopiez les notes affichées sur TripAdvisor, Booking.com ou Google : elles s’affichent sur l’offre avec leur source.</p>
+        ${RATING_SITES.map(([src, max]) => { const r = (o?.ratings || []).find((x) => x.source === src) || {}; return `<div class="rating-row full"><b>${src}</b>${field(`Note sur ${max}`, `name="rate_${src}" type="number" min="0" max="${max}" step="0.1" placeholder="${max === 10 ? '8.6' : '4.5'}" value="${fv(r.score)}"`)}${field('Nombre d’avis', `name="count_${src}" type="number" min="0" step="1" placeholder="1240" value="${fv(r.count)}"`)}</div>`; }).join('')}` : flightFields(o)}
         <h4 class="form-section full">Visuels et description</h4>
         ${galleryField(isPack ? 'Photos du pack' : 'Photos de l’offre', o?.images)}
         <label class="full">Description<textarea name="description" rows="2" placeholder="Quelques lignes pour donner envie…">${fv(o?.description)}</textarea></label>
@@ -1479,7 +1469,10 @@ function openOfferModal(type, existing = null) {
       const publishAt = editing ? null : readPublishAt(f);
       const g = (n) => f.elements.namedItem(n)?.value;
       const body = { type, title: g('title') || `${g('fromCity') || ''} → ${g('toCity')}`, toCity: g('toCity'), price: Number(g('price')), fromCity: g('fromCity') || undefined, country: g('country') || undefined, badge: g('badge') || undefined, oldPrice: g('oldPrice') ? Number(g('oldPrice')) : undefined, startDate: g('startDate') || undefined, endDate: g('endDate') || undefined, images: JSON.parse(g('images') || '[]'), description: g('description') || undefined };
-      if (isPack) Object.assign(body, { hotelName: g('hotelName'), hotelStars: Number(g('hotelStars')), hotelNights: Number(g('hotelNights')), hotelBoard: g('hotelBoard') });
+      if (isPack) {
+        const ratings = RATING_SITES.map(([source]) => ({ source, score: g(`rate_${source}`), count: g(`count_${source}`) })).filter((r) => r.score !== '' && r.score != null).map((r) => ({ source: r.source, score: Number(r.score), ...(r.count ? { count: Number(r.count) } : {}) }));
+        Object.assign(body, { country: 'France', hotelName: g('hotelName'), hotelStars: Number(g('hotelStars')), hotelNights: Number(g('hotelNights')), hotelBoard: g('hotelBoard'), transport: { mode: f.querySelector('input[name=transportMode]:checked')?.value, details: g('transportDetails') || undefined }, ratings });
+      }
       else {
         const roundtrip = g('tripType') !== 'oneway';
         body.endDate = roundtrip ? g('endDate') || undefined : undefined;

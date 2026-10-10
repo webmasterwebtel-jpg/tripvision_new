@@ -1,5 +1,5 @@
 /* Location de voitures (site public) : catégories, résultats, filtres, détail et parcours de réservation.
-   Tout ce qui est affiché (inclus dans le prix, protection, options, conditions de location) est saisi par le loueur ou le back-office. */
+   Tout ce qui est affiché (inclus dans le prix, protection, options, conditions de location) est saisi par l’enseigne ou le back-office. */
 (() => {
   const E = (v) => escapeHtml(v);
   const svg = (p) => `<svg viewBox="0 0 24 24" aria-hidden="true">${p}</svg>`;
@@ -26,6 +26,9 @@
     driver: svg('<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0M16 5a3.2 3.2 0 0 1 0 6M18 14.5a6 6 0 0 1 3 5.5"/>'),
     rack: svg('<path d="M3 11h18M6 11V8h12v3M5 14l2 3h10l2-3"/>'),
     doc: svg('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/>'),
+    gauge: svg('<path d="M4 17a8 8 0 1 1 16 0"/><path d="m12 17 4-5"/>'),
+    info: svg('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'),
+    wallet: svg('<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M16 12h2M3 9h18"/>'),
   };
 
   const optIcon = (x) => {
@@ -191,9 +194,9 @@
     v.transmission && ['gear', v.transmission], v.airConditioning && ['snow', 'Climatisation'], v.fuelType && ['fuel', v.fuelType], v.volumeM3 && ['box', `${v.volumeM3} m³`],
   ].filter(Boolean).map(([k, t]) => `<li>${I[k]}<span>${E(t)}</span></li>`).join('');
 
-  // Supplément jeune conducteur : s'applique si l'âge saisi à la recherche est sous le seuil fixé par le loueur.
+  // Supplément jeune conducteur : s'applique si l'âge saisi à la recherche est sous le seuil fixé par l’enseigne.
   const youngFeeOf = (v, age = S().age) => (Number(v.youngDriverFee) > 0 && v.youngDriverAge && age && age < Number(v.youngDriverAge) ? Number(v.youngDriverFee) : 0);
-  // Ce que le loueur a coché comme « inclus dans le prix »
+  // Ce que l’enseigne a coché comme « inclus dans le prix »
   function includedList(v) {
     const out = [];
     if (v.freeCancelHours > 0) out.push(`Annulation gratuite jusqu’à ${cancelText(v.freeCancelHours)} avant`);
@@ -253,22 +256,33 @@
     const young = youngFeeOf(v, sr.age);
     return (young ? (v.youngDriverPricing === 'once' ? young : young * d) : 0) + (!sr.sameReturn && v.returnPolicy === 'fee' ? Number(v.returnFee) || 0 : 0);
   }
+  // Faits clés d'une offre, comme sur un comparateur : vert = avantage, ambre = à savoir.
+  function keyFacts(v) {
+    const f = [];
+    f.push(v.unlimitedKm ? ['ok', 'gauge', 'Kilométrage illimité'] : v.includedKm ? ['', 'gauge', `${v.includedKm} inclus${v.extraKmPrice ? `, puis ${euro(v.extraKmPrice)} / km` : ''}`] : null);
+    f.push(v.freeCancelHours > 0 ? ['ok', 'check', `Annulation gratuite jusqu’à ${cancelText(v.freeCancelHours)} avant`] : v.cancelFee ? ['warn', 'info', `Annulation : ${euro(v.cancelFee)} de frais`] : null);
+    f.push(v.fuelPolicy ? ['', 'fuel', `Carburant : ${v.fuelPolicy}`] : null);
+    f.push(v.excess ? ['warn', 'shield', `Franchise ${euro(v.excess)}${v.protectionPricePerDay > 0 ? ' · réductible' : ''}`] : null);
+    f.push(v.deposit != null ? (v.deposit > 0 ? ['', 'wallet', `Dépôt de garantie ${euro(v.deposit)}`] : ['ok', 'wallet', 'Sans dépôt de garantie']) : null);
+    if (v.theftProtection) f.push(['ok', 'check', 'Protection vol incluse']);
+    return f.filter(Boolean).slice(0, 6).map(([t, ic, x]) => `<li class="${t}">${I[ic] || I.check}<span>${E(x)}</span></li>`).join('');
+  }
+  const payOn = () => { try { return Boolean(PAY.payments); } catch { return false; } };
   function card(v) {
     const d = searchDays(), base = rentalTotal(v, d), fees = searchFees(v, d), total = base + fees, per = total / d;
     const old = v.oldPriceDay && Number(v.oldPriceDay) > Number(v.priceDay) ? Number(v.oldPriceDay) * d : null;
     const lessor = lessorOf(v);
     const place = [v.city && v.city !== v.pickupAddress ? v.city : '', v.country].filter(Boolean).join(', ') || v.pickupAddress;
-    const inc = includedList(v).slice(0, 5);
-    return `<article class="rent-card" data-vehicle-id="${v.id}">
-      <div class="rent-media">${TVGallery.html(v.images?.length ? v.images : [v.image], v.name || v.model, { spin: v.spin })}<span class="rent-cat">${E(v.category)}</span>${old ? `<span class="rent-flag deal">-${Math.round((1 - base / old) * 100)} %</span>` : ''}</div>
-      <div class="rent-body">
-        <header><h3>${carName(v)} <small>ou similaire</small></h3><p class="rent-lessor"><span class="lessor-av">${E(initialsOf(lessor))}</span><span>Proposé par <b>${E(lessor)}</b></span><span class="dot">·</span>${I.pin}${E(place)}</p></header>
-        <ul class="rent-specs">${specs(v)}</ul>
-        ${inc.length ? `<ul class="rent-inc">${checkList(inc)}</ul>` : ''}
-        <ul class="rent-chips">${chips(v)}</ul>
-        <div class="rent-links">${v.rentalConditions ? `<button class="rent-link" type="button" data-car-terms="${v.id}">Conditions de location</button>` : ''}</div>
+    const deposit = Math.round(total * (v.commissionPct || 10)) / 100;
+    return `<article class="rent-card rc2" data-vehicle-id="${v.id}">
+      <div class="rc-media"><span class="rc-cat">${E(v.category)}</span>${old ? `<span class="rc-deal">−${Math.round((1 - base / old) * 100)} %</span>` : ''}<img src="${E(v.images?.[0] || v.image || '')}" alt="${E(v.name || v.model)}" loading="lazy" decoding="async"></div>
+      <div class="rc-body">
+        <header><h3>${carName(v)} <small>ou similaire</small></h3></header>
+        <ul class="rent-specs rc-specs">${specs(v)}</ul>
+        <ul class="rc-facts">${keyFacts(v)}</ul>
+        <footer class="rc-foot"><span class="rc-lessor"><span class="lessor-av">${E(initialsOf(lessor))}</span><span><small>Enseigne</small><b>${E(lessor)}</b></span></span><span class="rc-place">${I.pin}<span><small>Retrait</small><b>${E(place)}</b></span></span>${v.rentalConditions ? `<button class="rent-link" type="button" data-car-terms="${v.id}">Conditions de location</button>` : ''}</footer>
       </div>
-      <aside class="rent-price"><small>Prix pour ${dayLabel(d)}</small>${old ? `<s>${euro(old)}</s>` : ''}<strong>${euro(total)}</strong><span>soit ${euro(per)} / jour</span>${fees ? `<span class="rent-fees">dont ${euro(fees)} de frais</span>` : ''}<button class="btn" type="button" data-book="${v.id}">Réserver ${I.arrow}</button></aside>
+      <aside class="rc-price"><small>Prix pour ${dayLabel(d)}</small>${old ? `<s>${euro(old)}</s>` : ''}<strong>${euro(total)}</strong><span>soit ${euro(per)} / jour</span>${fees ? `<span class="rent-fees">dont ${euro(fees)} de frais</span>` : ''}${payOn() ? `<span class="rc-online">Seulement <b>${euro(deposit)}</b> à payer en ligne</span>` : ''}<button class="btn" type="button" data-book="${v.id}">Voir l’offre ${I.arrow}</button>${v.freeCancelHours > 0 ? '<em class="rc-free">Annulation gratuite</em>' : ''}</aside>
     </article>`;
   }
 
@@ -328,7 +342,7 @@
       <fieldset><legend>Inclus</legend>${check('freeCancel', '1', 'Annulation gratuite', F.freeCancel)}${check('freeMod', '1', 'Modifications gratuites', F.freeMod)}${check('unlimited', '1', 'Kilométrage illimité', F.unlimited)}${check('fullIns', '1', 'Assurance tous risques', F.fullIns)}
         <label class="rf-sel">Dépôt de garantie<select data-rf="deposit">${[['', 'Indifférent'], ['0', 'Sans dépôt'], ['500', '500 € maximum'], ['1000', '1 000 € maximum'], ['2000', '2 000 € maximum']].map(([v, l]) => `<option value="${v}" ${F.deposit === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label></fieldset>
       <fieldset><legend>Conducteur</legend>${sel('minAge', 'Âge du conducteur', [['', 'Indifférent'], ['21', '21 ans ou moins exigé'], ['23', '23 ans ou moins exigé'], ['25', '25 ans ou moins exigé']], F.minAge)}</fieldset>
-      ${lessors.length > 1 ? `<fieldset><legend>Loueur</legend>${lessors.map((l) => check('lessor', l, l, F.lessors.has(l))).join('')}</fieldset>` : ''}`;
+      ${lessors.length > 1 ? `<fieldset><legend>Enseigne</legend>${lessors.map((l) => check('lessor', l, l, F.lessors.has(l))).join('')}</fieldset>` : ''}`;
   }
 
   function renderCars() {
@@ -417,7 +431,7 @@
     if (book) { e.preventDefault(); closeModals(); openReserve(book.dataset.book); }
   });
 
-  /* ---------- Fenêtres : détail du véhicule et conditions de location du loueur ---------- */
+  /* ---------- Fenêtres : détail du véhicule et conditions de location de l’enseigne ---------- */
   const modal = () => document.getElementById('carDetailModal');
   function closeModals() { modal()?.classList.remove('open'); }
   document.getElementById('closeCarDetail')?.addEventListener('click', closeModals);
@@ -441,7 +455,7 @@
   const loadPay = () => api('/public/config').then((c) => { PAY = c; payLoaded = true; if (R && !R.done) renderReserve(); }).catch(() => {});
   window.addEventListener('load', loadPay);
   const LABELS = { loc: 'Votre location', opt: 'Protection & options', info: 'Vos informations' };
-  // L'étape « Protection & options » n'existe que si le loueur propose une protection ou des options.
+  // L'étape « Protection & options » n'existe que si l’enseigne propose une protection ou des options.
   const flow = () => { const v = find(R.id); return v.protectionPricePerDay > 0 || (v.extras || []).length ? ['loc', 'opt', 'info'] : ['loc', 'info']; };
 
   function pricing() {
@@ -459,7 +473,7 @@
     if (young) lines.push({ label: `Conducteur de moins de ${v.youngDriverAge} ans${v.youngDriverPricing === 'once' ? ' · forfait' : ` · ${dayLabel(d)}`}`, amount: v.youngDriverPricing === 'once' ? young : young * d });
     if (R.protection && v.protectionPricePerDay > 0) lines.push({ label: `Protection de la franchise · ${dayLabel(d)}`, amount: Number(v.protectionPricePerDay) * d });
     const total = lines.reduce((n, l) => n + l.amount, 0);
-    // Une partie du total se règle en ligne à la réservation (options et frais compris) ; le solde se paie au loueur au retrait.
+    // Une partie du total se règle en ligne à la réservation (options et frais compris) ; le solde se paie à l’enseigne au retrait.
     const online = PAY.payments ? Math.round(total * (Number(v.commissionPct) || 10)) / 100 : 0;
     return { v, d, base, old, lines, total, online, onSite: Math.max(0, Math.round((total - online) * 100) / 100) };
   }
@@ -474,22 +488,22 @@
     requestAnimationFrame(step);
   }
 
-  const returnLabel = (v) => { const l = (v.returnOptions || []).find((x) => x.key === R.returnKey); return l ? l.name : 'Lieu indiqué par le loueur'; };
-  // Le client rend la voiture à l'agence de retrait ou, si le loueur l'autorise, dans un autre lieu (avec ou sans frais).
+  const returnLabel = (v) => { const l = (v.returnOptions || []).find((x) => x.key === R.returnKey); return l ? l.name : 'Lieu indiqué par l’enseigne'; };
+  // Le client rend la voiture à l'agence de retrait ou, si l’enseigne l'autorise, dans un autre lieu (avec ou sans frais).
   function returnHtml(v) {
     const list = v.returnOptions || [];
-    if (!list.length) return `<p>${I.pin}Lieu indiqué par le loueur</p>`;
-    if (list.length === 1) return `<p>${I.pin}${E(list[0].name)}</p><p class="muted">Ce loueur ne propose pas la restitution dans un autre lieu.</p>`;
+    if (!list.length) return `<p>${I.pin}Lieu indiqué par l’enseigne</p>`;
+    if (list.length === 1) return `<p>${I.pin}${E(list[0].name)}</p><p class="muted">Cette enseigne ne propose pas la restitution dans un autre lieu.</p>`;
     return `<div class="ret-list" role="radiogroup" aria-label="Lieu de restitution">${list.map((l) => `<label class="ret-opt ${l.key === R.returnKey ? 'on' : ''}"><input type="radio" name="rsvReturn" value="${E(l.key)}" ${l.key === R.returnKey ? 'checked' : ''}><span class="ret-dot"></span><span class="ret-main"><b>${E(l.name)}</b>${l.address ? `<small>${E(l.address)}</small>` : ''}</span><em>${l.fee > 0 ? `+ ${euro(l.fee)}` : l.same ? 'Inclus' : 'Sans frais'}</em></label>`).join('')}</div>`;
   }
   const depositBox = (v) => v.deposit == null ? '' : v.deposit > 0
-    ? `<div class="rsv-deposit"><span>Dépôt de garantie</span><strong>${euro(v.deposit)}</strong><small>Demandé par le loueur à l’agence au retrait du véhicule, restitué à la fin de la location selon ses conditions.</small></div>`
-    : `<div class="rsv-deposit free"><span>Dépôt de garantie</span><strong>Aucun</strong><small>Le loueur ne demande pas de dépôt de garantie.</small></div>`;
+    ? `<div class="rsv-deposit"><span>Dépôt de garantie</span><strong>${euro(v.deposit)}</strong><small>Demandé par l’enseigne à l’agence au retrait du véhicule, restitué à la fin de la location selon ses conditions.</small></div>`
+    : `<div class="rsv-deposit free"><span>Dépôt de garantie</span><strong>Aucun</strong><small>L’enseigne ne demande pas de dépôt de garantie.</small></div>`;
   function priceCardHtml() {
     const { v, d, total, online, onSite } = pricing();
     return `<section class="rsv-card rsv-pricecard"><h3>${I.shield}Prix de votre location</h3>
       <div class="rsv-bigprice"><span>Prix total · ${dayLabel(d)}</span><strong>${euro(total)}</strong></div>
-      ${PAY.payments ? `<div class="rsv-split2"><div><small>À payer en ligne maintenant</small><b>${euro(online)}</b></div><div><small>À payer au loueur à l’arrivée</small><b>${euro(onSite)}</b></div></div>` : ''}
+      ${PAY.payments ? `<div class="rsv-split2"><div><small>À payer en ligne maintenant</small><b>${euro(online)}</b></div><div><small>À payer à l’enseigne à l’arrivée</small><b>${euro(onSite)}</b></div></div>` : ''}
       ${depositBox(v)}</section>`;
   }
   function sideHtml() {
@@ -508,7 +522,7 @@
         ${lines.map((l) => `<div class="rsv-line"><span>${E(l.label)}</span><b>${euro(l.amount)}</b></div>`).join('')}
         ${old ? `<div class="rsv-save">Vous économisez ${euro(old - lines[0].amount)}</div>` : ''}
         <div class="rsv-total"><span>Total</span><strong data-v="${total}" id="rsvTotal">${euro(total)}</strong></div>
-        ${PAY.payments ? `<div class="rsv-line split"><span>À payer au loueur à l’arrivée</span><b>${euro(onSite)}</b></div><div class="rsv-online"><span>Payez en ligne maintenant</span><strong>${euro(online)}</strong></div>` : ''}
+        ${PAY.payments ? `<div class="rsv-line split"><span>À payer à l’enseigne à l’arrivée</span><b>${euro(onSite)}</b></div><div class="rsv-online"><span>Payez en ligne maintenant</span><strong>${euro(online)}</strong></div>` : ''}
         ${depositBox(v)}
       </div>`}`;
   }
@@ -518,7 +532,7 @@
     return `<ol class="rsv-steps" style="--n:${steps.length}">${steps.map((t, i) => `<li class="${i + 1 === R.step ? 'on' : ''} ${i + 1 < R.step || R.done ? 'done' : ''}"><span>${i + 1 < R.step || R.done ? '✓' : i + 1}</span><b>${t}</b></li>`).join('')}</ol>`;
   }
 
-  // Présentation de l'offre avant le prix : catégorie, loueur, lieu de retrait, puis les caractéristiques.
+  // Présentation de l'offre avant le prix : catégorie, enseigne, lieu de retrait, puis les caractéristiques.
   function offerIntro(v) {
     const place = [v.city && v.city !== v.pickupAddress ? v.city : '', v.country].filter(Boolean).join(', ') || v.pickupAddress;
     return `<div class="rsv-offer-meta">${v.category ? `<span class="rsv-cat">${E(v.category)}</span>` : ''}
@@ -528,14 +542,33 @@
   }
   function highlights(v) {
     const km = v.unlimitedKm ? ['Kilométrage', 'Illimité'] : v.includedKm ? ['Kilométrage', `${v.includedKm}${v.extraKmPrice ? ` · puis ${euro(v.extraKmPrice)} / km` : ''}`] : null;
-    const cancel = v.freeCancelHours > 0 ? ['Annulation', `Gratuite jusqu’à ${cancelText(v.freeCancelHours)} avant le départ`, ...(v.cancelFee ? [`Ensuite : ${euro(v.cancelFee)} de frais`] : [])] : ['Annulation', v.cancelFee ? `Frais d’annulation : ${euro(v.cancelFee)}` : 'Selon les conditions du loueur'];
+    const cancel = v.freeCancelHours > 0 ? ['Annulation', `Gratuite jusqu’à ${cancelText(v.freeCancelHours)} avant le départ`, ...(v.cancelFee ? [`Ensuite : ${euro(v.cancelFee)} de frais`] : [])] : ['Annulation', v.cancelFee ? `Frais d’annulation : ${euro(v.cancelFee)}` : 'Selon les conditions de l’enseigne'];
     const cover = v.fullInsurance ? ['Assurance', 'Tous risques incluse'] : v.theftProtection ? ['Assurance', 'Protection contre le vol incluse'] : v.insuranceType ? ['Assurance', v.insuranceType] : null;
     const age = ['Conducteur', v.minAge ? `${v.minAge} ans minimum` : '18 ans minimum', ...(Number(v.youngDriverFee) > 0 && v.youngDriverAge ? [`Moins de ${v.youngDriverAge} ans : + ${euro(v.youngDriverFee)}${v.youngDriverPricing === 'once' ? ' (forfait)' : ' / jour'}`] : [])];
     const ret = v.returnPolicy === 'free' ? ['Restitution', 'Possible dans un autre lieu, sans frais'] : v.returnPolicy === 'fee' ? ['Restitution', `Possible dans un autre lieu : + ${euro(v.returnFee)}`] : ['Restitution', 'À l’agence de retrait'];
-    const dep = v.deposit == null ? null : ['Dépôt de garantie', v.deposit > 0 ? `${euro(v.deposit)}, demandé par le loueur au retrait` : 'Aucun dépôt demandé'];
+    const dep = v.deposit == null ? null : ['Dépôt de garantie', v.deposit > 0 ? `${euro(v.deposit)}, demandé par l’enseigne au retrait` : 'Aucun dépôt demandé'];
     const exc = v.excess ? ['Franchise', `${euro(v.excess)} en cas de dommage ou de vol${v.protectionPricePerDay > 0 ? ', réductible avec la protection (étape suivante)' : ''}`] : null;
     const fuel = v.fuelPolicy ? ['Carburant', v.fuelPolicy] : null;
     return [km, cancel, cover, age, ret, dep, exc, fuel].filter(Boolean).map(([t, ...d]) => `<li><b>${E(t)}</b><span>${d.map(E).join('<br>')}</span></li>`).join('');
+  }
+  // La franchise expliquée simplement, avec les montants de l'offre (comme sur un comparateur).
+  function franchiseHtml(v) {
+    const prot = Number(v.protectionPricePerDay) > 0, d = searchDays();
+    if (!v.excess && !prot) return '';
+    const amount = v.excess ? euro(v.excess) : 'le montant prévu au contrat';
+    return `<section class="rsv-card fr-explain"><h3>${I.shield}La franchise, simplement</h3>
+      <div class="fr-top">${v.excess ? `<div class="fr-amount"><small>Franchise de cette offre</small><strong>${euro(v.excess)}</strong><span>montant maximum à votre charge en cas de dommage ou de vol</span></div>` : ''}
+        <ol class="fr-steps">
+          <li><b>Au retrait</b><span>${v.deposit > 0 ? `L’enseigne bloque un dépôt de garantie de ${euro(v.deposit)} sur votre carte bancaire. Il est débloqué au retour si tout va bien.` : 'L’enseigne vérifie le véhicule avec vous : notez et photographiez chaque rayure avant de partir.'}</span></li>
+          <li><b>En cas de dommage ou de vol</b><span>L’enseigne peut vous facturer jusqu’à ${amount}. Au-delà, c’est son assurance qui paie.</span></li>
+          ${prot ? `<li><b>Avec la protection</b><span>Ajoutez la protection de la franchise (${euro(v.protectionPricePerDay)} / jour) : la somme retenue par l’enseigne vous est remboursée.</span></li>` : ''}
+        </ol></div>
+      ${prot ? `<div class="fr-compare">
+        <div><b>Sans protection</b><span class="bad">Jusqu’à ${amount} à payer</span><small>en cas de rayure, de choc ou de vol</small></div>
+        <div class="best"><i>Conseillé</i><b>Avec la protection</b><span class="good">Franchise remboursée</span><small>+ ${euro(Number(v.protectionPricePerDay) * d)} pour ${dayLabel(d)}, à choisir à l’étape suivante</small></div>
+      </div>` : ''}
+      <p class="fr-note">${I.info}Franchise et dépôt de garantie sont deux choses différentes : le dépôt est seulement bloqué sur votre carte, la franchise est ce que vous payez vraiment en cas de sinistre.</p>
+    </section>`;
   }
   function step1() {
     const { v } = pricing();
@@ -545,6 +578,7 @@
     return `
       <section class="rsv-card rsv-offer"><span class="eyebrow">Votre offre</span><h3>${carName(v)} <small>ou similaire</small></h3>${offerIntro(v)}
         <ul class="rsv-hl">${highlights(v)}</ul></section>
+      ${franchiseHtml(v)}
       <section class="rsv-card"><h3>${I.cal}Retrait et restitution</h3>
         <div class="rsv-two">
           <div><small>Récupérer la voiture</small><b>${E(dayFmt(S().startDate))}</b><span>${E(S().startTime)}</span><p>${I.pin}${E(pick)}</p><p class="muted">${E(v.pickupAddress || '')}</p>${v.officeHours ? `<p>${I.clock}${E(v.officeHours)}</p>` : ''}${v.pickupInstructions ? `<p class="muted">${E(v.pickupInstructions)}</p>` : ''}</div>
@@ -556,7 +590,8 @@
       ${v.rentalConditions ? `<section class="rsv-card"><h3>${I.doc}Conditions de location</h3><p class="muted">Rédigées par ${E(lessorOf(v))}.</p><button type="button" class="rent-link" data-car-terms="${v.id}">Lire les conditions de location</button></section>` : ''}
       <span id="rsvPriceAnchor"></span>
       ${priceCardHtml()}
-      <div class="rsv-nav"><span></span><button class="btn" type="button" data-rsv-next>Continuer ${I.arrow}</button></div>`;
+      <div class="rsv-nav"><span></span><button class="btn" type="button" data-rsv-next>Continuer ${I.arrow}</button></div>
+      ${packsXsell(v)}`;
   }
 
   function step2() {
@@ -572,10 +607,10 @@
     }).join('');
     return `
       ${prot ? `<section class="rsv-card protect"><h3>${I.shield}Protégez votre franchise</h3>
-        <p class="muted">${v.excess ? `En cas de dommage ou de vol, la franchise de <b>${euro(v.excess)}</b> reste à votre charge.` : 'Option proposée par le loueur pour limiter votre responsabilité en cas de dommage.'}</p>
+        <p class="muted">${v.excess ? `En cas de dommage ou de vol, la franchise de <b>${euro(v.excess)}</b> reste à votre charge.` : 'Option proposée par l’enseigne pour limiter votre responsabilité en cas de dommage.'}</p>
         <div class="prot-grid">
-          <label class="prot ${R.protection ? '' : 'on'}"><input type="radio" name="rsvProt" value="0" ${R.protection ? '' : 'checked'}><b>Sans protection</b><span>${v.excess ? `Franchise : ${euro(v.excess)}` : 'Selon le contrat du loueur'}</span><em>Inclus</em></label>
-          <label class="prot best ${R.protection ? 'on' : ''}"><input type="radio" name="rsvProt" value="1" ${R.protection ? 'checked' : ''}><i class="prot-badge">Recommandé</i><b>Avec la protection de la franchise</b><span>Proposée par ${E(lessorOf(v))}</span><em>+ ${euro(protTotal)} <small>(${euro(v.protectionPricePerDay)} / jour)</small></em></label>
+          <label class="prot ${R.protection ? '' : 'on'}"><input type="radio" name="rsvProt" value="0" ${R.protection ? '' : 'checked'}><b>Sans protection</b><span>${v.excess ? `Franchise : ${euro(v.excess)}` : 'Selon le contrat de l’enseigne'}</span><em>Inclus</em></label>
+          <label class="prot best ${R.protection ? 'on' : ''}"><input type="radio" name="rsvProt" value="1" ${R.protection ? 'checked' : ''}><i class="prot-badge">Recommandé</i><b>Avec la protection de la franchise</b><span>La franchise retenue par l’enseigne vous est remboursée</span><em>+ ${euro(protTotal)} <small>(${euro(v.protectionPricePerDay)} / jour)</small></em></label>
         </div></section>` : ''}
       <section class="rsv-card"><h3>${I.plus}Options</h3>${extras ? `<div class="opt-list">${extras}</div>` : '<p class="muted">Aucune option n’est proposée pour ce véhicule.</p>'}</section>
       <div class="rsv-nav"><button class="btn ghost" type="button" data-rsv-prev>${I.back} Retour</button><button class="btn" type="button" data-rsv-next>Continuer ${I.arrow}</button></div>`;
@@ -583,7 +618,7 @@
 
   const ageNote = (v, age) => {
     const bits = [];
-    if (v.minAge) bits.push(`Le loueur demande ${v.minAge} ans minimum.`);
+    if (v.minAge) bits.push(`L’enseigne demande ${v.minAge} ans minimum.`);
     if (Number(v.youngDriverFee) > 0 && v.youngDriverAge) bits.push(age && age < Number(v.youngDriverAge) ? `Supplément jeune conducteur appliqué : + ${euro(v.youngDriverFee)}${v.youngDriverPricing === 'once' ? ' (forfait)' : ' / jour'}.` : `Supplément de ${euro(v.youngDriverFee)}${v.youngDriverPricing === 'once' ? '' : ' / jour'} pour les moins de ${v.youngDriverAge} ans.`);
     return bits.join(' ');
   };
@@ -599,7 +634,7 @@
           <label>E-mail ${REQ}<input name="email" type="email" required autocomplete="email" value="${E(TVAuth.session?.user.email || x.email || '')}" ${TVAuth.session ? 'readonly' : ''}><small>Votre réservation sera rattachée à votre compte TripVision.</small></label>
           <label>Téléphone ${REQ}<input name="phone" type="tel" required autocomplete="tel" placeholder="+33 6 00 00 00 00" value="${E(x.phone || '')}"></label>
           <label>Âge du conducteur ${REQ}<input name="driverAge" type="number" required min="${v.minAge || 18}" max="99" value="${E(x.driverAge || S().age || '')}"><small data-age-note>${ageNote(v, Number(x.driverAge || S().age))}</small></label>
-          <label class="wide">Une précision pour le loueur ? (facultatif)<textarea name="message" rows="3" placeholder="Heure d’arrivée du vol, siège bébé…">${E(x.message || '')}</textarea></label>
+          <label class="wide">Une précision pour l’enseigne ? (facultatif)<textarea name="message" rows="3" placeholder="Heure d’arrivée du vol, siège bébé…">${E(x.message || '')}</textarea></label>
         </div>
         ${PAY.payments
           ? `<p class="rsv-pay big">${I.shield}<span>Vous allez être redirigé vers la page de paiement sécurisée de <b>Stripe</b>.</span></p>${PAY.testMode ? '<p class="rsv-test"><b>Mode test</b> : utilisez la carte 4242 4242 4242 4242, une date d’expiration future et un code à 3 chiffres. Aucun débit réel.</p>' : ''}`
@@ -608,6 +643,14 @@
         <div class="rsv-nav"><button class="btn ghost" type="button" data-rsv-prev>${I.back} Retour</button><button class="btn" type="submit" id="rsvSubmit">${PAY.payments ? `Payer ${euro(pricing().online)}` : 'Suivant'} ${I.arrow}</button></div></form>`;
   }
 
+  // Vente croisée : un week-end tout organisé dans la ville de la location.
+  function packsXsell(v) {
+    const city = String(v.city || '').toLowerCase();
+    if (!city || typeof state === 'undefined' || typeof packCard !== 'function') return '';
+    const list = (state.packs || []).filter((p) => String(p.to_city || '').toLowerCase().includes(city)).slice(0, 2);
+    if (!list.length) return '';
+    return `<section class="rsv-card xsell-packs"><span class="eyebrow">Et pourquoi pas…</span><h3>Un week-end tout organisé à ${E(v.city)}</h3><p class="muted">Transport et hôtel réunis : ajoutez une escapade à votre location.</p><div class="pack-grid">${list.map(packCard).join('')}</div></section>`;
+  }
   function step4() {
     const { v, lines, total } = pricing();
     const b = R.done;
@@ -616,7 +659,8 @@
         <h2>Demande envoyée !</h2><p class="done-ref">Référence <b>${E(b.reference)}</b></p>
         <p class="muted">Un e-mail de confirmation de réception vient de vous être envoyé. ${E(lessorOf(v))} vérifie la disponibilité et vous répond très vite ; vous serez prévenu par e-mail et dans votre espace.</p>
         <div class="done-sum"><div><small>Véhicule</small><b>${E(v.name || v.model)}</b></div><div><small>Du</small><b>${E(dayFmt(S().startDate))} · ${E(S().startTime)}</b></div><div><small>Au</small><b>${E(dayFmt(S().endDate))} · ${E(S().endTime)}</b></div><div><small>Total estimé</small><b>${euro(total)}</b></div></div>
-        <div class="rsv-nav center"><a class="btn" href="#login" data-page-link="login">Suivre ma réservation</a><a class="btn ghost" href="#cars" data-page-link="cars">Voir d’autres voitures</a></div></section>`;
+        <div class="rsv-nav center"><a class="btn" href="#login" data-page-link="login">Suivre ma réservation</a><a class="btn ghost" href="#cars" data-page-link="cars">Voir d’autres voitures</a></div></section>
+      ${packsXsell(v)}`;
   }
 
   /* ---------- Le parcours survit à l'actualisation de la page (le temps de l'onglet) ---------- */
@@ -810,8 +854,8 @@
       <section class="rsv-card rsv-done ${ok ? '' : 'failed'}">${ok ? '<div class="done-mark"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="m15 27 8 8 15-17"/></svg></div>' : '<div class="fail-mark">!</div>'}
         <h2>${ok ? 'Merci, votre réservation est confirmée !' : kind === 'pending' ? 'Paiement en cours de vérification' : 'Paiement non abouti'}</h2>
         ${d?.reference ? `<p class="done-ref">Référence <b>${E(d.reference)}</b></p>` : ''}
-        <p class="muted">${ok ? 'Votre paiement est bien enregistré et le loueur est prévenu. Un e-mail récapitulatif arrive dans votre boîte de réception, et vous retrouvez tous les détails dans votre espace client.' : kind === 'pending' ? 'Votre paiement n’est pas encore confirmé. Actualisez cette page dans un instant.' : 'Aucun montant n’a été débité et la réservation n’a pas été enregistrée. Le véhicule est de nouveau disponible : vous pouvez réessayer.'}</p>
-        ${ok && d ? `<div class="done-sum"><div><small>Véhicule</small><b>${E(d.vehicle)}</b></div><div><small>Du</small><b>${E(dayFmt(d.startDate))} · ${E(d.startTime || '')}</b></div><div><small>Au</small><b>${E(dayFmt(d.endDate))} · ${E(d.endTime || '')}</b></div><div><small>Payé en ligne</small><b>${euro(d.paid ?? d.total)}</b></div><div><small>À régler au loueur au retrait</small><b>${euro(Math.max(0, (d.total || 0) - (d.paid || 0)))}</b></div></div>` : ''}
+        <p class="muted">${ok ? 'Votre paiement est bien enregistré et l’enseigne est prévenue. Un e-mail récapitulatif arrive dans votre boîte de réception, et vous retrouvez tous les détails dans votre espace client.' : kind === 'pending' ? 'Votre paiement n’est pas encore confirmé. Actualisez cette page dans un instant.' : 'Aucun montant n’a été débité et la réservation n’a pas été enregistrée. Le véhicule est de nouveau disponible : vous pouvez réessayer.'}</p>
+        ${ok && d ? `<div class="done-sum"><div><small>Véhicule</small><b>${E(d.vehicle)}</b></div><div><small>Du</small><b>${E(dayFmt(d.startDate))} · ${E(d.startTime || '')}</b></div><div><small>Au</small><b>${E(dayFmt(d.endDate))} · ${E(d.endTime || '')}</b></div><div><small>Payé en ligne</small><b>${euro(d.paid ?? d.total)}</b></div><div><small>À régler à l’enseigne au retrait</small><b>${euro(Math.max(0, (d.total || 0) - (d.paid || 0)))}</b></div></div>` : ''}
         <div class="rsv-nav center">${ok ? '<a class="btn" href="#login" data-page-link="login">Suivre ma réservation</a>' : '<button class="btn" type="button" data-pay-exit>Revenir aux voitures</button>'}</div></section>`;
   };
   async function handlePaymentReturn() {

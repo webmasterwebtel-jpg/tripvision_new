@@ -51,7 +51,7 @@ function priceBox(doc, { total, online, onsite, deposit }) {
   if (onsite != null) {
     doc.font('Helvetica').fontSize(9).fillColor(MUTED).text('PAYÉ EN LIGNE', 300, y + 14, { characterSpacing: 1.2 });
     doc.font('Helvetica-Bold').fontSize(15).fillColor('#1f7a55').text(eur(online), 300, y + 28);
-    doc.font('Helvetica').fontSize(9).fillColor(MUTED).text('À RÉGLER AU LOUEUR AU RETRAIT', 300, y + 54, { characterSpacing: 0.6 });
+    doc.font('Helvetica').fontSize(9).fillColor(MUTED).text('À RÉGLER À L’ENSEIGNE AU RETRAIT', 300, y + 54, { characterSpacing: 0.6 });
     doc.font('Helvetica-Bold').fontSize(15).fillColor(INK).text(eur(onsite), 300, y + 67);
   }
   doc.y = y + (onsite != null ? 96 : 60) + 10;
@@ -59,7 +59,7 @@ function priceBox(doc, { total, online, onsite, deposit }) {
     const dy = doc.y;
     doc.roundedRect(48, dy, 499, 40, 8).lineWidth(1.5).strokeColor('#d9a13b').fillAndStroke('#fff8e6', '#d9a13b');
     doc.font('Helvetica-Bold').fontSize(9).fillColor('#8a5a00').text('DÉPÔT DE GARANTIE', 64, dy + 8, { characterSpacing: 1 });
-    doc.font('Helvetica').fontSize(8.5).fillColor('#4d3a07').text(deposit > 0 ? 'Demandé par le loueur à l’agence, au retrait du véhicule.' : 'Le loueur ne demande pas de dépôt de garantie.', 64, dy + 22);
+    doc.font('Helvetica').fontSize(8.5).fillColor('#4d3a07').text(deposit > 0 ? 'Demandé par l’enseigne à l’agence lors du retrait du véhicule.' : 'L’enseigne ne demande pas de dépôt de garantie.', 64, dy + 22);
     doc.font('Helvetica-Bold').fontSize(16).fillColor('#8a5a00').text(deposit > 0 ? eur(deposit) : 'Aucun', 380, dy + 12, { width: 150, align: 'right' });
     doc.y = dy + 50;
   }
@@ -77,9 +77,9 @@ export function bookingPdf(b) {
   const doc = start();
   doc.options.bufferPages = true;
   const confirmed = b.status === 'confirmed' || b.status === 'completed';
-  header(doc, { title: 'Confirmation de location de voiture', reference: b.reference, status: { ok: confirmed, label: confirmed ? 'Confirmée' : ['inactive', 'cancelled'].includes(b.status) ? 'Annulée' : 'En attente' } });
+  header(doc, { title: 'Voucher de location de voiture', reference: b.reference, status: { ok: confirmed, label: confirmed ? 'Confirmée' : ['inactive', 'cancelled'].includes(b.status) ? 'Annulée' : 'En attente' } });
   section(doc, 'Votre véhicule');
-  rows(doc, [['Véhicule', b.vehicle], ['Loueur', b.lessor], ['Réservé le', day(b.createdAt)]]);
+  rows(doc, [['Véhicule', b.vehicle], ['Enseigne', b.lessor], ['Réservé le', day(b.createdAt)]]);
   section(doc, 'Retrait et restitution');
   rows(doc, [['Départ', when(b.startDate, b.startTime)], ['Lieu de prise en charge', b.pickup], ['Retour', when(b.endDate, b.endTime)], ['Lieu de restitution', b.returnPlace], ['Horaires de l’agence', b.officeHours]]);
   section(doc, 'Conducteur principal');
@@ -92,7 +92,7 @@ export function bookingPdf(b) {
   const paid = b.paymentStatus === 'paid';
   priceBox(doc, { total: b.total, online: b.paidAmount, onsite: paid ? b.payOnPickup : null, deposit: b.deposit });
   if (b.conditions && Object.values(b.conditions).some(Boolean)) {
-    section(doc, 'Conditions du loueur');
+    section(doc, 'Conditions de l’enseigne');
     rows(doc, [['Kilométrage', b.conditions.mileage], ['Carburant', b.conditions.fuelPolicy], ['Annulation', b.conditions.freeCancelHours > 0 ? `Gratuite jusqu’à ${b.conditions.freeCancelHours} h avant le départ` : ''], ['Âge minimum', b.conditions.minAge ? `${b.conditions.minAge} ans` : ''], ['Franchise', b.conditions.excess != null ? eur(b.conditions.excess) : ''], ['Assurance', b.conditions.insuranceType]]);
     if (b.conditions.text) {
       doc.moveDown(0.4);

@@ -10,9 +10,9 @@
 
   /* ---------- Bannières vidéo ---------- */
   const HEROES = [
-    ['.flight-premium-hero', 'flights', ['boarding', 'takeoff', 'clouds', 'window', 'gate', 'cockpit', 'wing-night', 'sunset-landing']],
-    ['.car-premium-hero', 'cars', ['mountain-road-1', 'night-highway', 'mountain-road-2', 'mountain-road-3']],
-    ['.weekend-editorial-hero', 'weekend', ['beach-1', 'oia', 'beach-2', 'beach-sunset']],
+    ['.flight-premium-hero', 'flights', ['takeoff', 'boarding', 'window', 'gate', 'cockpit']],
+    ['.car-premium-hero', 'cars', ['mountain-road-1', 'mountain-road-2', 'mountain-road-3']],
+    ['.weekend-editorial-hero', 'weekend', ['beach-1', 'oia', 'beach-2']],
   ];
   function mountHero([sel, dir, names]) {
     const hero = document.querySelector(sel);
