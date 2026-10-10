@@ -53,7 +53,6 @@
   .rsl-art .trail{fill:none;stroke:#cfd8d3;stroke-width:2.4;stroke-linecap:round;stroke-dasharray:18 10;animation:rslLane .45s linear infinite}
   .rsl-art .near{animation:rslFar 3.2s linear infinite}
   .rsl-art .beacon{animation:rslTwk 1.1s ease-in-out infinite}
-  .rsl-art .engine{animation:rslBob .25s ease-in-out infinite}
   .rsl-art .drive{animation:rslDrive 4.2s cubic-bezier(.45,.05,.55,.95) infinite}
   @keyframes rslDrive{0%{transform:translateX(-140px)}100%{transform:translateX(390px)}}
   .rsl-art .glow{transform-box:fill-box;transform-origin:center;animation:rslGlow 2.6s ease-in-out infinite}
