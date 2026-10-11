@@ -851,3 +851,10 @@ td strong + .row-link{display:flex;width:max-content}
 .drawer.chat-drawer .chat-formats{font-size:11px;color:var(--muted)}
 @media(max-height:760px){.drawer.chat-drawer .chat-meta{display:none}.drawer.chat-drawer .chat-body{flex-basis:260px!important;min-height:260px!important}}
 @media(max-width:560px){.drawer.chat-drawer .drawer-head h3{font-size:19px!important}.drawer.chat-drawer .chat-body{padding:12px}.drawer.chat-drawer .chat-formats{display:none}}
+
+/* Fenêtre de conversation : l'en-tête (avec la croix) reste toujours visible, même en faisant défiler */
+.drawer.chat-drawer .drawer-head{position:sticky;top:0;z-index:4;background:var(--paper,#fdfbf6);box-shadow:0 1px 0 var(--line-soft,#ece7dc)}
+.drawer.chat-drawer .chat-form-actions [data-action="close-drawer"]{order:8}
+.drawer.chat-drawer .chat-form-actions button[type=submit]{order:9;margin-left:0}
+.drawer.chat-drawer .chat-form-actions{justify-content:flex-start}
+.drawer.chat-drawer .chat-closed{display:flex;flex-wrap:wrap;gap:8px}

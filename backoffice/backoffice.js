@@ -573,12 +573,12 @@ async function openChat(id, keepDraft = false) {
         <button class="icon-btn light" type="button" data-action="close-drawer" aria-label="Fermer">${icon('close')}</button></header>
       <div class="drawer-body chat-body">${bubbles}</div>
       ${closed
-        ? `<footer class="drawer-foot chat-closed">${toggle || '<p class="muted">Conversation clôturée.</p>'}</footer>`
+        ? `<footer class="drawer-foot chat-closed">${toggle || '<p class="muted">Conversation clôturée.</p>'}<button class="btn" type="button" data-action="close-drawer">Fermer la fenêtre</button></footer>`
         : `<form id="chatReplyForm" class="drawer-foot chat-form" data-thread="${esc(id)}">
             <div class="chat-tabs" role="tablist"><button type="button" class="${CH.mode === 'reply' ? 'on' : ''}" data-chat-mode="reply">Répondre au ${t.kind === 'client' ? 'client' : 'partenaire'}</button><button type="button" class="${CH.mode === 'note' ? 'on' : ''}" data-chat-mode="note">Note interne</button></div>
             <textarea name="message" ${CH.mode === 'note' ? 'required' : ''} maxlength="4000" rows="3" placeholder="${CH.mode === 'note' ? 'Note visible uniquement par l’équipe…' : 'Votre réponse…'}"></textarea>
             <div class="chat-files" id="chatFiles">${chatFileChips()}</div>
-            <div class="chat-form-actions"><label class="btn small file-btn" ${CH.mode === 'note' ? 'hidden' : ''}>${icon('upload')} Joindre<input type="file" id="chatFile" accept="${CHAT_ACCEPT}" multiple hidden></label><span class="chat-formats">JPG, PNG ou PDF · 8 Mo</span>${CH.mode === 'note' ? '' : cannedSel}${toggle}<button class="btn primary" type="submit">${CH.mode === 'note' ? 'Ajouter la note' : 'Envoyer'}</button></div>
+            <div class="chat-form-actions"><label class="btn small file-btn" ${CH.mode === 'note' ? 'hidden' : ''}>${icon('upload')} Joindre<input type="file" id="chatFile" accept="${CHAT_ACCEPT}" multiple hidden></label><span class="chat-formats">JPG, PNG ou PDF · 8 Mo</span>${CH.mode === 'note' ? '' : cannedSel}${toggle}<button class="btn" type="button" data-action="close-drawer">Fermer la fenêtre</button><button class="btn primary" type="submit">${CH.mode === 'note' ? 'Ajouter la note' : 'Envoyer'}</button></div>
           </form>`}`;
     $('#drawer').hidden = false;
     $('#overlay').hidden = false;
