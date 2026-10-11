@@ -567,7 +567,7 @@ async function openChat(id, keepDraft = false) {
     const assign = `<div class="chat-assign"><span>${t.assigned_name ? `Attribuée à <b>${esc(t.assigned_name)}</b>` : 'Non attribuée'}</span>${!closed && !mine ? actionBtn('chat-take', id, 'Prendre en charge') : ''}${d.canManage && !closed && CH.staff?.length ? `<select data-chat-assign="${esc(id)}" aria-label="Attribuer à"><option value="">Attribuer à…</option>${CH.staff.map(u => `<option value="${esc(u.id)}" ${u.id === t.assigned_to ? 'selected' : ''}>${esc(u.name)} · ${esc(ROLE_LABELS[u.role] || u.role)}</option>`).join('')}${t.assigned_to ? '<option value="none">Retirer l’attribution</option>' : ''}</select>` : ''}</div>`;
     const meta = `<div class="chat-meta">${resp != null ? `<span>${icon('clock')} 1ʳᵉ réponse en ${resp < 60 ? `${resp} min` : `${Math.round(resp / 6) / 10} h`}</span>` : '<span>Pas encore de réponse</span>'}${t.rating ? `<span class="rating" title="${t.rating}/5">${'★'.repeat(t.rating)}${'☆'.repeat(5 - t.rating)}</span>${t.rating_comment ? `<em>« ${esc(t.rating_comment)} »</em>` : ''}` : closed ? '<span class="muted">Avis du client : pas encore donné</span>' : ''}</div>`;
     const cannedSel = canned.length ? `<select data-chat-canned aria-label="Réponses types"><option value="">Réponses types…</option>${canned.map(c => `<option value="${esc(c.id)}">${esc(c.title)}</option>`).join('')}</select>` : '';
-    $('#drawer').innerHTML = `
+    $('#drawer').className = 'drawer chat-drawer'; $('#drawer').innerHTML = `
       <header class="drawer-head"><div><span class="eyebrow">Messagerie ${t.kind === 'client' ? 'client' : 'partenaire'}</span><h3>${esc(t.subject || 'Conversation')}</h3>
         <div class="drawer-status">${chatBadge({ ...t, unread: 0 })}<span class="muted">${esc(t.partner_name)} · ${esc(t.partner_email)}</span></div>${assign}${meta}</div>
         <button class="icon-btn light" type="button" data-action="close-drawer" aria-label="Fermer">${icon('close')}</button></header>
@@ -682,7 +682,7 @@ async function openClientDrawer(id) {
       ...d.bookings.map(b => ({ ref: b.reference, title: b.vehicle_name, line: `${fmtDay(b.start_date)} → ${fmtDay(b.end_date)}`, status: b.status, at: b.created_at })),
       ...d.requests.map(r => ({ ref: refOfRequest(r), title: r.offer_title, line: r.summary, status: r.status === 'cancelled' ? 'inactive' : r.status, at: r.created_at })),
     ].sort((a, b) => new Date(b.at) - new Date(a.at));
-    $('#drawer').innerHTML = `
+    $('#drawer').className = 'drawer'; $('#drawer').innerHTML = `
       <header class="drawer-head"><div><span class="eyebrow">Client</span><h3>${esc(c.name)}</h3><div class="drawer-status">${c.active ? badge('active', 'Actif') : badge('inactive', 'Bloqué')}</div></div>
         <button class="icon-btn light" type="button" data-action="close-drawer" aria-label="Fermer">${icon('close')}</button></header>
       <div class="drawer-body">${kv([['E-mail', esc(c.email)], ['Téléphone', esc(c.phone)], ['Inscrit le', fmtDate(c.created_at)], ['Dernière connexion', c.last_login_at ? fmtDate(c.last_login_at) : 'Jamais']])}
@@ -834,7 +834,7 @@ function openDrawer(kind, id) {
     const b = DATA.bookings.find(x => x.id === id);
     if (b?.unseen_staff) { b.unseen_staff = false; document.querySelector(`#tblBookings tr[data-id="${CSS.escape(id)}"] .new-tag`)?.remove(); markSeen(`/admin/bookings/${id}/seen`); }
   }
-  $('#drawer').innerHTML = `
+  $('#drawer').className = 'drawer'; $('#drawer').innerHTML = `
     <header class="drawer-head"><div><span class="eyebrow">${esc(d.eyebrow)}</span><h3>${esc(d.title)}</h3><div class="drawer-status">${d.status}</div></div>
       <button class="icon-btn light" type="button" data-action="close-drawer" aria-label="Fermer">${icon('close')}</button></header>
     <div class="drawer-body">${d.image ? `<img class="drawer-img" src="${esc(d.image)}" alt="">` : ''}${d.images?.length > 1 ? `<div class="drawer-thumbs">${d.images.map(u => `<img src="${esc(u)}" alt="" data-thumb>`).join('')}</div>` : ''}${d.body}</div>
@@ -1571,7 +1571,7 @@ async function openTrendDetail(kind) {
     const d = await api(`/admin/trends/detail?kind=${kind}&period=${DATA.trendPeriodNow || '30d'}`);
     const head = kind === 'bookings' ? ['Date', 'Type', 'Offre', 'Ville', 'Client', 'Montant', 'Statut'] : ['Date', 'Type', 'Libellé', 'Ville', 'Pays'];
     const rows = d.rows.map((r) => `<tr><td>${fmtDate(r.date)}</td><td>${esc(r.type)}</td><td><strong>${esc(r.label || '—')}</strong></td><td>${esc(r.city || '—')}</td>${kind === 'bookings' ? `<td>${esc(r.customer || '—')}</td><td class="num">${money(r.amount)}</td><td>${badge(r.status)}</td>` : `<td>${esc(r.country || '—')}</td>`}</tr>`).join('');
-    $('#drawer').innerHTML = `<header class="drawer-head"><div><span class="eyebrow">Statistiques</span><h3>${TREND_TITLES[kind]}</h3><div class="drawer-status"><span class="muted">${d.rows.length} ligne${d.rows.length > 1 ? 's' : ''} sur la période${d.rows.length >= 1000 ? ' (les 1 000 plus récentes)' : ''}</span></div></div><button class="icon-btn light" type="button" data-action="close-drawer" aria-label="Fermer">${icon('close')}</button></header>
+    $('#drawer').className = 'drawer'; $('#drawer').innerHTML = `<header class="drawer-head"><div><span class="eyebrow">Statistiques</span><h3>${TREND_TITLES[kind]}</h3><div class="drawer-status"><span class="muted">${d.rows.length} ligne${d.rows.length > 1 ? 's' : ''} sur la période${d.rows.length >= 1000 ? ' (les 1 000 plus récentes)' : ''}</span></div></div><button class="icon-btn light" type="button" data-action="close-drawer" aria-label="Fermer">${icon('close')}</button></header>
       <div class="drawer-body">${d.rows.length ? `<div class="table-wrap"><table class="detail-table"><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="muted">Aucune donnée sur cette période.</p>'}</div>`;
     $('#drawer').hidden = false; $('#overlay').hidden = false; document.body.classList.add('drawer-open');
   } catch (err) { toast(err.message); }
