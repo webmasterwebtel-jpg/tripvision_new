@@ -327,6 +327,9 @@
       if (u) { if (!form.elements.name.value) form.elements.name.value = u.name || ''; if (!form.elements.phone.value && u.phone) form.elements.phone.value = u.phone; }
     };
     drawAcct();
+    // Session fermée après 15 min sans activité : l'encart repasse en « Me connecter ».
+    window.__pdDrawAcct = () => { if (acct.isConnected) drawAcct(); };
+    if (!window.__pdExpireHook) { window.__pdExpireHook = true; window.addEventListener('tvauth:expired', () => window.__pdDrawAcct?.()); }
     const login = async () => {
       try { await window.TVAuth.require({ reason: 'Pour réserver un séjour, connectez-vous ou créez votre compte TripVision. Vos informations saisies sont conservées.' }); } catch { return false; }
       drawAcct(); return true;
@@ -467,8 +470,9 @@
   const AFRICA = /Sénégal|Côte d’Ivoire|Cameroun|Maroc|Gabon|Congo|Tunisie|Algérie|Bénin|Togo|Mali|Guinée|Burkina/i;
   const AMERICAS = /États-Unis|Canada|Mexique|dominicaine|Guadeloupe|Martinique|Brésil|Cuba/i, ASIA = /Émirats|Thaïlande|Indonésie|Maldives|Japon|Vietnam|Inde|Turquie/i, INDIAN = /Maurice|Seychelles|Tanzanie|Cap-Vert|Égypte/i;
   const regionOf = (d) => (/^France$/i.test(d.country) && !/réunion|guadeloupe|martinique/i.test(d.slug) ? 'fr' : /guadeloupe|martinique/.test(d.slug) ? 'am' : /reunion/.test(d.slug) ? 'af' : AFRICA.test(d.country) || INDIAN.test(d.country) ? 'af' : AMERICAS.test(d.country) ? 'am' : ASIA.test(d.country) && !/Turquie/.test(d.country) ? 'asia' : 'eu');
-  const inRegion = (d, r) => r === 'all' || (r === 'beach' ? Boolean(d.beach) : regionOf(d) === r);
-  const REGIONS = [['all', 'Toutes'], ['beach', 'Plages et îles'], ['af', 'Afrique et océan Indien'], ['eu', 'Europe'], ['fr', 'France'], ['am', 'Amériques et Caraïbes'], ['asia', 'Asie et Moyen-Orient']];
+  // La France fait partie de l'Europe (pas d'onglet à part).
+  const inRegion = (d, r) => r === 'all' || (r === 'beach' ? Boolean(d.beach) : r === 'eu' ? ['eu', 'fr'].includes(regionOf(d)) : regionOf(d) === r);
+  const REGIONS = [['all', 'Toutes'], ['beach', 'Plages et îles'], ['af', 'Afrique et océan Indien'], ['eu', 'Europe'], ['am', 'Amériques et Caraïbes'], ['asia', 'Asie et Moyen-Orient']];
   // Vol le moins cher vers une destination (offres publiées uniquement).
   function cheapestTo(d) {
     if (typeof state === 'undefined') return null;
@@ -519,13 +523,13 @@
 
   /* ---------- Week-ends : destinations du monde entier, par envie ---------- */
   const WK = { tab: 'sun' };
-  const WK_TABS = [['sun', 'Soleil et plages'], ['city', 'Grandes villes'], ['fr', 'France'], ['eu', 'Europe'], ['af', 'Afrique'], ['am', 'Amériques'], ['asia', 'Asie']];
+  const WK_TABS = [['sun', 'Soleil et plages'], ['city', 'Grandes villes'], ['eu', 'Europe'], ['af', 'Afrique'], ['am', 'Amériques'], ['asia', 'Asie']];
   const packFrom = (d) => (typeof state === 'undefined' ? null : state.packs.filter((o) => norm(o.to_city) === norm(d.name)).sort((a, b) => Number(a.price) - Number(b.price))[0] || null);
   function renderWeekendDest() {
     const grid = document.getElementById('weekendDest');
     if (!grid) return;
     const tabs = grid.previousElementSibling;
-    const list = D().filter((d) => (WK.tab === 'sun' ? d.beach : WK.tab === 'city' ? !d.beach && regionOf(d) !== 'af' : regionOf(d) === WK.tab));
+    const list = D().filter((d) => (WK.tab === 'sun' ? d.beach : WK.tab === 'city' ? !d.beach && regionOf(d) !== 'af' : (WK.tab === 'eu' ? ['eu', 'fr'].includes(regionOf(d)) : regionOf(d) === WK.tab)));
     tabs.innerHTML = WK_TABS.map(([k, t]) => `<button type="button" class="xp-tab ${WK.tab === k ? 'on' : ''}" data-wk-tab="${k}">${t}</button>`).join('');
     grid.innerHTML = list.map((d, i) => { const o = packFrom(d); return `<a class="wk-card" href="#destination/${d.slug}" data-page-link="destination/${d.slug}" style="--i:${i % 12}"><img src="${img(d.slug)}" alt="${E(d.name)}" loading="lazy" decoding="async"><span><b>${E(d.name)}</b><small>${E(d.country)}</small>${o ? `<em>Séjours dès <strong>${eur(o.price)}</strong></em>` : ''}</span></a>`; }).join('');
     if (typeof bindLinks === 'function') bindLinks(grid);

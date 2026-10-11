@@ -95,11 +95,26 @@
     }));
   }
 
+  // Même règle que l'espace client : 15 minutes sans activité = session fermée (rien n'est gardé sur le site).
+  const IDLE = 15 * 60 * 1000;
+  let lastAct = Date.now();
+  ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach((t) => window.addEventListener(t, () => { lastAct = Date.now(); }, { passive: true, capture: true }));
+  const expire = () => {
+    if (!session) return;
+    session = null;
+    modal?.querySelectorAll('form').forEach((f) => f.reset());
+    window.dispatchEvent(new CustomEvent('tvauth:expired'));
+  };
+  setInterval(() => { if (session && Date.now() - lastAct > IDLE) expire(); }, 20000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && session && Date.now() - lastAct > IDLE) expire(); });
+
   window.TVAuth = {
     get session() { return session; },
     headers() { return session ? { Authorization: `Bearer ${session.token}` } : {}; },
     reset() { session = null; },
+    expire,
     require({ reason = '', tab = 'login' } = {}) {
+      if (session && Date.now() - lastAct > IDLE) expire();
       if (session) return Promise.resolve(session);
       if (!modal) build();
       modal.querySelector('#tvgaLead').textContent = reason || 'Connectez-vous ou créez un compte pour continuer.';

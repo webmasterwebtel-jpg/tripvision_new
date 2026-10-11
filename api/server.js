@@ -760,6 +760,7 @@ app.post('/api/client/alerts', auth('client'), h(async (req, res) => {
     [req.user.id, b.fromCity || null, b.toCity, b.maxPrice || null, b.tripType, b.directOnly]);
   // Les offres déjà en ligne sont visibles tout de suite dans « Mes alertes » : seules les nouvelles déclencheront un e-mail.
   await query(`INSERT INTO price_alert_hits(alert_id, offer_id) SELECT a.id, o.id FROM price_alerts a JOIN offers o ON ${LIVE_FLIGHT} AND ${ALERT_MATCH} WHERE a.id = $1 ON CONFLICT DO NOTHING`, [rows[0].id]);
+  await pushNotification('staff', { kind: 'alert', title: 'Nouvelle alerte prix', body: `${alertRoute(rows[0])}${rows[0].max_price ? ` · jusqu’à ${euros(rows[0].max_price)}` : ''}`, link: 'alerts', refId: rows[0].id });
   res.status(201).json(rows[0]);
 }));
 
@@ -776,6 +777,16 @@ app.delete('/api/client/alerts/:id', auth('client'), h(async (req, res) => {
   const { rowCount } = await query('DELETE FROM price_alerts WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
   if (!rowCount) return res.status(404).json({ error: 'NOT_FOUND' });
   res.json({ ok: true });
+}));
+
+// Back-office : toutes les alertes des clients (la demande, trajet par trajet).
+app.get('/api/admin/alerts', auth(...BACKOFFICE_ROLES), canAny('offers.create', 'offers.edit', 'trends.view', 'mailing.export'), h(async (_req, res) => {
+  const { rows } = await query(
+    `SELECT a.*, u.name AS client_name, u.email AS client_email, m.n::int AS matches, m.best FROM price_alerts a
+       JOIN users u ON u.id = a.user_id
+       LEFT JOIN LATERAL (SELECT count(*) AS n, min(${ALERT_PRICE}) AS best FROM offers o WHERE ${LIVE_FLIGHT} AND ${ALERT_MATCH}) m ON true
+      ORDER BY a.created_at DESC LIMIT 2000`);
+  res.json(rows);
 }));
 
 // Nouvelles offres publiées (ou programmées qui arrivent en ligne) : chaque alerte concernée est prévenue une seule fois.

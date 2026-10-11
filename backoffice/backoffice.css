@@ -824,3 +824,9 @@ td strong + .row-link{display:flex;width:max-content}
 /* Menu latéral : les liens restent groupés en haut ; sur mobile, l en-tete garde sa hauteur */
 #nav{align-content:start}
 .app{align-content:start}
+
+/* Alertes prix : destinations les plus demandées */
+.al-top{display:flex;flex-wrap:wrap;gap:8px;padding:4px 20px 20px}
+.al-top span{display:inline-flex;align-items:center;gap:8px;padding:6px 8px 6px 14px;border:1px solid var(--line);border-radius:999px;background:#fff}
+.al-top b{font-weight:600}
+.al-top em{display:grid;place-items:center;min-width:24px;height:24px;padding:0 6px;border-radius:999px;background:var(--green);color:#fff;font-style:normal;font-size:12px;font-weight:700}

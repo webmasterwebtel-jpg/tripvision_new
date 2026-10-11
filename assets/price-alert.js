@@ -3,18 +3,18 @@
    TVAlert.open({ fromCity, toCity, tripType, directOnly, maxPrice }) */
 (() => {
   const css = `
-  .tval{position:fixed;inset:0;z-index:10040;display:none;overflow-y:auto;overscroll-behavior:contain;padding:16px;background:rgba(14,28,24,.6);backdrop-filter:blur(3px)}
-  .tval.open{display:block}
-  .tval-card{position:relative;width:100%;max-width:480px;margin:max(16px,6vh) auto;background:#fff;border:1px solid #e4dfd6;border-radius:18px;padding:30px 28px 26px;box-shadow:0 24px 60px rgba(0,0,0,.25)}
-  .tval-ic{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:#eef5f1;color:#0f3b2e;margin-bottom:12px}
+  .tval{position:fixed;inset:0;z-index:10040;display:none;overflow:hidden;overscroll-behavior:contain;padding:16px;background:rgba(14,28,24,.6);backdrop-filter:blur(3px)}
+  .tval.open{display:grid;place-items:center}
+  .tval-card{position:relative;width:100%;max-width:470px;max-height:calc(100dvh - 32px);overflow:hidden;background:#fff;border:1px solid #e4dfd6;border-radius:18px;padding:24px 26px 20px;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+  .tval-ic{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#eef5f1;color:#0f3b2e;margin-bottom:8px}
   .tval-ic svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .tval-card h2{font-family:'Cormorant Garamond',Georgia,serif;font-size:28px;margin:0 0 6px;color:#0f3b2e}
-  .tval-card p.lead{margin:0 0 18px;color:#5c6660;font-size:14.5px;line-height:1.55}
+  .tval-card h2{font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;margin:0 0 4px;color:#0f3b2e}
+  .tval-card p.lead{margin:0 0 14px;color:#5c6660;font-size:14px;line-height:1.5}
   .tval-x{position:absolute;top:14px;right:14px;width:34px;height:34px;border:0;background:#f3efe6;border-radius:50%;font-size:20px;cursor:pointer;line-height:1}
-  .tval-card form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .tval-card form{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
   .tval-card label{display:grid;gap:6px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#5c6660}
   .tval-card label.full,.tval-card .full{grid-column:1/-1}
-  .tval-card input:not([type=checkbox]),.tval-card select{padding:12px 13px;border:1px solid #d9d4c8;border-radius:12px;font:inherit;font-size:15px;font-weight:500;text-transform:none;letter-spacing:0;color:#16261f;background:#fff}
+  .tval-card input:not([type=checkbox]),.tval-card select{width:100%;min-width:0;padding:11px 12px;border:1px solid #d9d4c8;border-radius:12px;font:inherit;font-size:15px;font-weight:500;text-transform:none;letter-spacing:0;color:#16261f;background:#fff}
   .tval-card input:focus,.tval-card select:focus{outline:2px solid #c6a76b;outline-offset:1px}
   .tval-chk{display:flex!important;align-items:center;gap:12px!important;text-transform:none!important;letter-spacing:0!important;font-size:14px!important;font-weight:500!important;color:#33403b!important;cursor:pointer}
   .tval-chk input{width:22px;height:22px;margin:0;accent-color:#0d7a58;cursor:pointer}
@@ -25,8 +25,9 @@
   .tval-ok .tval-ic{margin:0 auto 12px;background:#0f3b2e;color:#fff}
   .tval-ok .btn{margin-top:8px}
   .tval-ok a.btn{display:inline-flex;width:100%;justify-content:center;text-decoration:none}
-  .tval-note{margin:14px 0 0;font-size:12px;color:#7b857f;text-align:center}
-  @media (max-width:520px){.tval-card{padding:26px 18px 20px}.tval-card form{grid-template-columns:1fr}}`;
+  .tval-note{margin:10px 0 0;font-size:12px;color:#7b857f;text-align:center}
+  html.tval-lock,html.tval-lock body{overflow:hidden!important}
+  @media (max-width:520px){.tval-card{padding:20px 16px 16px}.tval-card form{grid-template-columns:1fr 1fr}.tval-card label.full{grid-column:1/-1}.tval-card label:nth-of-type(1),.tval-card label:nth-of-type(2){grid-column:1/-1}.tval-card p.lead{font-size:13.5px}}`;
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   const BELL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
   const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -42,7 +43,7 @@
     modal.addEventListener('click', (e) => { if (e.target === modal || e.target.closest('.tval-x') || e.target.closest('[data-tval-close]')) close(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('open')) close(); });
   }
-  const close = () => modal?.classList.remove('open');
+  const close = () => { modal?.classList.remove('open'); document.documentElement.classList.remove('tval-lock'); };
 
   function form(pre) {
     const body = modal.querySelector('.tval-body');
@@ -51,7 +52,7 @@
       <form novalidate>
         <label>Départ<input name="fromCity" maxlength="80" value="${esc(pre.fromCity)}" placeholder="Toutes villes"></label>
         <label>Destination<input name="toCity" required minlength="2" maxlength="80" value="${esc(pre.toCity)}" placeholder="Ex. Dakar"></label>
-        <label>Billet<select name="tripType"><option value="any">Aller-retour ou aller simple</option><option value="roundtrip" ${pre.tripType === 'roundtrip' ? 'selected' : ''}>Aller-retour</option><option value="oneway" ${pre.tripType === 'oneway' ? 'selected' : ''}>Aller simple</option></select></label>
+        <label>Billet<select name="tripType"><option value="any">Indifférent</option><option value="roundtrip" ${pre.tripType === 'roundtrip' ? 'selected' : ''}>Aller-retour</option><option value="oneway" ${pre.tripType === 'oneway' ? 'selected' : ''}>Aller simple</option></select></label>
         <label>Prix max / pers.<input name="maxPrice" type="number" min="1" max="20000" step="1" inputmode="numeric" value="${esc(pre.maxPrice)}" placeholder="Tous les prix"></label>
         <label class="tval-chk full"><input type="checkbox" name="directOnly" ${pre.directOnly ? 'checked' : ''}> Vols directs uniquement</label>
         <p class="tval-err" role="alert"></p>
@@ -66,9 +67,10 @@
       if (String(d.toCity || '').trim().length < 2) { err.textContent = 'Indiquez une destination.'; f.elements.toCity.focus(); return; }
       const btn = f.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'Création…';
       try {
-        const s = await window.TVAuth.require({ reason: 'Connectez-vous pour enregistrer votre alerte prix.' });
-        const res = await fetch(`${API()}/client/alerts`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${s.token}` },
-          body: JSON.stringify({ fromCity: String(d.fromCity || '').trim(), toCity: String(d.toCity).trim(), tripType: d.tripType, maxPrice: d.maxPrice ? Number(d.maxPrice) : null, directOnly: Boolean(d.directOnly) }) });
+        const send = async () => { const s = await window.TVAuth.require({ reason: 'Votre session a expiré : reconnectez-vous pour enregistrer votre alerte prix.' }); return fetch(`${API()}/client/alerts`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${s.token}` },
+          body: JSON.stringify({ fromCity: String(d.fromCity || '').trim(), toCity: String(d.toCity).trim(), tripType: d.tripType, maxPrice: d.maxPrice ? Number(d.maxPrice) : null, directOnly: Boolean(d.directOnly) }) }); };
+        let res = await send();
+        if (res.status === 401) { window.TVAuth.reset(); res = await send(); }
         const data = await res.json().catch(() => ({}));
         if (res.status === 403 && data.error === 'FORBIDDEN') throw new Error('Les alertes prix sont réservées aux comptes voyageurs.');
         if (!res.ok) throw new Error(data.message || 'Impossible de créer l’alerte pour le moment.');
@@ -94,6 +96,7 @@
       if (!modal) build();
       form({ fromCity: '', toCity: '', tripType: 'any', directOnly: false, maxPrice: '', ...pre });
       modal.classList.add('open');
+      document.documentElement.classList.add('tval-lock');
       setTimeout(() => modal.querySelector(pre.toCity ? 'input[name=maxPrice]' : 'input[name=toCity]')?.focus(), 30);
     },
   };

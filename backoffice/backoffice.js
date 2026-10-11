@@ -1,6 +1,7 @@
 const BO = ['it', 'admin', 'manager'];
 const GOV = ['it', 'manager']; // journal d’audit
 const ICONS = {
+  alerts: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   overview: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
   vehicles: '<path d="M5 17h14M3 13l2-6a2 2 0 0 1 1.9-1.4h10.2A2 2 0 0 1 19 7l2 6v4h-2M3 13v4h2M3 13h18"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="16.5" cy="17" r="1.8"/>',
   offers: '<path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2l-1.1 1.1 6.4 3.6-3.3 3.3-2.7-.5L3 14.8l3.2 1.4 1.4 3.2 1.1-1.1-.5-2.7 3.3-3.3 3.6 6.4z"/>',
@@ -47,6 +48,7 @@ const SECTIONS = [
   { id: 'messages', label: 'Messages de contact', group: 'ops', nav: false, allow: () => true },
   { id: 'chats', label: 'Messagerie', group: 'ops', allow: () => can('chats.reply') || can('chats.manage') },
   { id: 'trends', label: 'Tendances', group: 'ops', allow: () => can('trends.view') },
+  { id: 'alerts', label: 'Alertes prix', group: 'ops', allow: () => ['offers.create', 'offers.edit', 'trends.view', 'mailing.export'].some(can) },
   { id: 'partners', label: 'Partenaires', group: 'gov', allow: () => can('partners.manage') },
   { id: 'applications', label: 'Candidatures', group: 'gov', allow: () => can('partners.manage') },
   { id: 'clients', label: 'Clients', group: 'gov', allow: () => can('clients.view') || ACCOUNT_PERMS.some(can) },
@@ -1179,6 +1181,30 @@ const RENDERERS = {
       <td class="actions"><span class="row-actions">${actionBtn('category-edit', c.id, 'Modifier')}${actionBtn('category-delete', c.id, 'Supprimer', 'danger')}</span></td></tr>`).join('');
     return pageHead('Opérations', '<em>Catégories</em> de voitures', 'Les catégories proposées aux enseignes et affichées sur le site public (nom et image). Une image claire sur fond blanc donne le meilleur rendu.', actionBtn('category-add', '', '+ Ajouter une catégorie', 'primary'))
       + tableCard({ id: 'tblCategories', title: 'Catégories', count: plural(list.length, 'catégorie', 'catégories'), head: ['Catégorie', 'Annonces', 'Ordre', 'État', ''], rows, empty: 'Aucune catégorie', cols: 5, filters: [{ key: 'state', label: 'État', options: [['on', 'Affichées'], ['off', 'Masquées']] }] });
+  },
+
+  // Alertes prix des clients : qui attend quel trajet, et à quel prix.
+  async alerts() {
+    const list = await api('/admin/alerts');
+    DATA.alerts = list;
+    const TRIP = { any: 'Indifférent', roundtrip: 'Aller-retour', oneway: 'Aller simple' };
+    const active = list.filter(a => a.active), clients = new Set(list.map(a => a.user_id)).size;
+    const waiting = active.filter(a => !a.matches).length;
+    const top = Object.entries(active.reduce((m, a) => { const k = a.to_city; m[k] = (m[k] || 0) + 1; return m; }, {})).sort((x, y) => y[1] - x[1]).slice(0, 8);
+    const rows = list.map(a => `<tr${fa({ state: a.active ? (a.matches ? 'served' : 'waiting') : 'paused' })}>
+        <td><strong>${esc(a.client_name || '—')}</strong><span class="muted">${esc(a.client_email)}</span></td>
+        <td><strong>${a.from_city ? `${esc(a.from_city)} → ` : '<span class="muted">Toutes villes</span> → '}${esc(a.to_city)}</strong><span class="muted">${esc(TRIP[a.trip_type] || TRIP.any)}${a.direct_only ? ' · vols directs' : ''}</span></td>
+        <td class="num">${a.max_price ? money(a.max_price) : '<span class="muted">Tous les prix</span>'}</td>
+        <td>${a.matches ? `<span class="badge ok">${a.matches} offre${a.matches > 1 ? 's' : ''} · dès ${money(a.best)}</span>` : '<span class="badge warn">Aucune offre</span>'}</td>
+        <td>${a.active ? '<span class="badge ok">Active</span>' : '<span class="badge plain">En pause</span>'}${a.hits ? `<span class="muted">${a.hits} offre${a.hits > 1 ? 's' : ''} signalée${a.hits > 1 ? 's' : ''}</span>` : ''}</td>
+        <td class="num">${fmtDate(a.created_at)}</td></tr>`).join('');
+    return pageHead('Opérations', 'Alertes <em>prix</em>', 'Les trajets que vos clients surveillent. Dès qu’une offre de vol correspondante est publiée, le client reçoit automatiquement un e-mail et une notification.')
+      + `<div class="kpis">
+        <div class="kpi"><div class="kpi-icon">${icon('alerts')}</div><div><strong>${active.length}</strong><span>Alertes actives</span></div></div>
+        <div class="kpi"><div class="kpi-icon">${icon('clients')}</div><div><strong>${clients}</strong><span>Clients</span></div></div>
+        <div class="kpi"><div class="kpi-icon">${icon('alert')}</div><div><strong>${waiting}</strong><span>Sans offre en ligne</span></div></div></div>`
+      + (top.length ? `<section class="card"><div class="card-head"><div><h3>Destinations les plus demandées</h3><p>Alertes actives par destination : publiez des offres sur ces trajets en priorité.</p></div></div><div class="al-top">${top.map(([c, n]) => `<span><b>${esc(c)}</b><em>${n}</em></span>`).join('')}</div></section>` : '')
+      + tableCard({ id: 'tblAlerts', title: 'Alertes', count: plural(list.length, 'alerte', 'alertes'), head: ['Client', 'Trajet', 'Prix max', 'En ce moment', 'Statut', 'Créée le'], rows, empty: 'Aucune alerte pour le moment', hint: 'Les clients créent leurs alertes depuis la page Vols ou leur espace.', cols: 6, filters: [{ key: 'state', label: 'État', options: [['waiting', 'Sans offre en ligne'], ['served', 'Avec offres'], ['paused', 'En pause']] }] });
   },
 
   async mailing() {
