@@ -1548,16 +1548,20 @@ const categoryModal = (c = null) => openModal({
 function dayChart(daily, from, to) {
   if (!daily.length) return '<p class="muted trend-empty">L’activité apparaîtra ici dès les premières visites.</p>';
   const map = new Map(daily.map((d) => [String(d.d).slice(0, 10), d.n]));
-  const start = new Date(String(from).slice(0, 10)), end = new Date(Math.min(new Date(to).getTime(), Date.now()));
+  const end = new Date(Math.min(new Date(to).getTime(), Date.now()));
+  // On commence quelques jours avant la première activité (au moins 14 jours affichés) : les barres restent lisibles même sur un site récent.
+  const firstDay = new Date([...map.keys()].sort()[0] + 'T12:00:00');
+  const start = new Date(Math.max(new Date(String(from).slice(0, 10) + 'T12:00:00').getTime(), Math.min(firstDay.getTime() - 5 * 864e5, end.getTime() - 13 * 864e5)));
   const days = [];
   for (let d = new Date(start); d <= end && days.length < 400; d.setDate(d.getDate() + 1)) { const k = d.toISOString().slice(0, 10); days.push([k, map.get(k) || 0]); }
   const max = Math.max(1, ...days.map(([, v]) => v)), nice = Math.max(4, Math.ceil(max / 4) * 4);
-  const W = 720, H = 200, L = 34, B = 26, bw = (W - L) / days.length;
+  const narrow = innerWidth < 700, W = narrow ? 340 : 720, H = narrow ? 210 : 200, L = 30, B = 26, bw = (W - L) / days.length;
   const y = (v) => H - B - (v / nice) * (H - B - 10);
   const grid = [0, .5, 1].map((f) => `<line x1="${L}" x2="${W}" y1="${y(nice * f)}" y2="${y(nice * f)}" class="g"/><text x="${L - 6}" y="${y(nice * f) + 4}" class="ax" text-anchor="end">${Math.round(nice * f)}</text>`).join('');
   const fmt = (k) => new Date(k).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-  const step = Math.max(1, Math.ceil(days.length / 6));
-  const bars = days.map(([k, v], i) => `<g class="col"><rect class="hit" x="${L + i * bw}" y="0" width="${bw}" height="${H - B}"/><rect class="bar" x="${L + i * bw + Math.min(2, bw * .15)}" y="${y(v)}" width="${Math.max(1, bw - Math.min(4, bw * .3))}" height="${Math.max(0, H - B - y(v))}" rx="${Math.min(4, bw / 3)}"/><title>${fmt(k)} : ${v} événement${v > 1 ? 's' : ''}</title></g>${i % step === 0 ? `<text x="${L + i * bw + bw / 2}" y="${H - 8}" class="ax" text-anchor="middle">${fmt(k)}</text>` : ''}`).join('');
+  const step = Math.max(1, Math.ceil(days.length / (narrow ? 3 : 6))), lastI = days.length - 1;
+  const showLabel = (i) => i === lastI || (i % step === 0 && lastI - i >= Math.ceil(step * .6));
+  const bars = days.map(([k, v], i) => `<g class="col"><rect class="hit" x="${L + i * bw}" y="0" width="${bw}" height="${H - B}"/><rect class="bar" x="${L + i * bw + (bw - Math.min(bw * .7, 26)) / 2}" y="${y(v)}" width="${Math.max(1, Math.min(bw * .7, 26))}" height="${Math.max(0, H - B - y(v))}" rx="${Math.min(4, bw / 3)}"/><title>${fmt(k)} : ${v} événement${v > 1 ? 's' : ''}</title></g>${showLabel(i) ? `<text x="${Math.min(W - 2, Math.max(L, L + i * bw + bw / 2))}" y="${H - 8}" class="ax" text-anchor="${i === lastI ? 'end' : i === 0 ? 'start' : 'middle'}">${fmt(k)}</text>` : ''}`).join('');
   return `<svg viewBox="0 0 ${W} ${H}" class="day-chart" role="img" aria-label="Activité par jour">${grid}${bars}</svg>`;
 }
 function mixChart(t) {

@@ -873,3 +873,19 @@ td strong + .row-link{display:flex;width:max-content}
 .card,.table-wrap{max-width:100%}
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 @media (min-width:961px) and (max-width:1200px){.kpis{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}.kpi{padding:16px}}
+
+/* Tendances : graphique et répartition alignés sur l'en-tête de la carte (plus collés aux bords) */
+.trend-card>.day-chart{width:calc(100% - 56px);margin:14px 28px 18px}
+.trend-card>.mix{margin:16px 28px 26px;gap:16px}
+.mix li{grid-template-columns:minmax(96px,1.1fr) minmax(60px,1.6fr) auto}
+.mix li>span{white-space:nowrap}
+.mix b{min-width:34px}
+@media(max-width:560px){.trend-card>.day-chart{width:calc(100% - 32px);margin:10px 16px 14px}.trend-card>.mix{margin:12px 16px 18px}.mix li{grid-template-columns:1fr auto;row-gap:6px}.mix li .mix-bar{grid-column:1/-1;order:3}}
+/* Répartition : libellé et chiffre sur une ligne, barre pleine largeur dessous (plus de chevauchement) */
+.mix li{grid-template-columns:minmax(0,1fr) auto!important;row-gap:7px;column-gap:12px;align-items:baseline}
+.mix li>span{white-space:normal}
+.mix li .mix-bar{grid-column:1/-1;order:3}
+/* Alignement exact avec le titre de la carte (24 px) */
+.trend-card>.day-chart{width:calc(100% - 48px);margin-left:24px;margin-right:24px}
+.trend-card>.mix{margin-left:24px;margin-right:24px}
+@media(max-width:560px){.trend-card>.day-chart{width:calc(100% - 48px);margin-left:24px;margin-right:24px}.trend-card>.mix{margin-left:24px;margin-right:24px}}
