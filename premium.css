@@ -4646,3 +4646,20 @@ label:has(> input[type=checkbox][name=terms]) > input,label:has(> input[type=che
 }
 #flights .fv-hero .hero-vid{top:0!important;bottom:118px!important;height:auto!important}
 @media (max-width:760px){#flights .fv-hero .hero-vid{bottom:90px!important}}
+
+/* Bandeau « Devenir partenaire » : pleine largeur (la seconde colonne est vide depuis le retrait du bloc voisin) */
+.discover-grid{grid-template-columns:minmax(0,1fr)!important}
+.partner-showcase{min-height:300px}
+.partner-showcase-content{width:min(52%,620px)}
+@media (max-width:760px){.partner-showcase-content{width:100%!important}}
+
+/* Lisibilité sur tous les écrans : plus aucun texte en dessous de 10,5 px */
+.simulator-field>span,.sim-fields label>span,.flight-route-field>span,.flight-meta-row label>span,.car-route-box span,.car-config-grid label span,.weekend-fields label span,
+.flight-search-top>div:first-child>span,.car-config-head>div:first-child>span,.weekend-planner-head span,.sim-card-head span:first-child,
+.car-overline,.weekend-overline,.car-config-badge,.flight-form-foot,.flight-benefits small,.weekend-signature,.chat-bubble small,.partner-summary small{font-size:11px!important;letter-spacing:.09em}
+.flight-benefits span{font-size:11px!important}
+.contact-premium-final label>span,.contact-form label>span,form label>span.field-label{font-size:11px}
+@media (max-width:760px){
+  .fv-opt span{font-size:13.5px}
+  .weekend-fields label span,.car-config-grid label span{font-size:11.5px!important}
+}

@@ -62,7 +62,7 @@ button, input, select, textarea { font: inherit; }
 .sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 26px; padding: 26px 14px 18px; color: #dfece7; background: linear-gradient(180deg, var(--green-rail) 0%, var(--green-deep) 100%); }
 .brand { display: flex; align-items: center; gap: 12px; padding: 0 10px; }
 .brand strong { display: block; font-family: var(--serif); font-size: 25px; font-weight: 600; line-height: 1; letter-spacing: -.01em; color: #fff; }
-.brand small { display: block; margin-top: 5px; font-size: 9.5px; font-weight: 600; letter-spacing: .26em; text-transform: uppercase; color: #8fb3a6; }
+.brand small { display: block; margin-top: 5px; font-size: 10.5px; font-weight: 600; letter-spacing: .26em; text-transform: uppercase; color: #8fb3a6; }
 
 #nav { display: grid; gap: 4px; overflow-y: auto; flex: 1; padding-right: 2px; }
 .nav-group { margin: 18px 12px 6px; font-size: 10px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; color: #6f9488; }
@@ -858,3 +858,18 @@ td strong + .row-link{display:flex;width:max-content}
 .drawer.chat-drawer .chat-form-actions button[type=submit]{order:9;margin-left:0}
 .drawer.chat-drawer .chat-form-actions{justify-content:flex-start}
 .drawer.chat-drawer .chat-closed{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Petits écrans : la zone de contenu ne s'élargit jamais au-delà de l'écran (colonne unique « minmax(0,1fr) ») */
+.workspace{grid-template-columns:minmax(0,1fr)}
+.workspace>*{min-width:0;max-width:100%}
+.page-head{flex-wrap:wrap}
+.page-actions{flex-wrap:wrap;max-width:100%}
+.export-bar,.seg,.segmented,.pillbar{max-width:100%;flex-wrap:wrap}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.kpi{min-width:0;padding:18px 20px}
+.kpi>div:last-child{min-width:0}
+.kpi span{letter-spacing:.1em;overflow-wrap:anywhere;line-height:1.35}
+@media (min-width:961px) and (max-width:1200px){.kpi{flex-direction:column;align-items:flex-start;gap:12px}.kpi strong{font-size:36px}}
+.card,.table-wrap{max-width:100%}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media (min-width:961px) and (max-width:1200px){.kpis{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}.kpi{padding:16px}}
