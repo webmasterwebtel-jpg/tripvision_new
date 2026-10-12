@@ -52,10 +52,24 @@
       CATS = Array.isArray(l) ? l : [];
       const sel = document.querySelector('#carSearchForm select[name=category]');
       if (sel && CATS.length) sel.innerHTML = '<option value="all">Toutes</option>' + CATS.map((c) => `<option>${E(c.name)}</option>`).join('');
+      paintCatPrices();
       renderCatIntro();
       renderCars();
     }).catch(() => {});
   });
+  /* Prix « dès X € / jour » sous chaque catégorie du carrousel de l'accueil (originaux et copies du défilement). */
+  const catKey = (v) => String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\(.*?\)/g, '').replace(/[^a-z]+/g, ' ').trim();
+  const catFrom = (c) => (c && c.fromPrice > 0 ? `<small class="hh-cat-from">dès <strong>${euro(c.fromPrice)}</strong> / jour</small>` : '<small class="hh-cat-from soon">Bientôt disponible</small>');
+  function paintCatPrices() {
+    document.querySelectorAll('.hh-cat').forEach((el) => {
+      const name = catKey(el.querySelector('b')?.textContent);
+      const c = CATS.find((x) => { const k = catKey(x.name); return k === name || k.startsWith(name + ' ') || name.startsWith(k + ' '); });
+      el.querySelector('.hh-cat-from')?.remove();
+      el.insertAdjacentHTML('beforeend', catFrom(c));
+    });
+  }
+  // Le carrousel crée ses copies après le chargement : on repeint aussi à ce moment-là.
+  window.addEventListener('load', () => setTimeout(paintCatPrices, 1500));
   /* ---------- Après 10 minutes d'inactivité, la page Voitures redevient vierge ---------- */
   const IDLE_MS = 15 * 60 * 1000;
   let lastActivity = Date.now();
@@ -88,7 +102,7 @@
     box.parentElement.hidden = !list.length;
     box.innerHTML = list.map((c) => {
       const desc = CAT_DESC.find(([re]) => re.test(c.name))?.[1] || '';
-      return `<button type="button" class="dest-card cat-intro-card" data-cat-pick="${E(c.name)}"><img src="${E(c.image || '')}" alt="" loading="lazy" decoding="async"><span class="dest-info"><b>${E(c.name)}</b><small>${E(desc)}</small></span><i class="dest-go">→</i></button>`;
+      return `<button type="button" class="dest-card cat-intro-card" data-cat-pick="${E(c.name)}"><img src="${E(c.image || '')}" alt="" loading="lazy" decoding="async"><span class="dest-info"><b>${E(c.name)}</b><small>${E(desc)}</small>${c.fromPrice > 0 ? `<em class="cat-from">dès <strong>${euro(c.fromPrice)}</strong> / jour</em>` : '<em class="cat-from soon">Bientôt disponible</em>'}</span><i class="dest-go">→</i></button>`;
     }).join('');
   }
   document.addEventListener('click', (e) => {

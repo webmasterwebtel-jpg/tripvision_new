@@ -2347,7 +2347,20 @@ const categorySchema = z.object({ name: z.string().trim().min(2).max(60), image:
 const mapCategory = (c) => ({ id: c.id, name: c.name, image: absImage(c.image) || null, position: c.position, active: c.active });
 app.get('/api/public/categories', h(async (_req, res) => {
   const { rows } = await query('SELECT * FROM vehicle_categories WHERE active ORDER BY position, name');
-  res.json(rows.map(mapCategory));
+  // Prix « à partir de » par catégorie : la voiture en ligne la moins chère (palier le plus bas de sa grille tarifaire).
+  const { rows: cars } = await query(
+    `SELECT v.category, v.price_day, v.details FROM vehicles v LEFT JOIN partners p ON p.id = v.partner_id
+      WHERE v.status = 'approved' AND v.deleted_at IS NULL AND (v.partner_id IS NULL OR (p.status = 'approved' AND p.deleted_at IS NULL)) AND (v.publish_at IS NULL OR v.publish_at <= now())
+        AND (v.details->>'availableUntil' IS NULL OR (v.details->>'availableUntil')::date >= current_date)`);
+  const best = new Map();
+  for (const c of cars) {
+    let price = Number(c.price_day);
+    try { price = globalThis.TVPricing.fromPrice({ priceDay: Number(c.price_day), ...(c.details || {}) }); } catch { /* prix par jour simple */ }
+    if (!(price > 0)) continue;
+    const k = String(c.category || '').toLowerCase();
+    if (!best.has(k) || price < best.get(k)) best.set(k, price);
+  }
+  res.json(rows.map((c) => ({ ...mapCategory(c), fromPrice: best.get(String(c.name).toLowerCase()) ?? null })));
 }));
 app.get('/api/admin/categories', auth(...BACKOFFICE_ROLES), can('categories.manage'), h(async (_req, res) => {
   const { rows } = await query('SELECT c.*, (SELECT count(*)::int FROM vehicles v WHERE v.deleted_at IS NULL AND lower(v.category) = lower(c.name)) AS vehicles FROM vehicle_categories c ORDER BY position, name');

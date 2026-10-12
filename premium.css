@@ -4663,3 +4663,23 @@ label:has(> input[type=checkbox][name=terms]) > input,label:has(> input[type=che
   .fv-opt span{font-size:13.5px}
   .weekend-fields label span,.car-config-grid label span{font-size:11.5px!important}
 }
+
+/* Prix « à partir de » des catégories de voitures */
+.hh-cat{gap:4px!important}
+.hh-cat-from{display:block;font-size:13.5px;color:#5c6660}
+.hh-cat-from strong{font-size:16px;color:#075f4b;font-weight:800}
+.hh-cat-from.soon{color:#8a928d;font-style:italic}
+.cat-intro-card .dest-info .cat-from{display:inline-flex;align-items:baseline;gap:5px;margin-top:6px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.94);color:#14231d;font-style:normal;font-size:12.5px;width:max-content;max-width:100%}
+.cat-intro-card .dest-info .cat-from strong{font-size:15px;color:#075f4b}
+.cat-intro-card .dest-info .cat-from.soon{background:rgba(255,255,255,.7);color:#5c6660}
+
+/* Catégories de voitures : voiture blanche sur fond clair, texte dessous (lisible) au lieu d'être posé sur l'image */
+.car-intro-cats .dest-card.cat-intro-card{aspect-ratio:auto;display:grid;grid-template-rows:auto 1fr;background:#fff;border:1px solid #e4dfd6;box-shadow:0 10px 26px -20px rgba(10,42,33,.55)}
+.cat-intro-card::after{display:none}
+.cat-intro-card img{position:static;height:auto;aspect-ratio:16/10;background:#f4f1ea}
+.cat-intro-card .dest-info{position:static;color:#14231d;padding:14px 48px 16px 16px;gap:3px}
+.cat-intro-card .dest-info b{font-size:23px;color:#0f3b2e}
+.cat-intro-card .dest-info small{color:#6b766f;font-size:12.5px}
+.cat-intro-card .dest-go{right:14px;bottom:16px;background:#eef5f1;color:#0f3b2e;backdrop-filter:none}
+.car-intro-cats .cat-intro-card .dest-info .cat-from{background:#eef5f1;margin-top:8px}
+.car-intro-cats .cat-intro-card .dest-info .cat-from.soon{background:#f3f1ec;color:#7b857f}
