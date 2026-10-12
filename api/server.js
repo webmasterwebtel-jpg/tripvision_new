@@ -17,6 +17,7 @@ import { paymentsEnabled, testMode, createCheckout, retrieveSession, expireSessi
 import { listCountries, searchCities, searchAirports, searchPlaces, countryCodeByName } from './geo.js';
 // Moteur de prix partagé avec le site (grille par durée, saisons, retard toléré, lissage des seuils).
 import '../assets/pricing.js';
+import '../assets/airline-links.js';
 const Pricing = globalThis.TVPricing;
 import { isLockedOut, recordFailedAttempt, clearAttempts, passwordProblem, audit, recordLogin, clientIp } from './security.js';
 
@@ -398,7 +399,7 @@ const timeStr = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Heure invalide');
 const flightSchema = z.object({
   tripType: z.enum(['roundtrip', 'oneway']).default('roundtrip'),
   airline: z.string().trim().min(2).max(80), flightNumber: z.string().trim().max(12).optional(),
-  bookingUrl: z.string().trim().max(600).url('Indiquez le lien de réservation de la compagnie (https://…).').refine((u) => /^https?:\/\//i.test(u), 'Le lien doit commencer par https://'),
+  bookingUrl: z.string().trim().max(600).default('').refine((u) => !u || /^https?:\/\//i.test(u), 'Le lien doit commencer par https://'),
   fromCountry: z.string().trim().max(80).optional(), fromAirport: z.string().trim().max(120).optional(), toAirport: z.string().trim().max(120).optional(),
   departTime: timeStr.optional(), arriveTime: timeStr.optional(), arriveDayOffset: z.coerce.number().int().min(0).max(2).default(0),
   durationMin: z.coerce.number().int().min(10).max(2400).optional(), oneWayPrice: z.coerce.number().positive().optional(),
@@ -1539,11 +1540,19 @@ async function checkFreshness() {
 setInterval(() => checkFreshness().catch((e) => console.error('Rythme de publication :', e.message)), 60 * 60 * 1000);
 setTimeout(() => checkFreshness().catch(() => {}), 30000);
 
+// Compagnies au format de lien vérifié (Air France, KLM, easyJet) : le lien est fabriqué à partir de l'offre ; sinon celui de l'agent est exigé.
+function normalizeFlightLink(o) {
+  if (o.type !== 'flight' || !o.flight) return;
+  const exact = globalThis.TVAirline.buildExact({ start_date: o.startDate, end_date: o.endDate, flight: o.flight }, {});
+  if (exact) o.flight.bookingUrl = exact;
+  else if (!/^https?:\/\//i.test(o.flight.bookingUrl || '')) throw new z.ZodError([{ code: 'custom', path: ['flight', 'bookingUrl'], message: 'Indiquez le lien de la page de résultats de la compagnie (même trajet, mêmes dates).' }]);
+}
 const offerCover = (o) => cleanImages(o.images)[0] || normalizeImage(o.image) || null;
 const offerDetails = (o) => ({ images: cleanImages(o.images), ...(o.type === 'flight' && o.flight ? { flight: o.flight } : {}), ...(o.type === 'pack' ? { transport: o.transport || null, ratings: o.ratings || [] } : {}) });
 
 app.post('/api/admin/offers', auth(...BACKOFFICE_ROLES), can('offers.create'), h(async (req, res) => {
   const o = offerSchema.parse(req.body);
+  normalizeFlightLink(o);
   const { rows } = await query(
     `INSERT INTO offers(type, title, from_city, to_city, country, badge, price, old_price, partner_name, start_date, end_date, image, description, publish_at, hotel_name, hotel_stars, hotel_nights, hotel_board, details)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
@@ -1556,6 +1565,7 @@ app.post('/api/admin/offers', auth(...BACKOFFICE_ROLES), can('offers.create'), h
 
 app.patch('/api/admin/offers/:id', auth(...BACKOFFICE_ROLES), can('offers.edit'), h(async (req, res) => {
   const o = offerSchema.parse(req.body);
+  normalizeFlightLink(o);
   const { rows } = await query(
     `UPDATE offers SET title = $1, from_city = $2, to_city = $3, country = $4, badge = $5, price = $6, old_price = $7, start_date = $8, end_date = $9,
             image = COALESCE($10, image), description = $11, hotel_name = $12, hotel_stars = $13, hotel_nights = $14, hotel_board = $15,
@@ -1573,6 +1583,13 @@ const statusWithSchedule = (values) => z.object({ status: z.enum(values), publis
 
 app.patch('/api/admin/offers/:id/status', auth(...BACKOFFICE_ROLES), can('offers.edit'), h(async (req, res) => {
   const { status, publishAt } = statusWithSchedule(['active', 'inactive']).parse(req.body);
+  if (status === 'active') {
+    const { rows: cur } = await query('SELECT * FROM offers WHERE id = $1 AND deleted_at IS NULL', [req.params.id]);
+    if (cur[0]?.type === 'flight') {
+      const a = globalThis.TVAirline.analyze({ ...cur[0], start_date: String(cur[0].start_date || '').slice(0, 10), end_date: String(cur[0].end_date || '').slice(0, 10), flight: cur[0].details?.flight });
+      if (a.level === 'weak' || a.level === 'none') return res.status(400).json({ error: 'LINK_WEAK', message: `Publication impossible : ${a.note} Utilisez « Changer le lien » sur cette offre.` });
+    }
+  }
   const { rows } = status === 'active'
     // Publier une offre en brouillon la valide : elle n'est plus marquée « à vérifier ».
     ? await query(`UPDATE offers SET status = $1, publish_at = COALESCE($2, now()), details = COALESCE(details, '{}'::jsonb) - 'draft' - 'toVerify' WHERE id = $3 AND deleted_at IS NULL RETURNING *`, [status, publishAt || null, req.params.id])
@@ -1585,7 +1602,11 @@ app.patch('/api/admin/offers/:id/status', auth(...BACKOFFICE_ROLES), can('offers
 
 // Changer seulement le lien de réservation d'un vol (vérification par l'équipe).
 app.patch('/api/admin/offers/:id/link', auth(...BACKOFFICE_ROLES), can('offers.edit'), h(async (req, res) => {
-  const { bookingUrl } = z.object({ bookingUrl: z.string().trim().max(600).url('Lien invalide').refine((u) => /^https:\/\//i.test(u), 'Le lien doit commencer par https://') }).parse(req.body);
+  let { bookingUrl } = z.object({ bookingUrl: z.string().trim().max(600).url('Lien invalide').refine((u) => /^https:\/\//i.test(u), 'Le lien doit commencer par https://') }).parse(req.body);
+  const { rows: cur } = await query("SELECT * FROM offers WHERE id = $1 AND type = 'flight' AND deleted_at IS NULL", [req.params.id]);
+  if (!cur[0]) return res.status(404).json({ error: 'NOT_FOUND' });
+  const exact = globalThis.TVAirline.buildExact({ start_date: String(cur[0].start_date || '').slice(0, 10), end_date: String(cur[0].end_date || '').slice(0, 10), flight: cur[0].details?.flight }, {});
+  if (exact) bookingUrl = exact;
   const { rows } = await query(`UPDATE offers SET details = jsonb_set(COALESCE(details, '{}'::jsonb), '{flight,bookingUrl}', to_jsonb($1::text), true) WHERE id = $2 AND type = 'flight' AND deleted_at IS NULL RETURNING *`, [bookingUrl, req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
   await audit(req.user.id, 'update_offer_link', 'offer', req.params.id, clientIp(req));

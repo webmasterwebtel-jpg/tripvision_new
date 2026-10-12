@@ -734,13 +734,18 @@ document.addEventListener('change', (e) => { if (e.target.matches?.('[data-notif
 const hhmm = (t, off) => (t ? `${esc(t)}${off ? ` (+${off} j)` : ''}` : '—');
 // Comparateur pour retrouver le vol le moins cher, toutes compagnies confondues.
 const compareUrl = (o) => `https://www.google.com/travel/flights?hl=fr&q=${encodeURIComponent(`Vols ${o.from_city || ''} ${o.to_city || ''} ${o.start_date ? String(o.start_date).slice(0, 10) : ''}${o.flight?.tripType === 'oneway' ? ' aller simple' : o.end_date ? ` retour ${String(o.end_date).slice(0, 10)}` : ''}`)}`;
+// Lien vers la compagnie : exactement le trajet, les dates et la classe de l'offre (voir assets/airline-links.js).
+const airLink = (o) => (window.TVAirline && o?.flight ? window.TVAirline.resolve(o, { adults: 1 }) : { url: o?.flight?.bookingUrl || '', mode: 'saved' });
+const LINK_LEVEL = { exact: ['ok', 'Lien exact'], ok: ['ok', 'Lien vérifié'], partial: ['warn', 'À vérifier'], unverified: ['warn', 'À comparer'], weak: ['bad', 'Page d’accueil'], none: ['bad', 'Pas de lien'] };
+const linkBadge = (o) => { const a = window.TVAirline?.analyze(o); if (!a) return ''; const [tone, label] = LINK_LEVEL[a.level] || ['plain', '']; return `<span class="badge ${tone}" title="${esc(a.note || '')}">${label}</span>`; };
+const linkChecks = (o) => { const a = window.TVAirline?.analyze(o); if (!a || !a.checks.length) return ''; return `<ul class="link-checks">${a.checks.map(c => `<li class="${c.ok ? 'ok' : 'ko'}"><b>${c.ok ? '✓' : '✗'}</b> ${esc(c.label)} <span>${esc(c.detail)}</span></li>`).join('')}</ul>`; };
 const flightRows = (o) => {
   const f = o.flight;
   if (!f) return [];
   const dur = f.durationMin ? `${Math.floor(f.durationMin / 60)} h ${String(f.durationMin % 60).padStart(2, '0')}` : '';
   return [
     ['Compagnie', [esc(f.airline), esc(f.flightNumber)].filter(Boolean).join(' · ')],
-    ['Lien de réservation', f.bookingUrl ? `<a class="ext-link" href="${esc(f.bookingUrl)}" target="_blank" rel="noopener noreferrer">${esc(f.bookingUrl.replace(/^https?:\/\//, '').slice(0, 70))}${f.bookingUrl.length > 78 ? '…' : ''} ${icon('external')}</a>` : '<span class="muted">Aucun lien</span>'],
+    ['Lien de réservation', (() => { const r = airLink(o); return r.url ? `<a class="ext-link" href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">${esc(r.url.replace(/^https?:\/\//, '').slice(0, 70))}${r.url.length > 78 ? '…' : ''} ${icon('external')}</a> ${linkBadge(o)}${linkChecks(o)}` : '<span class="muted">Aucun lien</span>'; })()],
     ['Aller', `${fmtDay(o.start_date)} · ${hhmm(f.departTime)} → ${hhmm(f.arriveTime, f.arriveDayOffset)}${dur ? ` · ${dur}` : ''}`],
     f.tripType === 'roundtrip' ? ['Retour', `${fmtDay(o.end_date)} · ${hhmm(f.returnDepartTime)} → ${hhmm(f.returnArriveTime, f.returnDayOffset)}`] : ['Trajet', 'Aller simple'],
     ['Escales', f.stops ? `${f.stops} escale${f.stops > 1 ? 's' : ''}` : 'Direct'], ['Classe', esc(f.cabin)], ['Bagages', esc(f.baggage)],
@@ -851,7 +856,7 @@ function offerActions(o, withExtras = false) {
     siteBtn('offer', o, 'Voir l’offre'),
     can('offers.edit') && actionBtn('offer-edit', o.id, 'Modifier'),
     !isArchived(o) && can('offers.edit') && actionBtn('offer-schedule', o.id, `${icon('clock')} Programmer`),
-    o.flight?.bookingUrl && `<a class="btn small" href="${esc(o.flight.bookingUrl)}" target="_blank" rel="noopener noreferrer" title="Ouvrir l’offre sur le site de la compagnie">${icon('external')} Vérifier sur ${esc(o.flight.airline || 'la compagnie')}</a>`,
+    airLink(o).url && `<a class="btn small" href="${esc(airLink(o).url)}" target="_blank" rel="noopener noreferrer" title="Ouvre le site de la compagnie avec le trajet et les dates de cette offre">${icon('external')} Vérifier sur ${esc(o.flight.airline || 'la compagnie')}</a>`,
     withExtras && o.flight && `<a class="btn small" href="${esc(compareUrl(o))}" target="_blank" rel="noopener noreferrer" title="Comparer toutes les compagnies sur ce trajet">${icon('search')} Comparer les prix</a>`,
     withExtras && o.flight && can('offers.edit') && actionBtn('offer-link', o.id, 'Changer le lien'),
     !isArchived(o) && can('offers.edit') && (o.status === 'active' ? actionBtn('offer-deactivate', o.id, 'Désactiver', 'danger') : actionBtn('offer-activate', o.id, 'Activer', 'primary')),
@@ -972,7 +977,7 @@ const RENDERERS = {
     const { offers } = await api('/admin/dashboard');
     DATA.offers = offers;
     const rows = offers.map(o => `<tr class="clickable"${fa({ status: pubKey(o), country: o.country })} data-detail="offer" data-type="${o.type}" data-id="${esc(o.id)}">
-      <td><span class="badge plain">${o.type === 'flight' ? 'Vol' : 'Pack'}</span></td><td><strong>${esc(o.title)}</strong>${o.flight?.bookingUrl ? `<a class="row-link" href="${esc(o.flight.bookingUrl)}" target="_blank" rel="noopener noreferrer" title="Vérifier l’offre sur le site de la compagnie">${esc(o.flight.airline || 'Compagnie')} ${icon('external')}</a>` : ''}</td><td>${esc(o.to_city)}</td>
+      <td><span class="badge plain">${o.type === 'flight' ? 'Vol' : 'Pack'}</span></td><td><strong>${esc(o.title)}</strong>${airLink(o).url ? `<a class="row-link" href="${esc(airLink(o).url)}" target="_blank" rel="noopener noreferrer" title="Vérifier l’offre sur le site de la compagnie (trajet et dates de l’offre)">${esc(o.flight.airline || 'Compagnie')} ${icon('external')}</a> ${linkBadge(o)}` : ''}</td><td>${esc(o.to_city)}</td>
       <td class="num">${money(o.price)}</td><td>${pubBadge(o)}</td>
       <td class="actions"><span class="row-actions">${offerActions(o)}</span></td></tr>`).join('');
     return pageHead('Opérations', 'Vols <em>& packs</em>', 'Cliquez sur une offre pour la consulter. Publiez-la tout de suite ou programmez-la.',
@@ -1429,8 +1434,8 @@ function flightFields(o) {
     <label>Type de trajet<select name="tripType"><option value="roundtrip" ${oneway ? '' : 'selected'}>Aller-retour</option><option value="oneway" ${oneway ? 'selected' : ''}>Aller simple</option></select></label>
     ${field('Compagnie aérienne', `name="airline" required maxlength="80" placeholder="Ex. Air France" value="${fv(f.airline)}"`)}
     ${field('N° de vol', `name="flightNumber" maxlength="12" placeholder="AF 718" value="${fv(f.flightNumber)}"`)}
-    ${field('Lien de réservation sur le site de la compagnie', `name="bookingUrl" type="url" required maxlength="600" placeholder="https://www.compagnie.com/vol/…" value="${fv(f.bookingUrl)}"`, true)}
-    <p class="hint full">TripVision ne vend pas les billets : le bouton « Réserver » du site envoie le voyageur sur ce lien, dans un nouvel onglet.</p>
+    ${field('Lien de la page de résultats de la compagnie', `name="bookingUrl" type="url" maxlength="600" placeholder="https://www.compagnie.com/… (laisser vide pour Air France, KLM, easyJet)" value="${fv(f.bookingUrl)}"`, true)}
+    <p class="hint full">TripVision ne vend pas les billets : le bouton « Voir l’offre » envoie le voyageur sur le site de la compagnie. <b>Air France, KLM et easyJet</b> : le lien exact est fabriqué automatiquement (trajet, dates, classe, voyageurs). <b>Autres compagnies</b> : faites la recherche sur leur site avec le même trajet et les mêmes dates, puis collez l’adresse de la page de résultats.</p>
     ${field('Aéroport de départ', `name="fromAirport" maxlength="120" data-geo="airport" data-geo-city="fromCity" data-geo-country="fromCountry" placeholder="Rechercher un aéroport…" value="${fv(f.fromAirport)}"`)}
     ${field('Aéroport d’arrivée', `name="toAirport" maxlength="120" data-geo="airport" data-geo-city="toCity" data-geo-country="country" placeholder="Rechercher un aéroport…" value="${fv(f.toAirport)}"`)}
     ${field('Date de départ', `name="startDate" type="date" required value="${fv(dateOnly(o?.start_date))}"`)}
@@ -1660,17 +1665,34 @@ const ACT = {
   'offer-delete': (id) => confirmCall({ eyebrow: 'Suppression', title: `Supprimer « ${esc(find('offers', id).title)} » ?`, message: 'L’offre sera retirée du site et de cette liste. Cette action ne peut pas être annulée depuis le back-office.', confirmLabel: 'Supprimer définitivement', tone: 'danger', loading: 'Suppression en cours…', success: 'Offre supprimée', method: 'DELETE', url: `/admin/offers/${id}` }),
   'offer-link': (id) => {
     const o = find('offers', id);
+    const auto = window.TVAirline?.hasBuilder(o.flight?.airline);
+    const exact = auto ? window.TVAirline.buildExact(o, {}) : '';
     openModal({
-      eyebrow: 'Offre vol', title: 'Lien de réservation', confirmLabel: 'Enregistrer le lien', loadingText: 'Enregistrement…',
-      bodyHtml: `<p class="modal-text">Le bouton « Voir l’offre » du site ouvre ce lien. Vérifiez qu’il mène bien au vol, au bon prix, sur le site de ${esc(o.flight?.airline || 'la compagnie')}.</p>
-        <div class="form-grid">${field('Lien de la compagnie', `name="bookingUrl" type="url" required maxlength="600" value="${esc(o.flight?.bookingUrl || '')}" placeholder="https://…"`, true)}</div>
-        <p class="muted"><a href="${esc(o.flight?.bookingUrl || '#')}" target="_blank" rel="noopener noreferrer">Tester le lien actuel ${icon('external')}</a> · <a href="${esc(compareUrl(o))}" target="_blank" rel="noopener noreferrer">Comparer les prix ${icon('external')}</a></p>`,
+      eyebrow: 'Offre vol', title: 'Lien de réservation', confirmLabel: auto ? 'Enregistrer le lien exact' : 'Enregistrer le lien', loadingText: 'Enregistrement…',
+      bodyHtml: auto
+        ? `<p class="modal-text">Pour ${esc(o.flight.airline)}, TripVision <b>fabrique le lien exact</b> : il ouvre la recherche de la compagnie avec le trajet, les dates, la classe et le nombre de voyageurs de l’offre. Rien à coller.</p>
+          ${linkChecks(o)}
+          <input type="hidden" name="bookingUrl" value="${esc(exact)}">
+          <p class="muted"><a href="${esc(exact)}" target="_blank" rel="noopener noreferrer">Ouvrir le lien exact ${icon('external')}</a></p>`
+        : `<p class="modal-text">Le bouton « Voir l’offre » du site ouvre ce lien. Sur le site de ${esc(o.flight?.airline || 'la compagnie')}, faites la recherche avec <b>le même trajet et les mêmes dates</b> que l’offre, puis collez ici l’adresse de la page de résultats.</p>
+          <div class="link-ref"><b>${esc(o.from_city || '')} → ${esc(o.to_city)}</b><span>${esc(o.flight?.fromAirport || '')} → ${esc(o.flight?.toAirport || '')}</span><span>Aller ${esc(String(o.start_date || '').slice(0, 10))}${o.flight?.tripType === 'oneway' ? ' · aller simple' : ` · retour ${esc(String(o.end_date || '').slice(0, 10))}`}</span></div>
+          <div class="form-grid">${field('Lien de la page de résultats', `name="bookingUrl" type="url" required maxlength="600" value="${esc(o.flight?.bookingUrl || '')}" placeholder="https://…"`, true)}</div>
+          <div class="link-live" id="linkLive">${linkChecks(o) || ''}</div>
+          <p class="muted"><a href="${esc(o.flight?.bookingUrl || '#')}" target="_blank" rel="noopener noreferrer">Tester le lien actuel ${icon('external')}</a> · <a href="${esc(compareUrl(o))}" target="_blank" rel="noopener noreferrer">Comparer les prix ${icon('external')}</a></p>`,
       run: async (f) => {
         const url = f.elements.bookingUrl.value.trim();
         if (!/^https:\/\//i.test(url)) throw new ApiError('Le lien doit commencer par https://');
+        if (!auto && window.TVAirline?.isHomepage(url)) throw new ApiError('Ce lien mène à la page d’accueil de la compagnie. Collez l’adresse de la page de résultats (trajet et dates de l’offre).');
         await api(`/admin/offers/${id}/link`, { method: 'PATCH', body: JSON.stringify({ bookingUrl: url }) });
-        return { title: 'Lien enregistré', text: 'Le bouton du site ouvre maintenant ce lien.' };
+        return { title: 'Lien enregistré', text: auto ? 'Le site ouvre la recherche exacte de la compagnie.' : 'Le bouton du site ouvre maintenant ce lien.' };
       },
+    });
+    // Contrôle en direct : le lien collé contient-il bien les aéroports et les dates de l'offre ?
+    const inp = document.querySelector('.modal [name=bookingUrl]:not([type=hidden])');
+    if (inp) inp.addEventListener('input', () => {
+      const probe = { ...o, flight: { ...o.flight, bookingUrl: inp.value.trim() } };
+      const a = window.TVAirline.analyze(probe), [tone, label] = LINK_LEVEL[a.level] || ['plain', ''];
+      document.getElementById('linkLive').innerHTML = `<span class="badge ${tone}">${label}</span> <span class="muted">${esc(a.note || '')}</span>${linkChecks(probe)}`;
     });
   },
   'offer-schedule': (id) => {

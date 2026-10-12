@@ -889,3 +889,27 @@ td strong + .row-link{display:flex;width:max-content}
 .trend-card>.day-chart{width:calc(100% - 48px);margin-left:24px;margin-right:24px}
 .trend-card>.mix{margin-left:24px;margin-right:24px}
 @media(max-width:560px){.trend-card>.day-chart{width:calc(100% - 48px);margin-left:24px;margin-right:24px}.trend-card>.mix{margin-left:24px;margin-right:24px}}
+
+/* Pagination des listes (10 par page) */
+.pg-off{display:none!important}
+.tvpg{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;padding:16px 16px 20px}
+.tvpg[hidden]{display:none}
+.tvpg-btn{min-width:38px;height:38px;padding:0 12px;border:1px solid var(--line,#e4dfd6);border-radius:10px;background:#fff;color:var(--ink,#16261f);font:600 14px inherit;font-family:inherit;cursor:pointer;transition:background .15s,border-color .15s}
+.tvpg-btn:hover:not(:disabled):not(.on){background:#f3f1ea;border-color:#cfc8bb}
+.tvpg-btn.on{background:var(--green,#0f3b2e);border-color:var(--green,#0f3b2e);color:#fff}
+.tvpg-btn:disabled{opacity:.4;cursor:not-allowed}
+.tvpg-gap{padding:0 4px;color:var(--muted,#7b857f)}
+.tvpg-info{flex-basis:100%;margin-top:4px;text-align:center;font-size:12.5px;color:var(--muted,#7b857f)}
+#orderList+.tvpg,#notifList+.tvpg{padding-top:18px}
+
+/* Contrôle du lien vers la compagnie */
+.link-checks{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:4px;font-size:13px}
+.link-checks li{display:flex;gap:8px;align-items:baseline}
+.link-checks li b{width:16px;font-weight:800}
+.link-checks li.ok b{color:#0d7a58}.link-checks li.ko b{color:#b3342f}
+.link-checks li span{color:var(--muted,#6b766f)}
+.link-ref{display:grid;gap:2px;margin:10px 0;padding:12px 14px;border-radius:10px;background:#f4f1ea;font-size:13.5px}
+.link-ref span{color:var(--muted,#6b766f)}
+.link-live{margin:10px 0 4px;font-size:13px}
+.link-live .badge{margin-right:6px}
+.modal .muted svg,.modal-text svg{width:13px;height:13px;vertical-align:-2px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}

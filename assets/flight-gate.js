@@ -38,7 +38,10 @@
 
   function open(id) {
     const o = offerOf(id);
-    const url = o?.flight?.bookingUrl;
+    // Lien exact : le trajet, les dates, la classe et le nombre de voyageurs affichés sur le site (Air France, KLM, easyJet) ; sinon le lien vérifié par l'agent.
+    const sf = typeof serviceFilters !== 'undefined' ? serviceFilters.flight || {} : {};
+    const wantsOne = sf.tripType === 'oneway' && o?.flight?.tripType === 'roundtrip' && o?.flight?.oneWayPrice;
+    const url = window.TVAirline && o?.flight ? window.TVAirline.resolve(o, { adults: sf.travelers || 1, oneway: wantsOne ? true : undefined }).url : o?.flight?.bookingUrl;
     if (!o || !/^https?:\/\//i.test(url || '')) return;
     const airline = o.flight.airline || 'la compagnie';
     document.querySelector('.fg-ov')?.remove();
