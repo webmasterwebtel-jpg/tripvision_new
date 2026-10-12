@@ -4683,3 +4683,7 @@ label:has(> input[type=checkbox][name=terms]) > input,label:has(> input[type=che
 .cat-intro-card .dest-go{right:14px;bottom:16px;background:#eef5f1;color:#0f3b2e;backdrop-filter:none}
 .car-intro-cats .cat-intro-card .dest-info .cat-from{background:#eef5f1;margin-top:8px}
 .car-intro-cats .cat-intro-card .dest-info .cat-from.soon{background:#f3f1ec;color:#7b857f}
+
+/* Voitures : questions fréquentes alignées à gauche, sur toute la largeur (comme les conseils au-dessus) */
+.car-faq{max-width:none!important;margin:0!important;width:100%}
+.car-faq details{width:100%}
