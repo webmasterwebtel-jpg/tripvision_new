@@ -974,14 +974,21 @@ const RENDERERS = {
   },
 
   async offers() {
-    const { offers } = await api('/admin/dashboard');
+    const [{ offers }, auto] = await Promise.all([api('/admin/dashboard'), api('/admin/auto-drafts').catch(() => null)]);
     DATA.offers = offers;
+    const when = (d) => (d ? new Date(d).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—');
+    const autoCard = auto ? `<section class="card auto-card"><div class="auto-ic">${icon('refresh')}</div>
+        <div class="auto-body"><h3>Brouillons de vols renouvelés toutes les ${auto.everyHours} h</h3>
+          <p>De nouveaux vols sont préparés <b>en brouillon, jamais publiés</b> : l’équipe vérifie le tarif et le lien sur le site de la compagnie, puis publie. Les anciens brouillons <b>non modifiés</b> sont remplacés ; les offres publiées et les brouillons que vous avez modifiés restent en place.</p>
+          <div class="auto-meta"><span>Dernier renouvellement <b>${when(auto.lastRunAt)}</b>${auto.lastCreated ? ` · ${auto.lastCreated} créés${auto.lastReplaced ? `, ${auto.lastReplaced} remplacés` : ''}` : ''}</span><span>Prochain <b>${when(auto.nextRunAt)}</b></span><span><b>${auto.replaceable}</b> brouillon${auto.replaceable > 1 ? 's' : ''} remplaçable${auto.replaceable > 1 ? 's' : ''} · <b>${auto.kept}</b> conservé${auto.kept > 1 ? 's' : ''}</span></div></div>
+        ${can('offers.create') ? `<button class="btn" type="button" data-action="auto-drafts-run">${icon('refresh')} Renouveler maintenant</button>` : ''}</section>` : '';
     const rows = offers.map(o => `<tr class="clickable"${fa({ status: pubKey(o), country: o.country })} data-detail="offer" data-type="${o.type}" data-id="${esc(o.id)}">
       <td><span class="badge plain">${o.type === 'flight' ? 'Vol' : 'Pack'}</span></td><td><strong>${esc(o.title)}</strong>${airLink(o).url ? `<a class="row-link" href="${esc(airLink(o).url)}" target="_blank" rel="noopener noreferrer" title="Vérifier l’offre sur le site de la compagnie (trajet et dates de l’offre)">${esc(o.flight.airline || 'Compagnie')} ${icon('external')}</a> ${linkBadge(o)}` : ''}</td><td>${esc(o.to_city)}</td>
       <td class="num">${money(o.price)}</td><td>${pubBadge(o)}</td>
       <td class="actions"><span class="row-actions">${offerActions(o)}</span></td></tr>`).join('');
     return pageHead('Opérations', 'Vols <em>& packs</em>', 'Cliquez sur une offre pour la consulter. Publiez-la tout de suite ou programmez-la.',
       can('offers.create') ? '<button class="btn" type="button" data-action="offer-new-flight">+ Nouveau vol</button><button class="btn primary" type="button" data-action="offer-new-pack">+ Nouveau pack</button>' : '')
+      + autoCard
       + '<div class="pills" role="group" aria-label="Filtrer par type"><button type="button" class="pill active" data-type-filter="all">Tous</button><button type="button" class="pill" data-type-filter="flight">Vols</button><button type="button" class="pill" data-type-filter="pack">Packs</button></div>'
       + tableCard({ id: 'tblOffers', title: 'Offres', count: plural(offers.length, 'offre', 'offres'), head: ['Type', 'Titre', 'Destination', 'Prix', 'Publication', ''], rows, empty: 'Aucune offre', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['active', 'En ligne'], ['draft', 'Brouillon à vérifier'], ['scheduled', 'Programmée'], ['inactive', 'Désactivée'], ['archived', 'Archivée']] }, { key: 'country', label: 'Pays', options: uniq(offers.map(o => o.country)) }] });
   },
@@ -1663,6 +1670,7 @@ const ACT = {
   },
   'offer-deactivate': (id) => confirmCall({ eyebrow: 'Offre', title: `Désactiver « ${esc(find('offers', id).title)} » ?`, message: 'L’offre disparaîtra du site immédiatement. Vous pourrez la réactiver plus tard.', confirmLabel: 'Désactiver', tone: 'danger', loading: 'Désactivation en cours…', success: 'Offre désactivée', url: `/admin/offers/${id}/status`, body: { status: 'inactive' } }),
   'offer-delete': (id) => confirmCall({ eyebrow: 'Suppression', title: `Supprimer « ${esc(find('offers', id).title)} » ?`, message: 'L’offre sera retirée du site et de cette liste. Cette action ne peut pas être annulée depuis le back-office.', confirmLabel: 'Supprimer définitivement', tone: 'danger', loading: 'Suppression en cours…', success: 'Offre supprimée', method: 'DELETE', url: `/admin/offers/${id}` }),
+  'auto-drafts-run': () => confirmCall({ eyebrow: 'Brouillons de vols', title: 'Renouveler les brouillons maintenant ?', message: 'De nouveaux vols sont créés <b>en brouillon</b> (rien n’est publié). Les anciens brouillons <b>non modifiés</b> sont remplacés. Les offres publiées et les brouillons que vous avez modifiés ne sont pas touchés.', confirmLabel: 'Renouveler', loading: 'Création des brouillons…', success: 'Brouillons renouvelés', method: 'POST', url: '/admin/auto-drafts/run' }),
   'offer-link': (id) => {
     const o = find('offers', id);
     const auto = window.TVAirline?.hasBuilder(o.flight?.airline);

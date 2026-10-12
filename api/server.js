@@ -18,6 +18,7 @@ import { listCountries, searchCities, searchAirports, searchPlaces, countryCodeB
 // Moteur de prix partagé avec le site (grille par durée, saisons, retard toléré, lissage des seuils).
 import '../assets/pricing.js';
 import '../assets/airline-links.js';
+import { renewDrafts, DRAFT_EVERY_HOURS } from './auto-drafts.js';
 const Pricing = globalThis.TVPricing;
 import { isLockedOut, recordFailedAttempt, clearAttempts, passwordProblem, audit, recordLogin, clientIp } from './security.js';
 
@@ -1600,6 +1601,34 @@ app.patch('/api/admin/offers/:id/status', auth(...BACKOFFICE_ROLES), can('offers
   res.json(rows[0]);
 }));
 
+
+/* ---------- Brouillons de vols renouvelés toutes les 48 h ---------- */
+// Un seul serveur gagne la course (UPDATE conditionnel). Sur l'offre gratuite, le serveur dort quand personne ne visite :
+// l'échéance est alors rattrapée dès son réveil.
+async function maybeRenewDrafts() {
+  const { rows } = await query(`UPDATE job_runs SET last_run_at = now() WHERE name = 'auto_drafts' AND last_run_at <= now() - ($1 || ' hours')::interval RETURNING name`, [String(DRAFT_EVERY_HOURS)]);
+  if (!rows[0]) return null;
+  const r = await renewDrafts(query, 'auto');
+  await pushNotification('staff', { kind: 'offer', title: 'Nouveaux brouillons de vols', body: `${r.created} brouillons à vérifier${r.replaced ? ` · ${r.replaced} anciens remplacés` : ''}`, link: 'offers' });
+  return r;
+}
+setInterval(() => maybeRenewDrafts().catch((e) => console.error('Renouvellement des brouillons :', e.message)), 30 * 60 * 1000);
+setTimeout(() => maybeRenewDrafts().catch(() => {}), 90 * 1000);
+
+app.get('/api/admin/auto-drafts', auth(...BACKOFFICE_ROLES), canAny('offers.create', 'offers.edit'), h(async (_req, res) => {
+  const { rows } = await query("SELECT * FROM job_runs WHERE name = 'auto_drafts'");
+  const { rows: cnt } = await query(`SELECT count(*) FILTER (WHERE details->>'auto' = 'true' AND COALESCE(details->>'touched', '') <> 'true')::int AS replaceable,
+      count(*) FILTER (WHERE COALESCE(details->>'touched', '') = 'true' OR details->>'auto' IS NULL)::int AS kept
+      FROM offers WHERE type = 'flight' AND status = 'inactive' AND deleted_at IS NULL AND details ? 'draft'`);
+  const last = rows[0]?.last_run_at ? new Date(rows[0].last_run_at) : null;
+  res.json({ everyHours: DRAFT_EVERY_HOURS, lastRunAt: last, nextRunAt: last ? new Date(last.getTime() + DRAFT_EVERY_HOURS * 3600e3) : null, lastCreated: rows[0]?.last_created ?? 0, lastReplaced: rows[0]?.last_replaced ?? 0, lastBy: rows[0]?.last_by || null, replaceable: cnt[0].replaceable, kept: cnt[0].kept });
+}));
+app.post('/api/admin/auto-drafts/run', auth(...BACKOFFICE_ROLES), can('offers.create'), h(async (req, res) => {
+  const r = await renewDrafts(query, req.user.email || 'agent');
+  await audit(req.user.id, 'renew_auto_drafts', 'offer', null, clientIp(req));
+  res.json(r);
+}));
+
 // Changer seulement le lien de réservation d'un vol (vérification par l'équipe).
 app.patch('/api/admin/offers/:id/link', auth(...BACKOFFICE_ROLES), can('offers.edit'), h(async (req, res) => {
   let { bookingUrl } = z.object({ bookingUrl: z.string().trim().max(600).url('Lien invalide').refine((u) => /^https:\/\//i.test(u), 'Le lien doit commencer par https://') }).parse(req.body);
@@ -1607,7 +1636,7 @@ app.patch('/api/admin/offers/:id/link', auth(...BACKOFFICE_ROLES), can('offers.e
   if (!cur[0]) return res.status(404).json({ error: 'NOT_FOUND' });
   const exact = globalThis.TVAirline.buildExact({ start_date: String(cur[0].start_date || '').slice(0, 10), end_date: String(cur[0].end_date || '').slice(0, 10), flight: cur[0].details?.flight }, {});
   if (exact) bookingUrl = exact;
-  const { rows } = await query(`UPDATE offers SET details = jsonb_set(COALESCE(details, '{}'::jsonb), '{flight,bookingUrl}', to_jsonb($1::text), true) WHERE id = $2 AND type = 'flight' AND deleted_at IS NULL RETURNING *`, [bookingUrl, req.params.id]);
+  const { rows } = await query(`UPDATE offers SET details = jsonb_set(COALESCE(details, '{}'::jsonb), '{flight,bookingUrl}', to_jsonb($1::text), true) || '{"touched": true}'::jsonb WHERE id = $2 AND type = 'flight' AND deleted_at IS NULL RETURNING *`, [bookingUrl, req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'NOT_FOUND' });
   await audit(req.user.id, 'update_offer_link', 'offer', req.params.id, clientIp(req));
   res.json(withAbsImage(rows[0]));

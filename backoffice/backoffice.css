@@ -913,3 +913,12 @@ td strong + .row-link{display:flex;width:max-content}
 .link-live{margin:10px 0 4px;font-size:13px}
 .link-live .badge{margin-right:6px}
 .modal .muted svg,.modal-text svg{width:13px;height:13px;vertical-align:-2px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* Renouvellement automatique des brouillons */
+.auto-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px;align-items:start;padding:18px 22px}
+.auto-ic{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:#eef5f1;color:var(--green,#0f3b2e)}
+.auto-ic svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.auto-body h3{margin:0 0 4px;font-size:21px}
+.auto-body p{margin:0 0 10px;color:var(--muted,#6b766f);font-size:13.5px;line-height:1.5;max-width:760px}
+.auto-meta{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:13px;color:var(--ink-soft,#33403b)}
+@media(max-width:760px){.auto-card{grid-template-columns:1fr}.auto-card .btn{width:100%;justify-content:center}}
