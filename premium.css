@@ -4687,3 +4687,6 @@ label:has(> input[type=checkbox][name=terms]) > input,label:has(> input[type=che
 /* Voitures : questions fréquentes alignées à gauche, sur toute la largeur (comme les conseils au-dessus) */
 .car-faq{max-width:none!important;margin:0!important;width:100%}
 .car-faq details{width:100%}
+.bp-group .bp-more{text-align:left;margin:16px 0 4px}
+.bp-group .bp-more a{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border:1px solid #cfe2d9;border-radius:999px;background:#f1f7f3;color:#0f3b2e;font-weight:700;text-decoration:none;transition:background .2s,border-color .2s}
+.bp-group .bp-more a:hover{background:#e3f0e9;border-color:#9cc9b6}

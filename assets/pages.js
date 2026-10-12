@@ -427,7 +427,8 @@
     const flights = best(state.flights.filter((o) => o.flight?.bookingUrl), (o) => `${norm(o.from_city)}>${norm(o.to_city)}`, (o) => Number(o.price)).slice(0, 6);
     const cars = best(state.vehicles || [], (v) => norm(v.city || ''), fromDay).slice(0, 4);
     const packs = best(state.packs || [], (o) => norm(o.to_city || ''), (o) => Number(o.price)).slice(0, 4);
-    const group = (title, icon, items, cls) => (items.length ? `<div class="bp-group ${cls}"><h3>${I(icon)} ${title}</h3><div class="bp-grid">${items.join('')}</div></div>` : '');
+    const MORE = { 'bp-flights': ['flights', 'Voir tous les vols'], 'bp-cars': ['cars', 'Voir toutes les voitures'], 'bp-packs': ['packs', 'Voir tous les week-ends'] };
+    const group = (title, icon, items, cls) => (items.length ? `<div class="bp-group ${cls}"><h3>${I(icon)} ${title}</h3><div class="bp-grid">${items.join('')}</div>${MORE[cls] ? `<p class="hh-more bp-more"><a href="#${MORE[cls][0]}" data-page-link="${MORE[cls][0]}">${MORE[cls][1]} →</a></p>` : ''}</div>` : '');
     box.innerHTML = group('Vols', 'plane', flights.map((o) => {
       const d = destOf(o.to_city), round = o.flight?.tripType !== 'oneway';
       return bpCard({ href: '#flights', link: 'flights', attrs: `data-route-from="${E(o.from_city || '')}" data-route-to="${E(o.to_city || '')}"`, pic: d ? img(d.slug) : (typeof offerImages === 'function' ? offerImages(o)[0] : o.image) || '', kicker: `${round ? 'Aller-retour' : 'Aller simple'} · ${E(o.flight?.airline || 'Vol')}`, title: `${E(o.from_city || '')} <i>→</i> ${E(o.to_city || '')}`, sub: '', price: o.price });

@@ -140,7 +140,7 @@
   async function search(input) {
     const mine = ++seq;
     const type = input.dataset.geo;
-    const text = input.value.trim();
+    const text = input.dataset.browse ? '' : input.value.trim();
     const needle = norm(text);
     if (text !== lastText) { expanded.clear(); lastText = text; }
     try {
@@ -204,15 +204,22 @@
     input.setAttribute('autocomplete', 'off');
     input.setAttribute('role', 'combobox');
     if (input.dataset.geo === 'country') delete input.dataset.codeStale;
+    if (input.value) input.dataset.browse = '1'; else delete input.dataset.browse;
     search(input);
   };
 
-  document.addEventListener('focusin', (e) => { if (isGeo(e.target)) open(e.target); });
+  document.addEventListener('focusin', (e) => {
+    if (!isGeo(e.target)) return;
+    open(e.target);
+    if (e.target.value) { e.target.dataset.justFocused = '1'; setTimeout(() => { e.target.select(); delete e.target.dataset.justFocused; }, 0); }
+  });
+  document.addEventListener('mouseup', (e) => { if (isGeo(e.target) && e.target.dataset.justFocused) e.preventDefault(); }, true);
   document.addEventListener('click', (e) => { if (isGeo(e.target) && (!list || list.hidden || active !== e.target)) open(e.target); });
 
   document.addEventListener('input', (e) => {
     if (!isGeo(e.target)) return;
     active = e.target;
+    delete active.dataset.browse;
     if (active.dataset.geo === 'country') delete active.dataset.code;
     clearTimeout(timer);
     timer = setTimeout(() => search(active), active.dataset.geo === 'country' ? 0 : 150);

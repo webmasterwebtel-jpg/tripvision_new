@@ -7,7 +7,7 @@
   <meta name="description" content="TripVision sélectionne des bons plans vols, locations de voiture et packs week-end depuis la France." />
   <link rel="stylesheet" href="styles.css?v=20260927-admin-1" />
   <script src="assets/boot.js"></script>
-  <link rel="stylesheet" href="premium.css?v=20261020-v74" />
+  <link rel="stylesheet" href="premium.css?v=20261020-v75" />
 </head>
 <body>
   <svg class="tv-icon-sprite" aria-hidden="true" focusable="false">
@@ -96,7 +96,6 @@
       <section class="hh-section hh-deals-wrap" hidden><div class="wrap">
         <div class="hh-head"><span class="eyebrow">Dénichés par TripVision</span><h2>Nos bons plans <em>du moment</em></h2><p>Nous comparons les compagnies et les enseignes pour vous : voici les meilleurs prix que nous avons trouvés.</p></div>
         <div class="deal-grid" id="homeDeals"></div>
-        <p class="hh-more"><a href="#flights" data-page-link="flights">Voir tous les vols →</a></p>
       </div></section>
 
       <section class="hh-section hh-trending" id="homeTrending" hidden><div class="wrap">
@@ -153,11 +152,11 @@
               <label class="fv-opt"><input type="checkbox" name="flex" value="1"><span>Dates flexibles ±3 jours</span></label>
             </div>
             <div class="fv-fields">
-              <label class="fv-field fv-from"><span>Départ</span><input name="fromCity" placeholder="Ville ou aéroport" autocomplete="off" data-geo="place" data-geo-only="offers"></label>
+              <label class="fv-field fv-from"><span>Départ</span><input name="fromCity" placeholder="Lieu de départ" autocomplete="off" data-geo="place" data-geo-only="offers"></label>
               <button type="button" class="fv-swap" id="flightSwap" aria-label="Inverser départ et destination">⇄</button>
-              <label class="fv-field fv-to"><span>Destination</span><input name="toCity" placeholder="Ville, pays ou aéroport" autocomplete="off" data-geo="place" data-geo-only="offers"></label>
-              <label class="fv-field fv-date"><span>Aller</span><b class="fv-date-txt" data-ph="Date indifférente">Date indifférente</b><input type="date" name="departDate" aria-label="Date d’aller"></label>
-              <label class="fv-field fv-date fv-ret"><span>Retour</span><b class="fv-date-txt" data-ph="Date indifférente">Date indifférente</b><input type="date" name="returnDate" aria-label="Date de retour"></label>
+              <label class="fv-field fv-to"><span>Destination</span><input name="toCity" placeholder="Destination" autocomplete="off" data-geo="place" data-geo-only="offers"></label>
+              <label class="fv-field fv-date"><span>Aller</span><b class="fv-date-txt" data-ph="Date d’aller">Date d’aller</b><input type="date" name="departDate" aria-label="Date d’aller"></label>
+              <label class="fv-field fv-date fv-ret"><span>Retour</span><b class="fv-date-txt" data-ph="Date de retour">Date de retour</b><input type="date" name="returnDate" aria-label="Date de retour"></label>
               <label class="fv-field fv-trav"><span>Voyageurs</span><select name="travelers"><option value="1">1 adulte</option><option value="2">2 adultes</option><option value="3">3 adultes</option><option value="4">4 adultes</option><option value="5">5 adultes et +</option></select></label>
             </div>
             <button class="btn fv-go" type="submit"><svg class="tv-icon" aria-hidden="true"><use href="#i-search"></use></svg> Rechercher</button>
@@ -520,7 +519,7 @@
 
   <footer class="footer"><div class="wrap footer-grid footer-grid-final"><div class="footer-brand-block"><a class="brand brand-premium brand-logo" href="#home" data-page-link="home" aria-label="TripVision — Voyager autrement"><img src="/assets/tripvision-logo-original.png?v=20260920-1" alt="TripVision — Voyager autrement" width="2048" height="682" decoding="async"></a></div><div><h4>Voyager</h4><a href="#flights" data-page-link="flights">Vols</a><a href="#cars" data-page-link="cars">Voitures</a><a href="#packs" data-page-link="packs">Week-ends</a></div><div><h4>Informations</h4><a href="#contact" data-page-link="contact">Contact</a><a href="mailto:info@tripvision.fr">info@tripvision.fr</a><a href="#login" data-page-link="login">Mon Espace Client</a><a href="#partner" data-page-link="partner">Espace partenaire</a></div></div><div class="wrap bottom footer-bottom-final"><span>© 2026 TripVision. Tous droits réservés.</span></div></footer>
   <script src="assets/pw-rules.js?v=1"></script>
-  <script src="assets/geo-picker.js?v=11"></script>
+  <script src="assets/geo-picker.js?v=12"></script>
   <script src="assets/cabin-pick.js?v=1"></script>
   <script src="assets/gallery.js?v=5"></script>
   <script src="assets/spin.js?v=5"></script>
@@ -530,7 +529,7 @@
   <script src="assets/scene.js?v=1"></script>
   <script src="assets/fx.js?v=10"></script>
   <script src="assets/fx2.js?v=8"></script>
-  <script src="assets/pages.js?v=19"></script>
+  <script src="assets/pages.js?v=20"></script>
   <script src="assets/pricing.js?v=1"></script>
   <script src="assets/range-picker.js?v=4"></script>
   <script src="assets/cars.js?v=44"></script>
