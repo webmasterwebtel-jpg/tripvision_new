@@ -1,6 +1,6 @@
 /* Pages « Bientôt disponible » (Voitures, Week-ends) */
 .page.is-soon > :not(.soon) { display: none !important; }
-.page.is-soon { padding: 0 !important; background: #04110d !important; }
+.page.is-soon { padding: 0 !important; background: #04110d !important; min-height: calc(100svh - 86px); }
 .soon { position: relative; isolation: isolate; height: calc(100svh - 86px); min-height: 520px; overflow: hidden; display: grid; place-items: start center; color: #fff; background: #04110d; }
 .soon-scene { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
 .soon-copy { position: relative; z-index: 5; width: min(1100px, 92vw); margin-top: clamp(22px, 5.5vh, 70px); text-align: center; pointer-events: none; }
