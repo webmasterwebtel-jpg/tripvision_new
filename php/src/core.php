@@ -188,6 +188,7 @@ final class DB
         }
         // Repli PDO : $1, $2… sont convertis en « ? » (un paramètre répété est dupliqué).
         $order = [];
+        $sql = str_replace('?', '??', $sql); // l'opérateur JSONB « ? » doit être doublé avec PDO
         $q = preg_replace_callback('/\$(\d+)/', function ($m) use (&$order) { $order[] = (int)$m[1] - 1; return '?'; }, $sql);
         $vals = array_map(fn($i) => self::param($params[$i] ?? null), $order);
         $st = self::$pdo->prepare($q);
@@ -443,40 +444,41 @@ function optional_client(Req $req): ?array
 }
 
 /* ---------- Validation (équivalent minimal de zod) ---------- */
+function v_issue(string $code, string $message, array $path, array $extra = []): never { throw new ValidationFailed([['code' => $code] + $extra + ['message' => $message, 'path' => $path]]); }
 function v_str(array $b, string $k, array $o = []): ?string
 {
     $v = $b[$k] ?? null;
     $has = array_key_exists($k, $b) && $v !== null;
     if (!$has) {
-        if (($o['required'] ?? true) && !array_key_exists('default', $o)) throw new ValidationFailed([['code' => 'invalid_type', 'message' => 'Required', 'path' => [$k]]]);
+        if (($o['required'] ?? true) && !array_key_exists('default', $o)) v_issue('invalid_type', 'Required', [$k], ['expected' => 'string', 'received' => 'undefined']);
         return $o['default'] ?? null;
     }
-    if (!is_string($v) && !is_numeric($v)) throw new ValidationFailed([['code' => 'invalid_type', 'message' => 'Expected string', 'path' => [$k]]]);
+    if (!is_string($v) && !is_numeric($v)) v_issue('invalid_type', 'Expected string, received ' . gettype($v), [$k], ['expected' => 'string', 'received' => gettype($v)]);
     $s = (string)$v;
     if ($o['trim'] ?? false) $s = trim($s);
     $len = mb_strlen($s);
-    if (isset($o['min']) && $len < $o['min']) throw new ValidationFailed([['code' => 'custom', 'message' => $o['minMsg'] ?? "Trop court ($k)", 'path' => [$k]]]);
-    if (isset($o['max']) && $len > $o['max']) throw new ValidationFailed([['code' => 'custom', 'message' => $o['maxMsg'] ?? "Trop long ($k)", 'path' => [$k]]]);
-    if (($o['email'] ?? false) && !preg_match('/^[^\s@]+@[^\s@]+\.[^\s@]+$/', $s)) throw new ValidationFailed([['code' => 'invalid_string', 'message' => 'Invalid email', 'path' => [$k]]]);
-    if (($o['uuid'] ?? false) && !is_uuid($s)) throw new ValidationFailed([['code' => 'invalid_string', 'message' => 'Invalid uuid', 'path' => [$k]]]);
-    if (isset($o['in']) && !in_array($s, $o['in'], true)) throw new ValidationFailed([['code' => 'invalid_enum_value', 'message' => 'Invalid enum value', 'path' => [$k]]]);
-    if (isset($o['regex']) && !preg_match($o['regex'], $s)) throw new ValidationFailed([['code' => 'custom', 'message' => $o['regexMsg'] ?? 'Format invalide', 'path' => [$k]]]);
+    if (isset($o['min']) && $len < $o['min']) isset($o['minMsg']) ? v_issue('custom', $o['minMsg'], [$k]) : v_issue('too_small', "String must contain at least {$o['min']} character(s)", [$k], ['minimum' => $o['min'], 'type' => 'string', 'inclusive' => true, 'exact' => false]);
+    if (isset($o['max']) && $len > $o['max']) isset($o['maxMsg']) ? v_issue('custom', $o['maxMsg'], [$k]) : v_issue('too_big', "String must contain at most {$o['max']} character(s)", [$k], ['maximum' => $o['max'], 'type' => 'string', 'inclusive' => true, 'exact' => false]);
+    if (($o['email'] ?? false) && !preg_match('/^[^\s@]+@[^\s@]+\.[^\s@]+$/', $s)) v_issue('invalid_string', 'Invalid email', [$k], ['validation' => 'email']);
+    if (($o['uuid'] ?? false) && !is_uuid($s)) v_issue('invalid_string', 'Invalid uuid', [$k], ['validation' => 'uuid']);
+    if (isset($o['in']) && !in_array($s, $o['in'], true)) v_issue('invalid_enum_value', "Invalid enum value. Expected '" . implode("' | '", $o['in']) . "', received '$s'", [$k], ['options' => $o['in'], 'received' => $s]);
+    if (isset($o['regex']) && !preg_match($o['regex'], $s)) v_issue(isset($o['regexMsg']) ? 'custom' : 'invalid_string', $o['regexMsg'] ?? 'Invalid', [$k], isset($o['regexMsg']) ? [] : ['validation' => 'regex']);
     return $s;
 }
 function v_num(array $b, string $k, array $o = []): int|float|null
 {
     $v = $b[$k] ?? null;
     if (!array_key_exists($k, $b) || $v === null || $v === '') {
-        if (($o['required'] ?? false) && !array_key_exists('default', $o)) throw new ValidationFailed([['code' => 'invalid_type', 'message' => 'Required', 'path' => [$k]]]);
+        if (($o['required'] ?? false) && !array_key_exists('default', $o)) v_issue('invalid_type', 'Required', [$k], ['expected' => 'number', 'received' => 'undefined']);
         return $o['default'] ?? null;
     }
-    if (!is_numeric($v)) throw new ValidationFailed([['code' => 'invalid_type', 'message' => 'Expected number', 'path' => [$k]]]);
+    if (!is_numeric($v)) v_issue('invalid_type', 'Expected number, received nan', [$k], ['expected' => 'number', 'received' => 'nan']);
     $n = $v + 0;
-    if (($o['int'] ?? false) && floor((float)$n) != $n) throw new ValidationFailed([['code' => 'invalid_type', 'message' => 'Expected integer', 'path' => [$k]]]);
-    if (isset($o['min']) && $n < $o['min']) throw new ValidationFailed([['code' => 'custom', 'message' => $o['minMsg'] ?? "Valeur trop petite ($k)", 'path' => [$k]]]);
-    if (isset($o['max']) && $n > $o['max']) throw new ValidationFailed([['code' => 'custom', 'message' => $o['maxMsg'] ?? "Valeur trop grande ($k)", 'path' => [$k]]]);
-    if (($o['positive'] ?? false) && $n <= 0) throw new ValidationFailed([['code' => 'custom', 'message' => $o['posMsg'] ?? "Doit être positif ($k)", 'path' => [$k]]]);
-    return $o['int'] ?? false ? (int)$n : $n;
+    if (($o['int'] ?? false) && floor((float)$n) != $n) v_issue('invalid_type', 'Expected integer, received float', [$k], ['expected' => 'integer', 'received' => 'float']);
+    if (isset($o['min']) && $n < $o['min']) isset($o['minMsg']) ? v_issue('custom', $o['minMsg'], [$k]) : v_issue('too_small', "Number must be greater than or equal to {$o['min']}", [$k], ['minimum' => $o['min'], 'type' => 'number', 'inclusive' => true, 'exact' => false]);
+    if (isset($o['max']) && $n > $o['max']) isset($o['maxMsg']) ? v_issue('custom', $o['maxMsg'], [$k]) : v_issue('too_big', "Number must be less than or equal to {$o['max']}", [$k], ['maximum' => $o['max'], 'type' => 'number', 'inclusive' => true, 'exact' => false]);
+    if (($o['positive'] ?? false) && $n <= 0) isset($o['posMsg']) ? v_issue('custom', $o['posMsg'], [$k]) : v_issue('too_small', 'Number must be greater than 0', [$k], ['minimum' => 0, 'type' => 'number', 'inclusive' => false, 'exact' => false]);
+    return ($o['int'] ?? false) ? (int)$n : $n;
 }
 function v_bool(array $b, string $k, ?bool $default = null): ?bool
 {

@@ -26,14 +26,15 @@ function smtp_send(string $to, string $subject, string $text, ?string $html, ?st
     $host = (string)env('SMTP_HOST'); $port = (int)(env('SMTP_PORT', '587'));
     [$fromName, $fromAddr] = mail_from();
     $remote = ($port === 465 ? 'ssl://' : 'tcp://') . $host . ':' . $port;
-    $fp = @stream_socket_client($remote, $errno, $errstr, 10);
+    $ssl = ['peer_name' => $host, 'SNI_enabled' => true] + (env('SMTP_VERIFY') === '0' ? ['verify_peer' => false, 'verify_peer_name' => false] : []);
+    $fp = @stream_socket_client($remote, $errno, $errstr, 10, STREAM_CLIENT_CONNECT, stream_context_create(['ssl' => $ssl]));
     if (!$fp) throw new RuntimeException("SMTP: $errstr");
     stream_set_timeout($fp, 15);
     $read = function () use ($fp): string { $r = ''; while (($l = fgets($fp, 515)) !== false) { $r .= $l; if (strlen($l) < 4 || $l[3] === ' ') break; } return $r; };
     $cmd = function (string $c, array $ok) use ($fp, $read): string { fwrite($fp, $c . "\r\n"); $r = $read(); if (!in_array(substr($r, 0, 3), $ok, true)) throw new RuntimeException('SMTP ' . trim($r)); return $r; };
     $read();
     $cmd('EHLO tripvision', ['250']);
-    if ($port !== 465) { $cmd('STARTTLS', ['220']); stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT); $cmd('EHLO tripvision', ['250']); }
+    if ($port !== 465) { $cmd('STARTTLS', ['220']); if (!@stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) throw new RuntimeException('SMTP : connexion sécurisée (TLS) impossible'); $cmd('EHLO tripvision', ['250']); }
     $cmd('AUTH LOGIN', ['334']); $cmd(base64_encode((string)env('SMTP_USER')), ['334']); $cmd(base64_encode((string)env('SMTP_PASSWORD')), ['235']);
     $cmd("MAIL FROM:<$fromAddr>", ['250']); $cmd("RCPT TO:<$to>", ['250', '251']); $cmd('DATA', ['354']);
     $b = 'tv' . bin2hex(random_bytes(8));

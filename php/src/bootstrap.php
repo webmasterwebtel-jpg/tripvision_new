@@ -12,6 +12,7 @@ require_once TV_APP . '/helpers.php';
 require_once TV_APP . '/geo.php';
 require_once TV_APP . '/payments.php';
 require_once TV_APP . '/xlsx.php';
+require_once TV_APP . '/pdf.php';
 foreach (['routes_auth', 'routes_public', 'routes_stats', 'routes_client', 'routes_packs', 'routes_admin', 'routes_chat', 'routes_jobs'] as $f) {
     if (is_file(TV_APP . "/$f.php")) require_once TV_APP . "/$f.php";
 }
@@ -40,6 +41,9 @@ function tv_handle(): void
     }
     // Les envois d'e-mails (et autres tâches différées) partent après la réponse.
     if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
+    elseif (function_exists('litespeed_finish_request')) @litespeed_finish_request();
     else { @ob_flush(); @flush(); }
     try { run_after(); } catch (Throwable $t) { error_log('[tripvision after] ' . $t->getMessage()); }
+    // Tâches planifiées de secours (le CRON de l'hébergeur reste le déclencheur principal).
+    if (str_starts_with($req->path, '/api/') && $req->path !== '/api/cron/run' && function_exists('opportunistic_jobs')) opportunistic_jobs();
 }
