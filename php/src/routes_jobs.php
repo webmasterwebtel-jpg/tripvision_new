@@ -42,8 +42,8 @@ route('GET', '/api/cron/check', function (Req $req) {
     $key = env('CRON_KEY');
     if (!$key || !hash_equals($key, (string)($req->q('key') ?: $req->header('x-cron-key')))) fail(404, 'NOT_FOUND');
     $out = ['php' => PHP_VERSION, 'extensions' => []];
-    foreach (['pgsql', 'pdo_pgsql', 'curl', 'mbstring', 'openssl', 'zip', 'gd', 'json'] as $e) $out['extensions'][$e] = extension_loaded($e);
-    try { $t = microtime(true); $out['database'] = ['ok' => (int)q1('SELECT 1 AS x')['x'] === 1, 'ms' => (int)round((microtime(true) - $t) * 1000)]; }
+    foreach (['pdo_mysql', 'curl', 'mbstring', 'openssl', 'zip', 'gd', 'json'] as $e) $out['extensions'][$e] = extension_loaded($e);
+    try { $t = microtime(true); $out['database'] = ['ok' => (int)q1('SELECT 1 AS x')['x'] === 1, 'ms' => (int)round((microtime(true) - $t) * 1000), 'version' => q1('SELECT VERSION() AS v')['v'], 'tables' => (int)q1('SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = DATABASE()')['n']]; }
     catch (Throwable $e) { $out['database'] = ['ok' => false, 'error' => $e->getMessage()]; }
     if (function_exists('curl_init')) {
         $ch = curl_init('https://api.stripe.com/v1'); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 10]); curl_exec($ch);
