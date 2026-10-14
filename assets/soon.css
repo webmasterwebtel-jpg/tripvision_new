@@ -176,3 +176,17 @@
 .hh-stats .wrap { grid-template-columns: repeat(2, minmax(0, 320px)); justify-content: center; gap: 24px clamp(48px, 10vw, 160px); }
 @media (max-width: 640px) { .hh-stats .wrap { grid-template-columns: 1fr; } }
 .hh-stats strong { font-variant-numeric: lining-nums; line-height: 1.05; margin-bottom: 14px; }
+
+/* Bandeau des drapeaux (accueil) */
+.hh-stats.hh-flags { padding: 44px 0 50px; overflow: hidden; }
+.hh-flags-head { margin: 0 0 26px; text-align: center; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: #cfe3da; }
+.hh-flags-head strong { font-family: "Cormorant Garamond", Georgia, serif; font-size: 30px; letter-spacing: 0; color: #e9c97a; margin: 0 4px; vertical-align: -3px; }
+.hh-flags-track { position: relative; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.hh-flags-row { display: flex; gap: 14px; width: max-content; margin: 0; padding: 4px 0; list-style: none; animation: hhFlags calc(var(--n, 30) * 2.4s) linear infinite; }
+.hh-flags-track:hover .hh-flags-row { animation-play-state: paused; }
+.hh-flags-row li { display: flex; align-items: center; gap: 12px; padding: 8px 20px 8px 8px; border-radius: 999px; background: rgba(255,255,255,.07); border: 1px solid rgba(233,201,122,.22); color: #fff; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.hh-flags-row img { width: 36px; height: 27px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+@keyframes hhFlags { to { transform: translateX(calc(-50% - 7px)); } }
+@media (prefers-reduced-motion: reduce) { .hh-flags-row { animation: none; width: auto; flex-wrap: wrap; justify-content: center; } .hh-flags-row li[aria-hidden="true"] { display: none; } .hh-flags-track { -webkit-mask-image: none; mask-image: none; } }
+.hh-stats.hh-flags .wrap { display: block; }
+.hh-flags-head strong { display: inline; line-height: 1; margin-bottom: 0; }
