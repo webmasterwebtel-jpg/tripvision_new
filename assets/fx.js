@@ -143,6 +143,7 @@
   /* ---------- Tendances : suivi anonyme des pages vues, clics et recherches ---------- */
   function track(kind, key, city, country, label) {
     if (!key) return;
+    if (!window.TVConsent || !window.TVConsent.allowed()) return; // mesure d'audience : uniquement avec l'accord du visiteur
     try {
       const url = `${typeof API_BASE !== 'undefined' ? API_BASE : '/api'}/public/track`;
       const body = JSON.stringify({ kind, key: String(key).slice(0, 120), city: city || undefined, country: country || undefined, label: label || undefined });

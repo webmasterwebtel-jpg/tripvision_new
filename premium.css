@@ -4700,3 +4700,12 @@ label:has(> input[type=checkbox][name=terms]) > input,label:has(> input[type=che
 .legal-page p,.legal-page li{line-height:1.7;color:#2b3a33}
 .legal-page ul{padding-left:22px;margin:8px 0 14px}
 .legal-page a{color:#0f3b2e;text-decoration:underline}
+
+/* Bandeau cookies */
+.cookie-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;max-width:880px;margin:0 auto;display:flex;gap:20px;align-items:center;justify-content:space-between;background:#fff;color:#14231d;border:1px solid #e3ddcf;border-radius:14px;padding:18px 22px;box-shadow:0 18px 50px rgba(6,24,19,.22)}
+.cookie-banner strong{display:block;font-size:16px;margin-bottom:4px;color:#0f3b2e}
+.cookie-banner p{margin:0;font-size:13.5px;line-height:1.55;color:#3d4d45}
+.cookie-banner a{color:#0f3b2e;text-decoration:underline;white-space:nowrap}
+.cookie-actions{display:flex;gap:10px;flex-shrink:0}
+.cookie-actions .btn{padding:10px 18px;font-size:13.5px;white-space:nowrap}
+@media(max-width:640px){.cookie-banner{flex-direction:column;align-items:stretch;gap:14px;padding:16px}.cookie-actions{width:100%}.cookie-actions .btn{flex:1}}
