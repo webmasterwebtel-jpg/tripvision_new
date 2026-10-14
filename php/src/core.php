@@ -7,11 +7,12 @@ mb_internal_encoding('UTF-8');
 date_default_timezone_set('UTC');
 
 /* ---------- Configuration (.env) ---------- */
-function tv_env_load(): void
+/** Réglages lus dans app/.env (sans putenv, que certains hébergeurs désactivent). Les variables d'environnement du serveur restent prioritaires. */
+function tv_env_vars(): array
 {
-    static $done = false;
-    if ($done) return;
-    $done = true;
+    static $vars = null;
+    if ($vars !== null) return $vars;
+    $vars = [];
     $candidates = [TV_APP . '/.env', dirname(TV_APP) . '/.env', dirname(TV_APP, 2) . '/.env'];
     foreach ($candidates as $file) {
         if (!is_file($file)) continue;
@@ -20,16 +21,17 @@ function tv_env_load(): void
             if ($line === '' || $line[0] === '#' || !str_contains($line, '=')) continue;
             [$k, $v] = array_map('trim', explode('=', $line, 2));
             if (strlen($v) >= 2 && ($v[0] === '"' || $v[0] === "'") && substr($v, -1) === $v[0]) $v = substr($v, 1, -1);
-            if (getenv($k) === false) { putenv("$k=$v"); $_ENV[$k] = $v; }
+            $vars[$k] = $v;
         }
         break;
     }
+    return $vars;
 }
 function env(string $key, ?string $default = null): ?string
 {
-    tv_env_load();
-    $v = getenv($key);
-    return ($v === false || $v === '') ? $default : $v;
+    $v = function_exists('getenv') ? getenv($key) : false;
+    if ($v === false || $v === '') $v = tv_env_vars()[$key] ?? false;
+    return ($v === false || $v === '') ? $default : (string)$v;
 }
 function app_url(): string { return rtrim(env('APP_URL', 'http://localhost:8080'), '/'); }
 
