@@ -9,7 +9,8 @@ La version PHP reprend les mêmes écrans que la version actuelle et utilise la 
 ## 1 bis. Créer la base de données (phpMyAdmin Nuxit)
 1. Dans le panneau Nuxit → Bases de données : créer une base MariaDB et un utilisateur ; noter le nom de la base, l'utilisateur, le mot de passe et le serveur (souvent `localhost`).
 2. Ouvrir phpMyAdmin, choisir la base, onglet **Importer** → fichier `php/db/schema.sql` (jeu de caractères utf8mb4) → Exécuter. Cela crée les 28 tables et les données de départ.
-3. Reprise des données de l'ancien site (comptes, offres, demandes, messages…) : sur l'ordinateur de développement, `php php/tools/copy-postgres-to-mariadb.php "postgres://…(adresse Supabase)" donnees.sql`, puis importer `donnees.sql` dans phpMyAdmin (après `schema.sql`). Les mots de passe et les connexions restent valables. Si le fichier dépasse la limite d'import de phpMyAdmin, le découper par tables ou demander à Nuxit de relever la limite.
+3. **Premier compte** (base vide) : php php/tools/create-admin.php toi@exemple.fr "Prénom Nom" crée premier-compte.sql et affiche un mot de passe temporaire (à changer à la première connexion). Importer ce fichier dans phpMyAdmin après schema.sql, puis le supprimer.
+3 bis. Reprise des données de l'ancien site (comptes, offres, demandes, messages…) : sur l'ordinateur de développement, `php php/tools/copy-postgres-to-mariadb.php "postgres://…(adresse Supabase)" donnees.sql`, puis importer `donnees.sql` dans phpMyAdmin (après `schema.sql`). Les mots de passe et les connexions restent valables. Si le fichier dépasse la limite d'import de phpMyAdmin, le découper par tables ou demander à Nuxit de relever la limite.
 4. Taille : l'offre Web 1 donne 2 bases de 250 Mo. Les images importées via le back-office sont stockées dans la base : privilégier des images légères (le serveur refuse déjà les fichiers trop gros).
 
 ## 1. Préparer le dossier à envoyer (sur l'ordinateur de développement)
@@ -65,3 +66,4 @@ Tant que Render tourne, revenir en arrière = remettre l'ancien enregistrement D
 ## Limites de cette version (volontaires)
 - Les pages **Voitures** et **Week-ends** affichent « Bientôt disponible » (scène animée) ; l'espace partenaire est masqué. Le code reste en place : retirer `assets/soon.js` les rouvre.
 - Les flèches « → » du reçu PDF sont remplacées par « – » (la police standard du PDF ne contient pas la flèche).
+
