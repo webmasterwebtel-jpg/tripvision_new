@@ -8,6 +8,8 @@ Contrôle automatique (site local ou en ligne) : `node php/tools/security-check.
 - **API** : requêtes SQL toutes paramétrées, CORS fermé par défaut (`CORS_ORIGIN` vide), limites de tentatives de connexion, jetons signés, mots de passe en bcrypt, contrôle des fichiers importés (octets d'en-tête JPG/PNG/WebP/PDF), validation des entrées (400, jamais 500).
 - **Espaces privés** (`/backoffice`, `/espace`, `/activation`, `/api`, `/uploads`) : `noindex` (balise + en-tête `X-Robots-Tag`) et `Disallow` dans `robots.txt`.
 - **Polices** : Cormorant Garamond et Inter hébergées sur le site (`assets/fonts/`, aucune requête vers Google).
+- **Sessions** : équipe du back-office = connexion de 8 h au plus et déconnexion après 15 min d'inactivité (côté serveur) ; clients = 7 jours.
+- **Anti-robots** : formulaire de contact avec champ piège et délai minimum de 3 s (les envois trop rapides sont ignorés sans erreur).
 - **Cookies** : mur de consentement bloquant, statistiques uniquement après accord.
 
 ## Référencement
@@ -26,5 +28,6 @@ Contrôle automatique (site local ou en ligne) : `node php/tools/security-check.
 
 ## Limites connues (décisions à prendre)
 - Mentions légales : l'hébergeur (Nuxit) est renseigné ; l'identité de l'éditeur TripVision (forme juridique, adresse, immatriculation, directeur de publication) reste à compléter.
-- Pas de double authentification pour les comptes du back-office (recommandée).
+- Pas de double authentification pour les comptes du back-office (recommandée, chantier à part).
 - Le site reste une application à une seule page ; les moteurs voient le contenu après exécution du JavaScript (Google le fait). Le HTML initial contient titre, description et liens.
+

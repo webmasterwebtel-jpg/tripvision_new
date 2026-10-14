@@ -189,7 +189,9 @@ function jwt_verify(string $token): ?array
 }
 function token_for(array $user): string
 {
-    return jwt_sign(['id' => $user['id'], 'role' => $user['role'], 'email' => $user['email'], 'mustChangePassword' => (bool)$user['must_change_password']]);
+    // Équipe (back-office) : connexion de 8 h au plus, en plus de la déconnexion après 15 min d'inactivité. Clients : 7 jours.
+    $ttl = in_array($user['role'], ['client', 'partner'], true) ? 7 * 86400 : 8 * 3600;
+    return jwt_sign(['id' => $user['id'], 'role' => $user['role'], 'email' => $user['email'], 'mustChangePassword' => (bool)$user['must_change_password']], $ttl);
 }
 
 /* ---------- Mots de passe ---------- */

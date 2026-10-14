@@ -70,6 +70,8 @@ route('POST', '/api/public/contact', function (Req $req) {
     $message = (string)v_str($b, 'message', ['trim' => true, 'min' => 5, 'max' => 5000]);
     $website = (string)v_str($b, 'website', ['required' => false, 'default' => '']);
     if ($website !== '') send(['sent' => true]);
+    // Un humain met plus de 3 secondes à écrire un message : un envoi plus rapide (ou sans mesure du temps) vient d'un robot, il est ignoré sans réponse d'erreur.
+    if (!isset($b['elapsed']) || !is_numeric($b['elapsed']) || (float)$b['elapsed'] < 3000) send(['sent' => true]);
     $ip = $req->ip();
     if (is_locked_out("contact:$ip", $ip)) fail(429, 'TOO_MANY_ATTEMPTS');
     record_failed_attempt("contact:$ip", $ip);

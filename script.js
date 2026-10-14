@@ -211,11 +211,12 @@ async function loginFrom(form){const email=form.querySelector('input[type="email
 
 function bindPublicContactForm(){
   const form=$('#publicContactForm');if(!form||form.dataset.bound==='1')return;form.dataset.bound='1';
+  const shownAt=Date.now();
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     const submit=form.querySelector('button[type="submit"]');
     const original=submit.innerHTML;
-    const data=Object.fromEntries(new FormData(form));
+    const data=Object.fromEntries(new FormData(form));data.elapsed=Date.now()-shownAt;
     submit.disabled=true;submit.textContent='Envoi…';
     try{
       const res=await api('/public/contact',{method:'POST',body:JSON.stringify(data)});
