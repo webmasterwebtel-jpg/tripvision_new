@@ -34,7 +34,7 @@ let boSrc = fs.readFileSync(bo, 'utf8');
 for (const id of ['vehicles', 'categories', 'partners', 'applications']) boSrc = boSrc.replace(new RegExp(`(\\{ id: '${id}',[^\\n]*?allow: )\\(\\) => [^\\n]*?(\\s*\\},?\\s*\\n)`), '$1() => false$2');
 fs.writeFileSync(bo, boSrc);
 fs.writeFileSync(path.join(dist, 'assets', 'lancement.css'), `/* Lancement : vols et week-ends uniquement. */
-a[data-page-link="cars"], a[data-page-link="partner"], .hh-panel[href="#cars"], .hh-cars, .hh-stats > .wrap > div:nth-child(3), .premium-discover, .hh-quick a[href="#cars"] { display: none !important; }
+a[data-page-link="partner"], .premium-discover { display: none !important; }
 `);
 const idx = path.join(dist, 'index.html');
 fs.writeFileSync(idx, fs.readFileSync(idx, 'utf8').replace('</head>', '  <link rel="stylesheet" href="/assets/lancement.css" />\n</head>'));

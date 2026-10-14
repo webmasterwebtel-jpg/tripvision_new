@@ -31,6 +31,11 @@ La réponse doit montrer : `database.ok: true`, `stripe.reachable: true`, `exten
 - Si `pgsql` et `pdo_pgsql` sont tous les deux `false` : activer l'extension PostgreSQL dans le panneau (sélecteur de version PHP → extensions). Sans elle la base n'est pas joignable.
 - Si `stripe.reachable` est `false` ou `database.ok` est `false` : l'hébergeur bloque les connexions sortantes → demander à Nuxit de les autoriser (ports 443 et 6543).
 
+## 4 bis. Adresses e-mail du site
+- `hello@tripvision.fr` : l'adresse du site (contact, messages, alertes de l'équipe → `SUPPORT_EMAIL`).
+- `noreply@tripvision.fr` : expéditeur des e-mails automatiques (activation, mot de passe, confirmations → `SMTP_USER`, `SMTP_FROM=TripVision <noreply@tripvision.fr>`).
+À faire dans le panneau Nuxit : créer les deux boîtes, relever le serveur SMTP, le port et le mot de passe de `noreply@`, puis dans la zone DNS pointer les enregistrements **MX** vers Nuxit et remplacer le **SPF** par celui que Nuxit indique (et activer la signature **DKIM** si le panneau la propose). Tant que les MX pointent encore chez webmo.fr, garder `SMTP_HOST=smtp.webmo.fr`. Tester ensuite avec : `php php/tools/mail-send-test.php votre@adresse.fr`.
+
 ## 5. Tâches planifiées (CRON)
 Dans le panneau Nuxit → « Tâches CRON » : une tâche **toutes les 5 minutes** (ou 10) qui ouvre :
 ```
@@ -50,5 +55,5 @@ Dans le tableau de bord Stripe → Développeurs → Webhooks : ajouter `https:/
 Tant que Render tourne, revenir en arrière = remettre l'ancien enregistrement DNS. Les données sont dans Supabase : rien ne se perd d'un côté ou de l'autre.
 
 ## Limites de cette version (volontaires)
-- Les locations de voitures et l'espace partenaire sont **masqués** (non proposés pour le lancement). Le code et les tables existent toujours dans la version actuelle.
+- Les pages **Voitures** et **Week-ends** affichent « Bientôt disponible » (scène animée) ; l'espace partenaire est masqué. Le code reste en place : retirer `assets/soon.js` les rouvre.
 - Les flèches « → » du reçu PDF sont remplacées par « – » (la police standard du PDF ne contient pas la flèche).

@@ -69,7 +69,7 @@ function footer(doc) {
   for (let i = range.start; i < range.start + range.count; i++) {
     doc.switchToPage(i);
     doc.moveTo(48, 800).lineTo(547, 800).strokeColor(LINE).lineWidth(1).stroke();
-    doc.font('Helvetica').fontSize(8).fillColor(MUTED).text(`TripVision · info@tripvision.fr · Document généré le ${new Date().toLocaleDateString('fr-FR')} · Page ${i + 1}/${range.count}`, 48, 808, { width: 499, align: 'center', lineBreak: false });
+    doc.font('Helvetica').fontSize(8).fillColor(MUTED).text(`TripVision · hello@tripvision.fr · Document généré le ${new Date().toLocaleDateString('fr-FR')} · Page ${i + 1}/${range.count}`, 48, 808, { width: 499, align: 'center', lineBreak: false });
   }
 }
 

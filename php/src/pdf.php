@@ -245,7 +245,7 @@ function pdf_footer(Pdf $d): void
     for ($i = 0; $i < $count; $i++) {
         $d->gotoPage($i);
         $d->line(48, 800, 547, 800, PDF_LINE, 1);
-        $d->text('TripVision · info@tripvision.fr · Document généré le ' . gmdate('d/m/Y') . ' · Page ' . ($i + 1) . "/$count", 48, 808, ['width' => 499, 'align' => 'center', 'size' => 8, 'color' => PDF_MUTED, 'oneLine' => true]);
+        $d->text('TripVision · hello@tripvision.fr · Document généré le ' . gmdate('d/m/Y') . ' · Page ' . ($i + 1) . "/$count", 48, 808, ['width' => 499, 'align' => 'center', 'size' => 8, 'color' => PDF_MUTED, 'oneLine' => true]);
     }
 }
 /** Reçu d'une demande de vol ou d'un pack (équivalent de requestPdf). */
