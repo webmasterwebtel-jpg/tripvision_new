@@ -50,8 +50,8 @@ http.createServer((req, res) => {
   req.on('end', () => {
     const body = Buffer.concat(chunks);
     const p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-    if (/^\/(api(\/|$)|uploads\/|unsubscribe\/?$)/.test(p)) return runPhp(req, res, body);
-    if (/^\/app(\/|$)/.test(p) || /(^|\/)\.(env|ht)/.test(p)) { res.writeHead(403); return res.end('Forbidden'); }
+    if (/^\/(api(\/|$)|uploads\/|unsubscribe\/?$|sitemap\.xml$|robots\.txt$|destination\/[a-z0-9-]+\/?$|(vols|voitures|week-ends|contact|mentions-legales|politique-de-confidentialite)\/?$)/.test(p) || p === '/') return runPhp(req, res, body);
+    if (/^\/app(\/|$)/.test(p) || /(^|\/)\.(?!well-known)/.test(p) || (/\.(php|phtml|phar|inc)$/.test(p) && p !== '/api.php')) { res.writeHead(403); return res.end('Forbidden'); }
     let file = path.join(root, p === '/' ? 'index.html' : p);
     if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
     if (!file.startsWith(root) || !fs.existsSync(file)) { res.writeHead(404); return res.end('Not found'); }

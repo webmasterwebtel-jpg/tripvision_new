@@ -38,6 +38,8 @@ a[data-page-link="partner"], .premium-discover { display: none !important; }
 `);
 const idx = path.join(dist, 'index.html');
 fs.writeFileSync(idx, fs.readFileSync(idx, 'utf8').replace('</head>', '  <link rel="stylesheet" href="/assets/lancement.css" />\n</head>'));
+fs.mkdirSync(path.join(dist, '.well-known'), { recursive: true });
+fs.writeFileSync(path.join(dist, '.well-known', 'security.txt'), ['Contact: mailto:hello@tripvision.fr', 'Expires: 2027-10-14T00:00:00.000Z', 'Preferred-Languages: fr, en', 'Canonical: https://www.tripvision.fr/.well-known/security.txt', ''].join('\n'));
 fs.copyFileSync(path.join(php, 'deploy', 'htaccess'), path.join(dist, '.htaccess'));
 fs.copyFileSync(path.join(php, 'deploy', 'app-htaccess'), path.join(dist, 'app', '.htaccess'));
 fs.copyFileSync(path.join(php, 'deploy', 'api.php'), path.join(dist, 'api.php'));

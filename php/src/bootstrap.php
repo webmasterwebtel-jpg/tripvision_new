@@ -13,7 +13,7 @@ require_once TV_APP . '/geo.php';
 require_once TV_APP . '/payments.php';
 require_once TV_APP . '/xlsx.php';
 require_once TV_APP . '/pdf.php';
-foreach (['routes_auth', 'routes_public', 'routes_stats', 'routes_client', 'routes_packs', 'routes_admin', 'routes_chat', 'routes_jobs'] as $f) {
+foreach (['routes_auth', 'routes_public', 'routes_stats', 'routes_client', 'routes_packs', 'routes_admin', 'routes_chat', 'routes_jobs', 'routes_seo'] as $f) {
     if (is_file(TV_APP . "/$f.php")) require_once TV_APP . "/$f.php";
 }
 

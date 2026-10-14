@@ -170,3 +170,7 @@
 @media (prefers-reduced-motion: reduce) {
   .soon *, .soon *::before, .soon *::after { animation-duration: 0s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; }
 }
+
+/* Accueil : voitures et week-ends n'apparaissent nulle part tant qu'ils ne sont pas ouverts. */
+.hh-cars, .hh-stats [data-stat="cars"], .hh-stats [data-stat="packs"] { display: none !important; }
+.hh-stats > .wrap > div:has([data-stat="cars"]), .hh-stats > .wrap > div:has([data-stat="packs"]) { display: none !important; }

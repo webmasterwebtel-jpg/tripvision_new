@@ -17,6 +17,18 @@ DirectoryIndex index.html
   RewriteRule ^uploads/ api.php [L]
   RewriteRule ^unsubscribe/?$ api.php [L]
 
+  # Pages à adresse propre (référencement) : renvoyées par api.php avec leur titre, leur description et leur adresse canonique.
+  RewriteRule ^(vols|voitures|week-ends|contact|mentions-legales|politique-de-confidentialite|destination/[a-z0-9-]+)/$ /$1 [R=301,L]
+  RewriteRule ^index.html$ / [R=301,L]
+  RewriteRule ^$ api.php [L]
+  RewriteRule ^(vols|voitures|week-ends|contact|mentions-legales|politique-de-confidentialite)$ api.php [L]
+  RewriteRule ^destination/[a-z0-9-]+$ api.php [L]
+  RewriteRule ^(sitemap\.xml|robots\.txt)$ api.php [L]
+
+  # Fichiers cachés (.git, .env, .user.ini…) et scripts PHP autres qu'api.php : jamais servis. (.well-known reste ouvert.)
+  RewriteRule (^|/)\.(?!well-known/) - [F,L]
+  RewriteRule ^(?!api\.php$).*\.(php|phtml|phar|inc)$ - [F,L]
+
   # Dossiers du serveur : jamais accessibles depuis le navigateur.
   RewriteRule ^app(/|$) - [F,L]
 </IfModule>
@@ -34,8 +46,14 @@ DirectoryIndex index.html
   Header always set Referrer-Policy "no-referrer"
   Header always set Cross-Origin-Opener-Policy "same-origin"
   Header always set Strict-Transport-Security "max-age=15552000; includeSubDomains" "expr=%{HTTPS} == 'on'"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(self), usb=()"
   Header always unset X-Powered-By
+  # Espaces privés et API : jamais dans les moteurs de recherche.
+  <If "%{REQUEST_URI} =~ m#^/(backoffice|espace|activation|api|uploads)(/|$)#">
+    Header always set X-Robots-Tag "noindex, nofollow, noarchive"
+  </If>
 </IfModule>
+
 
 # Fichiers du site : le navigateur les garde un peu en mémoire, puis revérifie (le contenu change quand on republie).
 <IfModule mod_expires.c>

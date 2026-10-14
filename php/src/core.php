@@ -528,9 +528,11 @@ function security_headers(): void
     header('X-Download-Options: noopen');
     header('X-Frame-Options: SAMEORIGIN');
     header('X-Permitted-Cross-Domain-Policies: none');
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(self), usb=(), interest-cohort=()');
     header('X-XSS-Protection: 0');
     header_remove('X-Powered-By');
-    $origin = env('CORS_ORIGIN', '*');
+    // Site et API partagent la même adresse : par défaut aucun autre site n'a le droit d'appeler l'API depuis un navigateur (CORS_ORIGIN='*' ou une liste pour l'ouvrir).
+    $origin = env('CORS_ORIGIN', '');
     $reqOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
     if ($origin === '*') { if ($reqOrigin) { header('Access-Control-Allow-Origin: ' . $reqOrigin); header('Vary: Origin'); } }
     elseif ($reqOrigin && in_array($reqOrigin, array_map('trim', explode(',', $origin)), true)) { header('Access-Control-Allow-Origin: ' . $reqOrigin); header('Vary: Origin'); }

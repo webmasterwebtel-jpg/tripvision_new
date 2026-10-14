@@ -30,6 +30,7 @@ route('GET', '/api/public/offers', function (Req $req) {
     $params = [];
     $sql = "SELECT * FROM offers WHERE status = 'active' AND deleted_at IS NULL AND (publish_at IS NULL OR publish_at <= now()) AND " . LIVE_DATES;
     $type = $req->q('type');
+    if ($type !== '' && !in_array($type, ['flight', 'pack'], true)) send([]);
     if ($type !== '') { $params[] = $type; $sql .= ' AND type = $' . count($params); }
     $sql .= ' ORDER BY COALESCE(publish_at, created_at) DESC';
     send(array_map('with_abs_image', q($sql, $params)->rows));
