@@ -47,7 +47,7 @@
 @keyframes soFade { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 
 /* Briques communes aux scènes */
-.so-sky, .so-layer, .so-road, .so-sea, .so-island, .so-car, .so-plane, .so-route, .so-streaks { position: absolute; }
+.so-sky, .so-layer, .so-road, .so-car, .so-streaks { position: absolute; }
 .so-sky { inset: 0; }
 .so-layer { left: 0; right: 0; overflow: hidden; }
 .so-track { display: flex; width: 200%; will-change: transform; }
@@ -95,40 +95,75 @@
 .so-streaks i:nth-child(6) { top: 66%; animation-duration: 1.6s; animation-delay: 1.1s; width: 18vw; }
 @keyframes soStreak { 0% { transform: translateX(110vw); opacity: 0; } 15% { opacity: .9; } 100% { transform: translateX(-40vw); opacity: 0; } }
 
-/* ----- Week-ends ----- */
-.soon-packs .so-sky.pk { background: linear-gradient(180deg, #0c3b46 0%, #1c6a73 28%, #e9a870 62%, #f6d6a0 78%, #f9e5bd 100%); }
-.so-sun { position: absolute; left: 50%; top: 56%; width: clamp(150px, 20vw, 300px); aspect-ratio: 1; margin-left: calc(clamp(150px, 20vw, 300px) / -2); border-radius: 50%; background: radial-gradient(circle, #fffbe0 0%, #ffe7a3 45%, #ffc470 75%, rgba(255,196,112,0) 76%); box-shadow: 0 0 120px 60px rgba(255, 207, 130, .45); animation: soSun 6s ease-in-out infinite; }
-@keyframes soSun { 50% { transform: translateY(-14px) scale(1.04); box-shadow: 0 0 160px 90px rgba(255, 207, 130, .5); } }
-.soon-packs .so-clouds { top: 38%; height: 40%; opacity: .75; }
-.soon-packs .so-clouds .so-track { animation: soSlide 120s linear infinite; }
+/* ----- Week-ends : valise qui se remplit, calendrier ven-sam-dim, monuments du monde ----- */
+.soon-packs .so-sky.pk { background: linear-gradient(180deg, #0a3440 0%, #17626b 30%, #d99a6c 62%, #f3c58c 78%, #f8dcab 100%); }
+.pk-stars { opacity: .8; -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 45%); mask-image: linear-gradient(180deg, #000 0%, transparent 45%); }
+.so-sun { position: absolute; left: 22%; bottom: 14%; width: clamp(120px, 15vw, 240px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, #fffbe0 0%, #ffe7a3 45%, #ffc470 75%, rgba(255,196,112,0) 76%); box-shadow: 0 0 120px 60px rgba(255, 207, 130, .5); animation: soSun 6s ease-in-out infinite; }
+@keyframes soSun { 50% { transform: translateY(-10px) scale(1.04); box-shadow: 0 0 160px 90px rgba(255, 207, 130, .55); } }
+.soon-packs .so-clouds { top: 42%; height: 26%; opacity: .55; }
+.soon-packs .so-clouds .so-track { animation: soSlide 140s linear infinite; }
 .cl-row { position: relative; }
-.cl-row i { position: absolute; width: 22%; opacity: .85; }
+.cl-row i { position: absolute; width: 20%; }
 .cl-row i svg { width: 100%; height: auto; display: block; }
-.so-route { inset: 0; width: 100%; height: 100%; z-index: 4; overflow: visible; }
-.so-route .rt { animation: soDash 1.4s linear infinite; }
-@keyframes soDash { to { stroke-dashoffset: -32; } }
-.so-island { right: 3%; bottom: 12%; width: min(46vw, 600px, 78vh); z-index: 3; }
-.so-island svg { width: 100%; height: auto; display: block; overflow: visible; filter: drop-shadow(0 20px 20px rgba(0,0,0,.25)); }
-.so-island .palm .crown { transform-box: fill-box; transform-origin: 0 100%; animation: soSway 4.2s ease-in-out infinite; animation-delay: var(--d); }
-@keyframes soSway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(5deg); } }
-.so-island .win { animation: soWin 3s ease-in-out infinite; animation-delay: var(--w); }
-@keyframes soWin { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
-.so-pin { position: absolute; left: 54%; top: 33%; width: 0; height: 0; z-index: 2; }
-.so-pin i { position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; border-radius: 50%; background: #e6c47e; box-shadow: 0 6px 12px rgba(0,0,0,.35); animation: soPin 1.6s ease-in-out infinite; }
-.so-pin b { position: absolute; left: -26px; top: 70px; width: 52px; height: 18px; border-radius: 50%; border: 2px solid rgba(230,196,126,.9); animation: soRipple 1.6s ease-out infinite; }
-@keyframes soPin { 50% { transform: translateY(-14px); } }
-@keyframes soRipple { 0% { transform: scale(.3); opacity: 1; } 100% { transform: scale(2.3); opacity: 0; } }
-.so-sea { left: 0; right: 0; bottom: 0; height: 26%; z-index: 4; }
-.so-sea .so-track { position: absolute; left: 0; right: 0; bottom: 0; width: 200%; height: 100%; }
-.so-sea .so-track svg { height: 100%; }
-.so-sea .s1 { bottom: 34%; height: 70%; animation: soSlide 14s linear infinite; }
-.so-sea .s2 { bottom: 14%; height: 70%; animation: soSlide 9s linear infinite reverse; }
-.so-sea .s3 { bottom: -4%; height: 70%; animation: soSlide 6s linear infinite; }
+.soon-packs .so-sk-far { bottom: 8%; height: 40%; opacity: .75; }
+.soon-packs .so-sk-near { bottom: 3%; height: 33%; }
+.soon-packs .so-sk-far .so-track { animation: soSlide 150s linear infinite; }
+.soon-packs .so-sk-near .so-track { animation: soSlide 85s linear infinite; }
+.soon-packs .so-sk-far .so-track > svg, .soon-packs .so-sk-near .so-track > svg { flex: 0 0 25%; width: 25%; height: 100%; }
+.so-sk-near .lt { animation: soTw 3.4s ease-in-out infinite; animation-delay: var(--l); }
+@keyframes soTw { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+.so-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 6%; background: linear-gradient(180deg, #0b3b3a, #051d1c); }
+
+/* Pastilles : transport, hôtel, paiement */
+.so-chips { position: absolute; left: 5%; bottom: 14%; z-index: 3; display: grid; gap: 12px; justify-items: start; }
+.so-chips .chip { display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px 10px 12px; border-radius: 999px; font: 600 15px Inter, sans-serif; color: #fff; background: rgba(4, 17, 13, .6); border: 1px solid rgba(255, 255, 255, .28); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); animation: soFloat 4.6s ease-in-out infinite; }
+.so-chips .chip svg { width: 24px; height: 24px; color: #e6c47e; flex-shrink: 0; }
+.so-chips .c2 { animation-delay: -1.5s; margin-left: 22px; }
+.so-chips .c3 { animation-delay: -3s; }
+@keyframes soFloat { 50% { transform: translateY(-8px); } }
+
+/* Calendrier du week-end */
+.so-cal { position: absolute; right: 5%; bottom: 14%; z-index: 3; width: min(250px, 22vw); padding: 14px 14px 12px; border-radius: 20px; background: rgba(255, 253, 248, .95); color: #10231c; box-shadow: 0 30px 60px -22px rgba(0, 0, 0, .55); transform: perspective(900px) rotateY(-14deg) rotateZ(2deg); animation: soCal 6s ease-in-out infinite; }
+@keyframes soCal { 50% { transform: perspective(900px) rotateY(-9deg) rotateZ(1deg) translateY(-8px); } }
+.cal-h { font: 800 11px Inter, sans-serif; letter-spacing: .24em; text-transform: uppercase; color: #b98a35; margin-bottom: 10px; }
+.cal-days { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.cal-days .d { display: grid; gap: 2px; padding: 9px 4px; text-align: center; border-radius: 12px; background: #f1ebdc; animation: soDay 6s infinite; }
+.cal-days b { font: 700 17px 'Cormorant Garamond', Georgia, serif; }
+.cal-days span { font: 600 10px Inter, sans-serif; color: #5d6b64; }
+.cal-days .d2 { animation-delay: 1.6s; } .cal-days .d3 { animation-delay: 3.2s; }
+@keyframes soDay { 0%, 4% { background: #f1ebdc; color: #10231c; transform: none; } 8%, 26% { background: #0f5a46; color: #fff; transform: translateY(-4px) scale(1.06); } 34%, 100% { background: #f1ebdc; color: #10231c; transform: none; } }
+.cal-days .d span { transition: color .2s; }
+.cal-bar { margin-top: 12px; height: 5px; border-radius: 3px; background: #e6dec8; overflow: hidden; }
+.cal-bar i { display: block; height: 100%; width: 0; border-radius: 3px; background: linear-gradient(90deg, #0f5a46, #e6c47e); animation: soBar 6s linear infinite; }
+@keyframes soBar { 0% { width: 0; } 80%, 100% { width: 100%; } }
+
+/* Valise : elle s'ouvre, se remplit (billet, appareil photo, passeport, lunettes), se ferme et saute */
+.so-case { position: absolute; left: 50%; bottom: 2.5%; z-index: 4; width: min(270px, 24vw, 26vh); transform: translateX(-50%); animation: soHop 7s ease-in-out infinite; }
+.so-case .case { width: 100%; height: auto; display: block; overflow: visible; filter: drop-shadow(0 22px 24px rgba(0, 0, 0, .4)); }
+@keyframes soHop { 0%, 66%, 100% { transform: translateX(-50%) translateY(0) rotate(0); } 70% { transform: translateX(-50%) translateY(-22px) rotate(-1.5deg); } 74% { transform: translateX(-50%) translateY(0) rotate(0); } 77% { transform: translateX(-50%) translateY(-7px) rotate(.8deg); } 80% { transform: translateX(-50%) translateY(0); } }
+.case .lid { transform-box: fill-box; transform-origin: 50% 100%; animation: soLid 7s ease-in-out infinite; }
+@keyframes soLid { 0%, 58% { transform: scaleY(1); } 64%, 88% { transform: scaleY(.06); } 96%, 100% { transform: scaleY(1); } }
+.case .closed, .case .handle { opacity: 0; animation: soClosed 7s ease-in-out infinite; }
+@keyframes soClosed { 0%, 61% { opacity: 0; } 65%, 88% { opacity: 1; } 93%, 100% { opacity: 0; } }
+.case .it { transform-box: fill-box; transform-origin: 50% 50%; opacity: 0; animation: soItem 7s cubic-bezier(.3, .1, .3, 1) infinite; animation-delay: calc(var(--k) * .5s); }
+@keyframes soItem {
+  0% { opacity: 0; transform: translateY(-120px) rotate(var(--r)); }
+  4% { opacity: 1; }
+  14% { transform: translateY(0) rotate(0); }
+  18% { transform: translateY(-9px) rotate(calc(var(--r) * -.3)); }
+  22% { transform: translateY(0) rotate(0); }
+  34% { opacity: 1; transform: translateY(110px) rotate(calc(var(--r) * .4)); }
+  35%, 100% { opacity: 0; transform: translateY(110px); }
+}
+.case .tag { opacity: 0; animation: soClosed 7s ease-in-out infinite; }
+.case .swing { transform-box: fill-box; transform-origin: 50% 0; animation: soSwing 7s ease-in-out infinite; }
+@keyframes soSwing { 0%, 66% { transform: rotate(0); } 72% { transform: rotate(14deg); } 78% { transform: rotate(-9deg); } 84% { transform: rotate(5deg); } 90%, 100% { transform: rotate(0); } }
 
 @media (max-width: 760px) {
   .soon-copy { margin-top: clamp(16px, 3.5vh, 40px); }
   .soon-title { font-size: clamp(38px, 12vw, 64px); }
-  .so-island { right: 2%; width: min(72vw, 36vh); bottom: 6vh; }
+  .so-chips, .so-cal { display: none; }
+  .so-case { width: min(46vw, 25vh); }
   .so-car { width: 118vw; }
   .soon-cars .so-lamps .so-track { animation-duration: 9s; }
 }
