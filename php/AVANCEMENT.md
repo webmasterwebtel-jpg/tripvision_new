@@ -6,7 +6,7 @@ Hors périmètre pour l'instant : voitures, espace partenaire (masqués dans le 
 
 ## Règles de travail
 - Aucune dépendance Composer : tout en PHP natif (pas de dossier vendor à envoyer par FTP).
-- Même base Supabase, structure inchangée. Jetons JWT et mots de passe compatibles avec la version Node.
+- Base MariaDB de l'hébergement Nuxit (structure : php/db/schema.sql, couche de traduction php/src/db.php). Jetons JWT et mots de passe compatibles avec la version Node. Reprise des données Supabase : php/tools/copy-postgres-to-mariadb.php.
 - Chaque étape est testée en local contre la version Node (comparaison des réponses) avant d'être cochée.
 
 ## Étapes
@@ -17,7 +17,7 @@ Hors périmètre pour l'instant : voitures, espace partenaire (masqués dans le 
 - [x] D. Back-office : tableau de bord, offres (création, modification, statut avec garde « lien faible », lien, planification, suppression), brouillons auto, demandes, messagerie, statistiques + exports xlsx/xls/csv, mailing + export, alertes, clients, comptes internes, journal, connexions, santé
 - [x] E. Tâches planifiées : /api/cron/run (CRON) + déclenchement de secours au fil des visites ; /api/cron/check (diagnostic de l'hébergement)
 - [x] F. Mise en ligne : `php/tools/build-dist.mjs` → `dist-php/`, `.htaccess`, `.env` d'exemple, `php/DEPLOIEMENT.md`
-- [ ] G. À faire AVEC l'utilisateur : test sur l'hébergement Nuxit (extension PostgreSQL, accès sortants Supabase/Stripe, CRON), paiement avec une vraie carte de test sur la page Stripe, validation, bascule du domaine
+- [ ] G. À faire AVEC l'utilisateur : test sur l'hébergement Nuxit (création de la base, import schema.sql, extension pdo_mysql, accès sortant Stripe, CRON), paiement avec une vraie carte de test sur la page Stripe, validation, bascule du domaine
 
 ## Tests réalisés (local, mêmes données que Node)
 - Réponses identiques Node/PHP : offres, géographie, connexion, notifications, alertes, messagerie complète (création, réponse, notes, attribution, clôture, avis, réouverture), tableau de bord, statistiques, exports, mailing, comptes, offres (cycle complet), demandes.
@@ -36,3 +36,4 @@ node php/tools/dev-server.mjs dist-php 8770     (variables : APP_URL, DEBUG=1, D
 ## Reste à améliorer (non bloquant)
 - Messages d'erreur de validation : mêmes codes que zod, textes en anglais pour certains champs (comme la version Node).
 - Aperçu du tableau de bord : quelques blocs « voitures / partenaires » à 0 restent visibles.
+

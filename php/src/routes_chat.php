@@ -189,7 +189,7 @@ route('GET', '/api/admin/chats-stats', function (Req $req) {
     $r = q1("SELECT
       count(*) FILTER (WHERE status = 'open')::int AS open, count(*) FILTER (WHERE status = 'pending')::int AS pending, count(*) FILTER (WHERE status = 'closed')::int AS closed,
       count(*) FILTER (WHERE status <> 'closed' AND assigned_to IS NULL)::int AS unassigned,
-      round(avg(extract(epoch FROM (first_response_at - created_at)) / 60) FILTER (WHERE first_response_at IS NOT NULL AND created_at >= now() - interval '30 days'))::int AS first_response_min,
+      round(avg(TIMESTAMPDIFF(SECOND, created_at, first_response_at) / 60) FILTER (WHERE first_response_at IS NOT NULL AND created_at >= now() - interval '30 days'))::int AS first_response_min,
       round(avg(rating)::numeric, 1) AS rating, count(rating)::int AS rated
     FROM chat_threads");
     $r['rating'] = $r['rating'] === null ? null : (float)$r['rating'] + 0;
@@ -287,7 +287,11 @@ route('POST', '/api/admin/chats/:id/reopen', fn(Req $r) => set_thread_status($r,
 /** Clôture automatique : une conversation qui attend le client depuis 7 jours sans réponse. Appelée par le CRON. */
 function auto_close_chats(): int
 {
-    $rows = q("UPDATE chat_threads SET status = 'closed', closed_at = now(), closed_by = 'Automatique', auto_closed = true, updated_at = now(), unread_partner = unread_partner + 1 WHERE status = 'pending' AND updated_at < now() - ($1 || ' days')::interval RETURNING id, partner_user_id, subject", [(string)CHAT_AUTO_CLOSE_DAYS])->rows;
+    $rows = [];
+    foreach (q("SELECT id FROM chat_threads WHERE status = 'pending' AND updated_at < now() - ($1 || ' days')::interval", [(string)CHAT_AUTO_CLOSE_DAYS])->rows as $c) {
+        $t = q1("UPDATE chat_threads SET status = 'closed', closed_at = now(), closed_by = 'Automatique', auto_closed = true, updated_at = now(), unread_partner = unread_partner + 1 WHERE id = $1 AND status = 'pending' RETURNING id, partner_user_id, subject", [$c['id']]);
+        if ($t) $rows[] = $t;
+    }
     foreach ($rows as $t) {
         q("INSERT INTO chat_messages(thread_id, sender, body) VALUES ($1,'system',$2)", [$t['id'], 'Conversation clôturée automatiquement après ' . CHAT_AUTO_CLOSE_DAYS . ' jours sans réponse. Vous pouvez en démarrer une nouvelle à tout moment.']);
         push_notification($t['partner_user_id'], 'chat', 'Conversation clôturée', $t['subject'] . ' · sans réponse depuis ' . CHAT_AUTO_CLOSE_DAYS . ' jours', 'chat');

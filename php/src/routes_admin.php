@@ -196,7 +196,7 @@ route('GET', '/api/admin/booking-stats', function (Req $req) {
       UNION ALL SELECT offer_type AS kind, created_at FROM offer_requests WHERE payment_status NOT IN ('awaiting', 'failed')
     ), edges AS (SELECT (now() - interval '7 days') AS wk, date_trunc('month', now()) AS mo, date_trunc('year', now()) AS yr)
     SELECT k.kind, count(*) FILTER (WHERE ev.created_at >= e.wk)::int AS week, count(*) FILTER (WHERE ev.created_at >= e.mo)::int AS month, count(*) FILTER (WHERE ev.created_at >= e.yr)::int AS year
-    FROM (VALUES ('car'), ('pack'), ('flight')) AS k(kind) CROSS JOIN edges e LEFT JOIN ev ON ev.kind = k.kind GROUP BY k.kind")->rows;
+    FROM (SELECT 'car' AS kind UNION ALL SELECT 'pack' UNION ALL SELECT 'flight') AS k CROSS JOIN edges e LEFT JOIN ev ON ev.kind = k.kind GROUP BY k.kind")->rows;
     $z = fn() => ['car' => 0, 'pack' => 0, 'flight' => 0, 'total' => 0];
     $out = ['week' => $z(), 'month' => $z(), 'year' => $z()];
     foreach ($rows as $r) foreach (['week', 'month', 'year'] as $p) { $out[$p][$r['kind']] = $r[$p]; $out[$p]['total'] += $r[$p]; }
@@ -208,7 +208,7 @@ function load_settings(): array
 {
     $s = ['franchisePerDay' => 7, 'franchiseAmount' => null];
     try {
-        foreach (q('SELECT key, value FROM site_settings')->rows as $r) {
+        foreach (q('SELECT `key`, value FROM site_settings')->rows as $r) {
             if ($r['key'] === 'franchise_protection_per_day') $s['franchisePerDay'] = max(0, (float)$r['value']) + 0;
             if ($r['key'] === 'franchise_amount' && $r['value'] !== null && (float)$r['value'] > 0) $s['franchiseAmount'] = (float)$r['value'] + 0;
         }
@@ -217,7 +217,7 @@ function load_settings(): array
 }
 function save_setting(string $key, mixed $value, array $u): void
 {
-    q('INSERT INTO site_settings(key, value, updated_at, updated_by) VALUES ($1, $2::jsonb, now(), $3) ON CONFLICT (key) DO UPDATE SET value = $2::jsonb, updated_at = now(), updated_by = $3', [$key, json_encode($value), $u['name'] ?: $u['email']]);
+    q('INSERT INTO site_settings(`key`, value, updated_at, updated_by) VALUES ($1, $2, now(), $3) ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = VALUES(updated_at), updated_by = VALUES(updated_by)', [$key, json_encode($value), $u['name'] ?: $u['email']]);
 }
 route('GET', '/api/admin/settings', function (Req $req) { bo($req, 'franchise.manage', 'settings.manage'); send(['franchisePerDay' => load_settings()['franchisePerDay']]); });
 route('PUT', '/api/admin/settings', function (Req $req) {
@@ -237,7 +237,7 @@ route('PUT', '/api/admin/franchise', function (Req $req) {
 });
 route('DELETE', '/api/admin/franchise', function (Req $req) {
     $u = bo($req, 'franchise.manage', 'settings.manage');
-    q("DELETE FROM site_settings WHERE key = 'franchise_amount'");
+    q("DELETE FROM site_settings WHERE `key` = 'franchise_amount'");
     audit($u['id'], 'remove_franchise_amount', 'settings', null, $req->ip());
     send(['amount' => null]);
 });
@@ -295,7 +295,7 @@ route('PATCH', '/api/admin/offers/:id', function (Req $req) {
     $img = $o['images'] !== null ? (offer_cover($o) ?: DEFAULT_OFFER_IMAGE) : (normalize_image($o['image']) ?: null);
     $r = q1("UPDATE offers SET title = $1, from_city = $2, to_city = $3, country = $4, badge = $5, price = $6, old_price = $7, start_date = $8, end_date = $9,
             image = COALESCE($10, image), description = $11, hotel_name = $12, hotel_stars = $13, hotel_nights = $14, hotel_board = $15,
-            details = $17::jsonb || (CASE WHEN status = 'inactive' AND details ? 'draft' THEN jsonb_build_object('draft', true, 'toVerify', details->'toVerify') ELSE '{}'::jsonb END)
+            details = JSON_MERGE_PATCH($17, CASE WHEN status = 'inactive' AND details ? 'draft' THEN JSON_MERGE_PATCH('{\"draft\": true}', JSON_OBJECT('toVerify', details->'toVerify')) ELSE '{}' END)
      WHERE id = $16 AND deleted_at IS NULL RETURNING *",
         [$o['title'], $o['fromCity'] ?: '', $o['toCity'], $o['country'] ?: '', offer_badge($o), $o['price'], $o['oldPrice'] ?: null, $o['startDate'] ?: null, $o['endDate'] ?: null,
          $img, $o['description'] ?: '', $pack ? $o['hotelName'] : null, $pack ? ($o['hotelStars'] ?: null) : null, $pack ? $o['hotelNights'] : null, $pack ? ($o['hotelBoard'] ?: null) : null, $id, json_encode(offer_details($o), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
@@ -318,7 +318,7 @@ route('PATCH', '/api/admin/offers/:id/status', function (Req $req) {
     }
     // Publier une offre en brouillon la valide : elle n'est plus marquée « à vérifier ».
     $r = $status === 'active'
-        ? q1("UPDATE offers SET status = $1, publish_at = COALESCE($2, now()), details = COALESCE(details, '{}'::jsonb) - 'draft' - 'toVerify' WHERE id = $3 AND deleted_at IS NULL RETURNING *", [$status, $publishAt, $id])
+        ? q1("UPDATE offers SET status = $1, publish_at = COALESCE($2, now()), details = JSON_REMOVE(COALESCE(details, '{}'), '$.draft', '$.toVerify') WHERE id = $3 AND deleted_at IS NULL RETURNING *", [$status, $publishAt, $id])
         : q1('UPDATE offers SET status = $1 WHERE id = $2 AND deleted_at IS NULL RETURNING *', [$status, $id]);
     if (!$r) fail(404, 'NOT_FOUND');
     audit($u['id'], "offer_$status", 'offer', $id, $req->ip());
@@ -336,7 +336,7 @@ route('PATCH', '/api/admin/offers/:id/link', function (Req $req) {
     if (!$cur) fail(404, 'NOT_FOUND');
     $exact = air_build_exact(['start_date' => substr((string)$cur['start_date'], 0, 10), 'end_date' => substr((string)$cur['end_date'], 0, 10), 'flight' => $cur['details']['flight'] ?? null], []);
     if ($exact) $url = $exact;
-    $r = q1("UPDATE offers SET details = jsonb_set(COALESCE(details, '{}'::jsonb), '{flight,bookingUrl}', to_jsonb($1::text), true) || '{\"touched\": true}'::jsonb WHERE id = $2 AND type = 'flight' AND deleted_at IS NULL RETURNING *", [$url, $id]);
+    $r = q1("UPDATE offers SET details = JSON_MERGE_PATCH(JSON_SET(COALESCE(details, '{}'), '$.flight.bookingUrl', $1), '{\"touched\": true}') WHERE id = $2 AND type = 'flight' AND deleted_at IS NULL RETURNING *", [$url, $id]);
     if (!$r) fail(404, 'NOT_FOUND');
     audit($u['id'], 'update_offer_link', 'offer', $id, $req->ip());
     send(with_abs_image($r));
@@ -396,7 +396,8 @@ function build_drafts(): array
 }
 function renew_drafts(string $by = 'auto'): array
 {
-    $old = q("UPDATE offers SET deleted_at = now() WHERE type = 'flight' AND status = 'inactive' AND deleted_at IS NULL AND publish_at IS NULL AND details ? 'draft' AND details->>'auto' = 'true' AND COALESCE(details->>'touched', '') <> 'true' RETURNING id");
+    $old = q("SELECT id FROM offers WHERE type = 'flight' AND status = 'inactive' AND deleted_at IS NULL AND publish_at IS NULL AND details ? 'draft' AND details->>'auto' = 'true' AND COALESCE(details->>'touched', '') <> 'true'");
+    foreach ($old->rows as $o) q('UPDATE offers SET deleted_at = now() WHERE id = $1 AND deleted_at IS NULL', [$o['id']]);
     $fresh = build_drafts();
     foreach ($fresh as $d) {
         q("INSERT INTO offers(type, title, from_city, to_city, country, badge, price, partner_name, start_date, end_date, image, description, status, details) VALUES ('flight', $1, $2, $3, $4, 'Bon plan', $5, $6, $7, $8, $9, '', 'inactive', $10)",
@@ -430,9 +431,8 @@ route('POST', '/api/admin/auto-drafts/run', function (Req $req) {
 /* ---------- Alertes de prix : vue de l'équipe ---------- */
 route('GET', '/api/admin/alerts', function (Req $req) {
     bo($req, 'offers.create', 'offers.edit', 'trends.view', 'mailing.export');
-    send(q('SELECT a.*, u.name AS client_name, u.email AS client_email, m.n::int AS matches, m.best FROM price_alerts a
+    send(q('SELECT a.*, u.name AS client_name, u.email AS client_email, ' . ALERT_MATCHES . ' FROM price_alerts a
        JOIN users u ON u.id = a.user_id
-       LEFT JOIN LATERAL (SELECT count(*) AS n, min(' . ALERT_PRICE . ') AS best FROM offers o WHERE ' . LIVE_FLIGHT . ' AND ' . ALERT_MATCH . ') m ON true
       ORDER BY a.created_at DESC LIMIT 2000')->rows);
 });
 

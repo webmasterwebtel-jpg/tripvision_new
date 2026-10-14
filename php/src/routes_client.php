@@ -44,13 +44,15 @@ const ALERT_MATCH = "lower(o.to_city) LIKE '%' || lower(a.to_city) || '%'
        OR (a.trip_type = 'oneway' AND " . ALERT_PRICE . " IS NOT NULL))
   AND (a.max_price IS NULL OR " . ALERT_PRICE . " <= a.max_price)";
 
+/** Nombre d'offres en ligne qui correspondent à l'alerte « a » et meilleur prix (sous-requêtes corrélées). */
+const ALERT_MATCHES = '(SELECT count(*) FROM offers o WHERE ' . LIVE_FLIGHT . ' AND ' . ALERT_MATCH . ')::int AS matches, (SELECT min(' . ALERT_PRICE . ') FROM offers o WHERE ' . LIVE_FLIGHT . ' AND ' . ALERT_MATCH . ') AS best';
+
 function alert_route(array $a): string { return ($a['from_city'] ? $a['from_city'] . ' → ' : '') . $a['to_city']; }
 function euros(mixed $n): string { return fr_num($n, 0) . ' €'; }
 
 route('GET', '/api/client/alerts', function (Req $req) {
     $u = require_auth($req, ['client']);
-    send(q('SELECT a.*, m.n::int AS matches, m.best FROM price_alerts a
-       LEFT JOIN LATERAL (SELECT count(*) AS n, min(' . ALERT_PRICE . ') AS best FROM offers o WHERE ' . LIVE_FLIGHT . ' AND ' . ALERT_MATCH . ') m ON true
+    send(q('SELECT a.*, ' . ALERT_MATCHES . ' FROM price_alerts a
       WHERE a.user_id = $1 ORDER BY a.active DESC, a.created_at DESC', [$u['id']])->rows);
 });
 

@@ -28,17 +28,21 @@ function record_contact(string $email, ?string $name, ?string $phone, string $so
     $e = strtolower(trim($email));
     if ($e === '') return ['returning' => false];
     try {
-        $existing = q('SELECT id FROM contacts WHERE lower(email) = $1', [$e]);
-        q('INSERT INTO contacts(email, name, phone, sources, consent, consent_at, requests_count)
-           VALUES ($1, $2, $3, $4::text[], $5::boolean, CASE WHEN $5::boolean THEN now() END, $6)
-           ON CONFLICT (lower(email)) DO UPDATE SET
-             name = COALESCE(NULLIF($2, \'\'), contacts.name), phone = COALESCE(NULLIF($3, \'\'), contacts.phone),
-             sources = (SELECT array_agg(DISTINCT x) FROM unnest(contacts.sources || $4::text[]) x),
-             consent = contacts.consent OR $5::boolean, consent_at = CASE WHEN $5::boolean AND NOT contacts.consent THEN now() ELSE contacts.consent_at END,
-             unsubscribed_at = CASE WHEN $5::boolean THEN NULL ELSE contacts.unsubscribed_at END,
-             requests_count = contacts.requests_count + $6, last_seen_at = now()',
-            [$e, $name ?: null, $phone ?: null, [$source], $consent, $count]);
-        return ['returning' => count($existing->rows) > 0];
+        $cur = q1('SELECT id, sources FROM contacts WHERE email = $1', [$e]);
+        if (!$cur) {
+            q('INSERT INTO contacts(email, name, phone, sources, consent, consent_at, requests_count) VALUES ($1, $2, $3, $4, $5, CASE WHEN $5 THEN now() END, $6)',
+                [$e, $name ?: null, $phone ?: null, [$source], $consent, $count]);
+            return ['returning' => false];
+        }
+        $sources = array_values(array_unique(array_merge(is_array($cur['sources']) ? $cur['sources'] : [], [$source])));
+        sort($sources);
+        // MariaDB applique les affectations dans l'ordre : consent_at est calculé avant de modifier consent.
+        q("UPDATE contacts SET name = COALESCE(NULLIF($2, ''), name), phone = COALESCE(NULLIF($3, ''), phone), sources = $4,
+             consent_at = CASE WHEN $5 AND NOT consent THEN now() ELSE consent_at END, consent = consent OR $5,
+             unsubscribed_at = CASE WHEN $5 THEN NULL ELSE unsubscribed_at END,
+             requests_count = requests_count + $6, last_seen_at = now() WHERE id = $1",
+            [$cur['id'], $name ?: null, $phone ?: null, $sources, $consent, $count]);
+        return ['returning' => true];
     } catch (Throwable $err) { error_log('Contact : ' . $err->getMessage()); return ['returning' => false]; }
 }
 

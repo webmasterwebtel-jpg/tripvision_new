@@ -1,10 +1,16 @@
 # Mise en ligne de la version PHP sur l'hébergement Nuxit
 
-La version PHP est un copier-coller de la version actuelle (même base Supabase, mêmes écrans). Aucun outil spécial : tout se téléverse par FTP.
+La version PHP reprend les mêmes écrans que la version actuelle et utilise la base **MariaDB fournie par Nuxit** (plus Supabase). Aucun outil spécial : tout se téléverse par FTP, la base s'installe par phpMyAdmin.
 
 ## 0. Avant de commencer
 - La version actuelle (Render) **reste en ligne** pendant tout le test. On ne coupe rien tant que la version PHP n'est pas validée.
 - Prévoir un **sous-domaine de test** (ex. `test.votredomaine.fr`) pointé sur un dossier de l'hébergement : on teste là, puis on bascule le vrai domaine.
+
+## 1 bis. Créer la base de données (phpMyAdmin Nuxit)
+1. Dans le panneau Nuxit → Bases de données : créer une base MariaDB et un utilisateur ; noter le nom de la base, l'utilisateur, le mot de passe et le serveur (souvent `localhost`).
+2. Ouvrir phpMyAdmin, choisir la base, onglet **Importer** → fichier `php/db/schema.sql` (jeu de caractères utf8mb4) → Exécuter. Cela crée les 28 tables et les données de départ.
+3. Reprise des données de l'ancien site (comptes, offres, demandes, messages…) : sur l'ordinateur de développement, `php php/tools/copy-postgres-to-mariadb.php "postgres://…(adresse Supabase)" donnees.sql`, puis importer `donnees.sql` dans phpMyAdmin (après `schema.sql`). Les mots de passe et les connexions restent valables. Si le fichier dépasse la limite d'import de phpMyAdmin, le découper par tables ou demander à Nuxit de relever la limite.
+4. Taille : l'offre Web 1 donne 2 bases de 250 Mo. Les images importées via le back-office sont stockées dans la base : privilégier des images légères (le serveur refuse déjà les fichiers trop gros).
 
 ## 1. Préparer le dossier à envoyer (sur l'ordinateur de développement)
 ```
@@ -15,7 +21,8 @@ Crée le dossier `dist-php/` (≈ 90 Mo) : le site, le back-office, l'espace cli
 ## 2. Créer le fichier de réglages
 1. Dans `dist-php/app/`, copier `env.example` en `.env` (point devant, pas d'extension).
 2. Le remplir (jamais dans Git, jamais par e-mail) :
-   - `DATABASE_URL` et `JWT_SECRET` : **les mêmes** que sur Render (Render → Environment). Avec le même `JWT_SECRET`, personne n'est déconnecté.
+   - `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` : ceux de la base créée à l'étape 1 bis.
+   - `JWT_SECRET` : **le même** que sur Render (Render → Environment) pour que personne ne soit déconnecté.
    - `APP_URL` : l'adresse publique, sans `/` final.
    - `SUPPORT_EMAIL` : l'adresse qui reçoit les alertes de l'équipe.
    - E-mails : SMTP du compte mail Nuxit (ou `MAIL_NATIVE=1`).
@@ -27,9 +34,10 @@ Envoyer **tout le contenu** de `dist-php/` (y compris les fichiers qui commencen
 
 ## 4. Vérifier l'hébergement
 Ouvrir dans le navigateur : `https://VOTRE-SITE/api/cron/check?key=VOTRE_CRON_KEY`
-La réponse doit montrer : `database.ok: true`, `stripe.reachable: true`, `extensions.pgsql` ou `extensions.pdo_pgsql` à `true`, `curl`, `mbstring`, `openssl` à `true`.
-- Si `pgsql` et `pdo_pgsql` sont tous les deux `false` : activer l'extension PostgreSQL dans le panneau (sélecteur de version PHP → extensions). Sans elle la base n'est pas joignable.
-- Si `stripe.reachable` est `false` ou `database.ok` est `false` : l'hébergeur bloque les connexions sortantes → demander à Nuxit de les autoriser (ports 443 et 6543).
+La réponse doit montrer : `database.ok: true` (avec la version de MariaDB et `tables: 28`), `stripe.reachable: true`, `extensions.pdo_mysql`, `curl`, `mbstring`, `openssl` à `true`.
+- Si `pdo_mysql` est `false` : activer l'extension dans le panneau (sélecteur de version PHP → extensions). Choisir PHP 8.2 ou plus récent.
+- Si `database.ok` est `false` : vérifier `DB_*` dans `app/.env` (le message d'erreur est affiché).
+- Si `stripe.reachable` est `false` : l'hébergeur bloque les connexions sortantes → demander à Nuxit d'autoriser le port 443.
 
 ## 4 bis. Adresses e-mail du site
 - `hello@tripvision.fr` : l'adresse du site (contact, messages, alertes de l'équipe → `SUPPORT_EMAIL`).
@@ -52,7 +60,7 @@ Dans le tableau de bord Stripe → Développeurs → Webhooks : ajouter `https:/
 3. Garder Render quelques jours en secours, puis le suspendre.
 
 ## Retour en arrière
-Tant que Render tourne, revenir en arrière = remettre l'ancien enregistrement DNS. Les données sont dans Supabase : rien ne se perd d'un côté ou de l'autre.
+Tant que Render tourne, revenir en arrière = remettre l'ancien enregistrement DNS. Attention : les deux versions ont chacune leur base (Supabase pour Render, MariaDB pour Nuxit) ; ce qui est créé sur l'une n'apparaît pas sur l'autre. Refaire la copie des données (étape 1 bis, point 3) juste avant la bascule définitive.
 
 ## Limites de cette version (volontaires)
 - Les pages **Voitures** et **Week-ends** affichent « Bientôt disponible » (scène animée) ; l'espace partenaire est masqué. Le code reste en place : retirer `assets/soon.js` les rouvre.

@@ -32,7 +32,7 @@ function top_of(array $map, int $n = 10): array
 }
 function trends_data(string $from, string $to): array
 {
-    $ev = q('SELECT kind, key, city, country, max(label) AS label, count(*)::int AS n FROM site_events WHERE created_at >= $1 AND created_at < $2 GROUP BY kind, key, city, country', [$from, $to])->rows;
+    $ev = q('SELECT kind, `key`, city, country, max(label) AS label, count(*)::int AS n FROM site_events WHERE created_at >= $1 AND created_at < $2 GROUP BY kind, `key`, city, country', [$from, $to])->rows;
     $bk = q("SELECT v.id, v.model, COALESCE(NULLIF(v.details->>'city', ''), v.pickup_address) AS city, COALESCE(v.details->>'country', '') AS country, count(*)::int AS n FROM bookings b JOIN vehicles v ON v.id = b.vehicle_id WHERE b.payment_status NOT IN ('awaiting', 'failed') AND b.status <> 'inactive' AND b.created_at >= $1 AND b.created_at < $2 GROUP BY v.id, v.model, 3, 4", [$from, $to])->rows;
     $rq = q("SELECT r.offer_type, o.id AS offer_id, o.title, o.from_city, o.to_city, o.country, count(*)::int AS n FROM offer_requests r JOIN offers o ON o.id = r.offer_id WHERE r.payment_status NOT IN ('awaiting', 'failed') AND r.status <> 'cancelled' AND r.created_at >= $1 AND r.created_at < $2 GROUP BY r.offer_type, o.id, o.title, o.from_city, o.to_city, o.country", [$from, $to])->rows;
     $daily = q("SELECT date_trunc('day', created_at)::date AS d, count(*)::int AS n FROM site_events WHERE created_at >= $1 AND created_at < $2 GROUP BY 1 ORDER BY 1", [$from, $to])->rows;

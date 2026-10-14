@@ -176,7 +176,7 @@ route('POST', '/api/public/track', function (Req $req) {
     if (throttle_count("m|$ip|" . intdiv(time(), 60), 60) > 60) send(null, 204);
     // Un même visiteur n'est compté qu'une fois par page toutes les 30 minutes.
     if (throttle_count("$ip|$kind|$key", 1800) > 1) send(null, 204);
-    q('INSERT INTO site_events(kind, key, city, country, label) VALUES ($1,$2,$3,$4,$5)', [$kind, $key, $city ?: null, $country ?: null, $label ?: null]);
+    q('INSERT INTO site_events(kind, `key`, city, country, label) VALUES ($1,$2,$3,$4,$5)', [$kind, $key, $city ?: null, $country ?: null, $label ?: null]);
     send(null, 204);
 });
 
