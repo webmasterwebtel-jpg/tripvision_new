@@ -1,7 +1,7 @@
 /* Consentement aux cookies et traceurs : choix obligatoire (accepter ou refuser) avant d'utiliser le site.
    - Indispensables (connexion, panier de recherche) : toujours actifs, sans consentement.
    - Mesure d'audience anonyme (pages vues, clics, recherches) : seulement si le visiteur accepte.
-   Tant que le visiteur n'a pas choisi, une fenêtre bloque le site ; seule la page « Politique de confidentialité » reste lisible
+   Tant que le visiteur n'a pas choisi, une fenêtre bloque le site ; seules les pages « Mentions légales » et « Politique de confidentialité » restent lisibles
    (le bandeau passe alors en bas de page). Le choix est gardé 6 mois et se change via « Gérer les cookies » en bas de page. */
 (function () {
   'use strict';
@@ -29,7 +29,7 @@
   // Sur la page de confidentialité, la fenêtre se range en bas pour laisser lire.
   function sync() {
     var w = wall(); if (!w) return;
-    var peek = location.hash === '#privacy';
+    var peek = location.hash === '#privacy' || location.hash === '#legal';
     w.classList.toggle('peek', peek);
     document.documentElement.classList.toggle('cookie-lock', !peek);
     w.querySelector('.cookie-banner').setAttribute('aria-modal', peek ? 'false' : 'true');
