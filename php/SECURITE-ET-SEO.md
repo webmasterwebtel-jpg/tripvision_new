@@ -7,6 +7,7 @@ Contrôle automatique (site local ou en ligne) : `node php/tools/security-check.
 - **Fichiers protégés** (`.htaccess`) : dossier `app/` (code, `.env`), fichiers cachés (`.git`, `.env`, `.user.ini`), tout `.php` sauf `api.php`, `.md`, `.log`, `.sql`, `.bak`. `.well-known/security.txt` publié.
 - **API** : requêtes SQL toutes paramétrées, CORS fermé par défaut (`CORS_ORIGIN` vide), limites de tentatives de connexion, jetons signés, mots de passe en bcrypt, contrôle des fichiers importés (octets d'en-tête JPG/PNG/WebP/PDF), validation des entrées (400, jamais 500).
 - **Espaces privés** (`/backoffice`, `/espace`, `/activation`, `/api`, `/uploads`) : `noindex` (balise + en-tête `X-Robots-Tag`) et `Disallow` dans `robots.txt`.
+- **Polices** : Cormorant Garamond et Inter hébergées sur le site (`assets/fonts/`, aucune requête vers Google).
 - **Cookies** : mur de consentement bloquant, statistiques uniquement après accord.
 
 ## Référencement
@@ -24,7 +25,6 @@ Contrôle automatique (site local ou en ligne) : `node php/tools/security-check.
 6. Changer le mot de passe du compte administrateur initial.
 
 ## Limites connues (décisions à prendre)
-- Mentions légales : identité de l'éditeur (forme juridique, adresse, immatriculation, directeur de publication, hébergeur Nuxit) à compléter.
+- Mentions légales : l'hébergeur (Nuxit) est renseigné ; l'identité de l'éditeur TripVision (forme juridique, adresse, immatriculation, directeur de publication) reste à compléter.
 - Pas de double authentification pour les comptes du back-office (recommandée).
-- Polices Google chargées depuis Google (adresse IP transmise à Google) : à héberger sur le site pour un RGPD strict.
 - Le site reste une application à une seule page ; les moteurs voient le contenu après exécution du JavaScript (Google le fait). Le HTML initial contient titre, description et liens.
