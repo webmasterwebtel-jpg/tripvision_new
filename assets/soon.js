@@ -55,34 +55,68 @@
   <div class="so-car">${car}</div>
   <div class="so-streaks"><i></i><i></i><i></i><i></i><i></i><i></i></div>`;
 
-  /* ---------- Week-ends : ciel de fin de journée, avion, île, palmiers, vagues ---------- */
-  // Avion vu du dessus dessiné nez à gauche, puis retourné (scale(-1 1)) : nez vers la droite (+x), il suit la courbe grâce à rotate="auto".
-  const planeShape = `<path d="M8 30 L46 24 L72 4 L84 4 L70 25 L108 27 Q116 28 116 31 Q116 34 108 35 L70 37 L84 56 L72 56 L46 38 L8 32 Z" fill="#fff" stroke="#0f3b2e" stroke-width="2" stroke-linejoin="round" style="filter: drop-shadow(0 10px 8px rgba(0,0,0,.3))"/><path d="M92 28 L106 28" stroke="#9fd9cb" stroke-width="3" stroke-linecap="round"/>`;
-  const palm = (x, h, d) => `<g class="palm" style="--d:${d}s" transform="translate(${x} 0)"><path d="M0 300 Q-8 ${300 - h / 2} 6 ${300 - h}" stroke="#4b3a2a" stroke-width="9" fill="none" stroke-linecap="round"/><g transform="translate(6 ${300 - h})"><g class="crown">${[-70, -35, 0, 35, 70, 105, -105].map((a) => `<path d="M0 0 Q40 -34 84 -4 Q42 -14 0 0Z" fill="#1c7a5c" transform="rotate(${a})"/>`).join('')}</g></g></g>`;
-  const wave = (fill, o) => `<svg viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60 Q75 ${20 + o} 150 60 T300 60 T450 60 T600 60 T750 60 T900 60 T1050 60 T1200 60 L1200 120 L0 120Z" fill="${fill}"/></svg>`;
+  /* ---------- Week-ends : la valise qui se remplit, le calendrier ven-sam-dim, des monuments du monde au coucher du soleil ---------- */
+  const rn = (n) => Math.round(n * 10) / 10;
+  const lights = (x, y, w, h, seed) => { let out = ''; for (let r = 0; r < Math.floor(h / 16); r++) for (let c = 0; c < Math.floor(w / 13); c++) if (((r * 7 + c * 13 + seed) % 5) < 2) out += `<rect class="lt" style="--l:${((r + c + seed) % 7) * .45}s" x="${rn(x + 5 + c * 13)}" y="${rn(y + 6 + r * 16)}" width="5" height="7" rx="1"/>`; return out; };
+  const tile = (far) => {
+    const base = far ? '#2a6f78' : '#0b3b3a';
+    return `<svg viewBox="0 0 1200 260" preserveAspectRatio="xMinYMax slice" aria-hidden="true"><g fill="${base}">
+      <path d="M96 260 L120 190 L126 150 L130 110 L134 50 L136 14 L138 50 L142 110 L146 150 L152 190 L176 260 L158 260 Q136 205 114 260Z"/><rect x="116" y="146" width="40" height="6"/><rect x="125" y="104" width="22" height="5"/>
+      <rect x="190" y="170" width="70" height="90"/><rect x="262" y="150" width="54" height="110"/><path d="M262 150 L289 128 L316 150Z"/>
+      <rect x="420" y="96" width="38" height="164"/><rect x="428" y="72" width="22" height="26"/><circle cx="439" cy="66" r="7"/><rect x="438" y="44" width="2" height="18"/>
+      <rect x="486" y="190" width="90" height="70"/><rect x="590" y="178" width="46" height="82"/>
+      <rect x="660" y="190" width="120" height="70"/><path d="M676 190 A34 36 0 0 1 744 190Z" fill="${far ? '#3d86a8' : '#1c5f8e'}"/><rect x="709" y="146" width="2" height="12" fill="${far ? '#cfe9e0' : '#e7f3ef'}"/><rect x="756" y="150" width="16" height="40"/>
+      <path d="M850 260 L856 120 L862 52 L868 8 L874 52 L880 120 L888 260Z"/><rect x="900" y="150" width="46" height="110"/><rect x="950" y="176" width="60" height="84"/>
+      <path d="M1066 260 Q1058 215 1072 168" stroke="${far ? '#2a6f78' : '#0b3b3a'}" stroke-width="7" fill="none"/><g transform="translate(1072 168)">${[-80, -40, 0, 40, 80, 120, -120].map((a) => `<path d="M0 0 Q26 -22 56 -3 Q26 -9 0 0Z" transform="rotate(${a})"/>`).join('')}</g>
+      <rect x="1100" y="200" width="100" height="60"/></g>
+      ${far ? '' : `<g fill="#ffd978">${lights(190, 170, 70, 90, 1)}${lights(262, 150, 54, 110, 2)}${lights(486, 190, 90, 70, 3)}${lights(590, 178, 46, 82, 4)}${lights(660, 190, 120, 70, 5)}${lights(900, 150, 46, 110, 6)}${lights(950, 176, 60, 84, 7)}${lights(1100, 200, 100, 60, 8)}</g>`}
+    </svg>`;
+  };
   const cloud = `<svg viewBox="0 0 260 90" aria-hidden="true"><g fill="#fff"><ellipse cx="80" cy="60" rx="70" ry="24"/><ellipse cx="140" cy="44" rx="52" ry="34"/><ellipse cx="190" cy="62" rx="62" ry="22"/></g></svg>`;
 
-  const packsScene = `
-  <div class="so-sky pk"><span class="so-sun"></span></div>
-  <div class="so-layer so-clouds"><div class="so-track">${[0, 1].map(() => `<div class="cl-row"><i style="left:6%;top:14%;transform:scale(1.1)">${cloud}</i><i style="left:38%;top:30%;transform:scale(.7)">${cloud}</i><i style="left:66%;top:10%;transform:scale(1)">${cloud}</i><i style="left:86%;top:36%;transform:scale(.6)">${cloud}</i></div>`).join('')}</div></div>
-  <svg class="so-route" viewBox="0 0 1200 600" aria-hidden="true">
-    <path class="rt" d="M-60 440 C 300 100, 700 100, 930 392" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 14"/>
-    <g class="pl" opacity="0">
-      <animateMotion class="pm" dur="7s" repeatCount="indefinite" rotate="auto" calcMode="spline" keyTimes="0;1" keySplines=".45 .05 .35 1" path="M-60 440 C 300 100, 700 100, 930 392"/>
-      <animate attributeName="opacity" dur="7s" repeatCount="indefinite" values="0;1;1;1;0" keyTimes="0;.06;.5;.9;1"/>
-      <g class="pls" transform="scale(1)"><g transform="translate(62 -30) scale(-1 1)">${planeShape}</g></g>
+  const suitcase = `
+  <svg class="case" viewBox="0 0 360 330" aria-hidden="true">
+    <defs>
+      <linearGradient id="scBody" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a8168"/><stop offset=".55" stop-color="#14574a"/><stop offset="1" stop-color="#0a3027"/></linearGradient>
+      <linearGradient id="scGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4dc9a"/><stop offset="1" stop-color="#b98a35"/></linearGradient>
+    </defs>
+    <ellipse cx="180" cy="318" rx="140" ry="10" fill="rgba(0,0,0,.35)"/>
+    <g class="lid"><rect x="34" y="4" width="292" height="116" rx="22" fill="#0f4a3b"/><rect x="46" y="16" width="268" height="92" rx="14" fill="#f1e6c9"/><rect x="58" y="28" width="244" height="68" rx="10" fill="none" stroke="#c8a24a" stroke-width="2" stroke-dasharray="6 6"/><rect x="74" y="44" width="92" height="40" rx="8" fill="#e4d4aa"/><circle cx="238" cy="64" r="22" fill="#e4d4aa"/></g>
+    <g class="items">
+      <g transform="translate(86 62)"><g class="it" style="--k:0;--r:-14deg"><rect width="86" height="40" rx="6" fill="#fffdf8" stroke="#c8a24a"/><line x1="58" y1="4" x2="58" y2="36" stroke="#c8a24a" stroke-dasharray="3 3"/><path d="M14 24 L30 20 L38 10 L42 10 L38 21 L50 22 L48 25 L38 26 L42 34 L38 34 L30 27 L14 27Z" fill="#0f5a46"/></g></g>
+      <g transform="translate(186 50)"><g class="it" style="--k:1;--r:10deg"><rect width="64" height="42" rx="8" fill="#1b2a26"/><rect x="6" y="-8" width="22" height="10" rx="3" fill="#1b2a26"/><circle cx="32" cy="22" r="14" fill="#0e1715" stroke="#9fd9cb" stroke-width="3"/><circle cx="32" cy="22" r="6" fill="#3d6f8e"/><circle cx="54" cy="10" r="3" fill="#e6c47e"/></g></g>
+      <g transform="translate(120 56)"><g class="it" style="--k:2;--r:-8deg"><rect width="42" height="56" rx="5" fill="#0f5a46"/><circle cx="21" cy="26" r="11" fill="none" stroke="#e6c47e" stroke-width="3"/><rect x="9" y="44" width="24" height="3" rx="1.5" fill="#e6c47e"/></g></g>
+      <g transform="translate(236 66)"><g class="it" style="--k:3;--r:16deg"><circle cx="14" cy="14" r="14" fill="#10231c" stroke="#e6c47e" stroke-width="3"/><circle cx="56" cy="14" r="14" fill="#10231c" stroke="#e6c47e" stroke-width="3"/><path d="M28 12 Q35 6 42 12" stroke="#e6c47e" stroke-width="3" fill="none"/></g></g>
     </g>
-  </svg>
-  <div class="so-island">
-    <svg viewBox="0 0 700 340" aria-hidden="true">
-      <defs><linearGradient id="soSand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3dfae"/><stop offset="1" stop-color="#d6b777"/></linearGradient></defs>
-      <path d="M30 330 Q120 236 270 236 Q360 190 470 232 Q600 232 676 330Z" fill="url(#soSand)"/>
-      <g class="hotel"><rect x="318" y="150" width="120" height="86" rx="6" fill="#fffdf8"/><rect x="306" y="140" width="144" height="14" rx="4" fill="#0f5a46"/>${[0, 1, 2, 3].map((i) => `<rect class="win" style="--w:${i * .35}s" x="${332 + i * 26}" y="170" width="14" height="22" rx="3" fill="#ffd978"/>`).join('')}<rect x="366" y="206" width="24" height="30" rx="3" fill="#0f5a46"/></g>
-      ${palm(170, 150, 0)}${palm(236, 120, 1.1)}${palm(520, 140, 0.6)}${palm(590, 110, 1.6)}
-    </svg>
-    <div class="so-pin"><i></i><b></b></div>
-  </div>
-  <div class="so-sea"><div class="so-track s1">${wave('rgba(48,170,150,.9)', 0).repeat(2)}</div><div class="so-track s2">${wave('rgba(14,100,100,.95)', 14).repeat(2)}</div><div class="so-track s3">${wave('#0a4c4a', 28).repeat(2)}</div></div>`;
+    <g class="body">
+      <rect x="20" y="112" width="320" height="196" rx="28" fill="url(#scBody)" stroke="#6fd0b5" stroke-opacity=".35"/>
+      <rect x="76" y="112" width="18" height="196" fill="url(#scGold)" opacity=".92"/><rect x="266" y="112" width="18" height="196" fill="url(#scGold)" opacity=".92"/>
+      <path d="M85 120 V300 M275 120 V300" stroke="#8c6a22" stroke-width="2" stroke-dasharray="5 6" opacity=".7"/>
+      <path d="M20 280 Q20 308 48 308 L66 308 L66 286 Q40 286 20 262Z M340 280 Q340 308 312 308 L294 308 L294 286 Q320 286 340 262Z" fill="url(#scGold)"/>
+      <rect x="156" y="124" width="48" height="28" rx="8" fill="url(#scGold)"/><circle cx="180" cy="136" r="5" fill="#0a3027"/><rect x="178" y="136" width="4" height="10" rx="2" fill="#0a3027"/>
+      <circle cx="180" cy="214" r="42" fill="#f6ecd0" stroke="#c8a24a" stroke-width="3"/>
+      <path d="M156 220 L176 215 L186 198 L192 198 L186 214 L202 216 L199 221 L186 223 L192 236 L186 236 L176 224 L156 224Z" fill="#0f5a46"/>
+      <text x="180" y="278" text-anchor="middle" font-family="Inter, sans-serif" font-size="21" font-weight="800" letter-spacing="3.5" fill="#f6ecd0">WEEK-END</text>
+    </g>
+    <g class="closed"><rect x="20" y="96" width="320" height="30" rx="14" fill="#1a6b57" stroke="#6fd0b5" stroke-opacity=".35"/><path d="M128 98 Q128 56 180 56 Q232 56 232 98" fill="none" stroke="url(#scGold)" stroke-width="12" stroke-linecap="round"/><rect x="156" y="106" width="48" height="26" rx="8" fill="url(#scGold)"/></g>
+    <g class="tag" transform="translate(262 100)"><g class="swing"><path d="M0 0 Q14 30 4 52" stroke="#c8a24a" stroke-width="3" fill="none"/><rect x="-22" y="50" width="52" height="68" rx="9" fill="#fffdf8" stroke="#c8a24a" stroke-width="2.5"/><circle cx="4" cy="62" r="4" fill="#c8a24a"/><text x="4" y="92" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#0f5a46">2 NUITS</text><text x="4" y="108" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#b98a35">TRIPVISION</text></g></g>
+  </svg>`;
+
+  const ico = {
+    plane: '<svg viewBox="0 0 24 24"><path d="M2 14 L10 11 L14 3 L16 3 L14 11 L21 12 Q22 12.5 21 13 L14 14 L16 21 L14 21 L10 15 L2 15Z" fill="currentColor"/></svg>',
+    bed: '<svg viewBox="0 0 24 24"><path d="M3 18 V7 M3 14 H21 V18 M21 14 V11 Q21 9 19 9 H11 V14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="11" r="2" fill="currentColor"/></svg>',
+    lock: '<svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2.5" fill="currentColor"/><path d="M8 10 V7.5 A4 4 0 0 1 16 7.5 V10" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  };
+
+  const packsScene = `
+  <div class="so-sky pk"><span class="so-sun"></span><i class="so-stars pk-stars"></i></div>
+  <div class="so-layer so-clouds"><div class="so-track">${[0, 1].map(() => `<div class="cl-row"><i style="left:8%;top:12%;transform:scale(1.1)">${cloud}</i><i style="left:42%;top:34%;transform:scale(.7)">${cloud}</i><i style="left:72%;top:8%;transform:scale(.95)">${cloud}</i></div>`).join('')}</div></div>
+  <div class="so-layer so-sk-far"><div class="so-track">${tile(true).repeat(2)}</div></div>
+  <div class="so-layer so-sk-near"><div class="so-track">${tile(false).repeat(2)}</div></div>
+  <div class="so-ground"></div>
+  <div class="so-chips"><span class="chip c1">${ico.plane}Transport</span><span class="chip c2">${ico.bed}Hôtel</span><span class="chip c3">${ico.lock}Paiement sécurisé</span></div>
+  <div class="so-cal" aria-hidden="true"><div class="cal-h">Votre week-end</div><div class="cal-days"><div class="d d1"><b>Ven</b><span>Départ</span></div><div class="d d2"><b>Sam</b><span>Découverte</span></div><div class="d d3"><b>Dim</b><span>Retour</span></div></div><div class="cal-bar"><i></i></div></div>
+  <div class="so-case">${suitcase}</div>`;
 
   const block = (kind, headline, sub, scene) => {
     const d = document.createElement('div');
@@ -144,15 +178,6 @@
       if (!page || !page.classList.contains('active')) return;
       const top = s.getBoundingClientRect().top + window.scrollY;
       s.style.height = `${Math.max(520, window.innerHeight - top)}px`;
-      const svg = s.querySelector('.so-route'); if (!svg) return;
-      const sc = s.querySelector('.soon-scene').getBoundingClientRect(), pin = s.querySelector('.so-pin i').getBoundingClientRect();
-      const w = Math.round(sc.width), h = Math.round(sc.height); if (!w || !h) return;
-      const px = Math.round(pin.left + pin.width / 2 - sc.left), py = Math.round(pin.top + pin.height / 2 - sc.top);
-      const d = `M${-80} ${Math.round(h * 0.78)} C ${Math.round(w * 0.22)} ${Math.round(h * 0.18)}, ${Math.round(w * 0.62)} ${Math.round(h * 0.06)}, ${px} ${py - 10}`;
-      svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
-      svg.querySelector('.rt').setAttribute('d', d);
-      svg.querySelector('.pm').setAttribute('path', d);
-      svg.querySelector('.pls').setAttribute('transform', `scale(${Math.min(1.3, Math.max(.7, w / 1000)).toFixed(2)})`);
     });
   }
   let t; const later = () => { clearTimeout(t); t = setTimeout(fit, 60); };
