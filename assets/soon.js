@@ -56,7 +56,8 @@
   <div class="so-streaks"><i></i><i></i><i></i><i></i><i></i><i></i></div>`;
 
   /* ---------- Week-ends : ciel de fin de journée, avion, île, palmiers, vagues ---------- */
-  const plane = `<svg viewBox="0 0 120 60" aria-hidden="true"><path d="M8 30 L46 24 L72 4 L84 4 L70 25 L108 27 Q116 28 116 31 Q116 34 108 35 L70 37 L84 56 L72 56 L46 38 L8 32 Z" fill="#fff" stroke="#0f3b2e" stroke-width="2" stroke-linejoin="round"/><path d="M92 28 L106 28" stroke="#9fd9cb" stroke-width="3" stroke-linecap="round"/></svg>`;
+  // Avion vu du dessus dessiné nez à gauche, puis retourné (scale(-1 1)) : nez vers la droite (+x), il suit la courbe grâce à rotate="auto".
+  const planeShape = `<path d="M8 30 L46 24 L72 4 L84 4 L70 25 L108 27 Q116 28 116 31 Q116 34 108 35 L70 37 L84 56 L72 56 L46 38 L8 32 Z" fill="#fff" stroke="#0f3b2e" stroke-width="2" stroke-linejoin="round" style="filter: drop-shadow(0 10px 8px rgba(0,0,0,.3))"/><path d="M92 28 L106 28" stroke="#9fd9cb" stroke-width="3" stroke-linecap="round"/>`;
   const palm = (x, h, d) => `<g class="palm" style="--d:${d}s" transform="translate(${x} 0)"><path d="M0 300 Q-8 ${300 - h / 2} 6 ${300 - h}" stroke="#4b3a2a" stroke-width="9" fill="none" stroke-linecap="round"/><g transform="translate(6 ${300 - h})"><g class="crown">${[-70, -35, 0, 35, 70, 105, -105].map((a) => `<path d="M0 0 Q40 -34 84 -4 Q42 -14 0 0Z" fill="#1c7a5c" transform="rotate(${a})"/>`).join('')}</g></g></g>`;
   const wave = (fill, o) => `<svg viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60 Q75 ${20 + o} 150 60 T300 60 T450 60 T600 60 T750 60 T900 60 T1050 60 T1200 60 L1200 120 L0 120Z" fill="${fill}"/></svg>`;
   const cloud = `<svg viewBox="0 0 260 90" aria-hidden="true"><g fill="#fff"><ellipse cx="80" cy="60" rx="70" ry="24"/><ellipse cx="140" cy="44" rx="52" ry="34"/><ellipse cx="190" cy="62" rx="62" ry="22"/></g></svg>`;
@@ -64,10 +65,14 @@
   const packsScene = `
   <div class="so-sky pk"><span class="so-sun"></span></div>
   <div class="so-layer so-clouds"><div class="so-track">${[0, 1].map(() => `<div class="cl-row"><i style="left:6%;top:14%;transform:scale(1.1)">${cloud}</i><i style="left:38%;top:30%;transform:scale(.7)">${cloud}</i><i style="left:66%;top:10%;transform:scale(1)">${cloud}</i><i style="left:86%;top:36%;transform:scale(.6)">${cloud}</i></div>`).join('')}</div></div>
-  <svg class="so-route" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-    <path id="soRoute" d="M-40 470 C 260 150, 700 90, 930 392" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 14" class="rt"/>
+  <svg class="so-route" viewBox="0 0 1200 600" aria-hidden="true">
+    <path class="rt" d="M-60 440 C 300 100, 700 100, 930 392" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 14"/>
+    <g class="pl" opacity="0">
+      <animateMotion class="pm" dur="7s" repeatCount="indefinite" rotate="auto" calcMode="spline" keyTimes="0;1" keySplines=".45 .05 .35 1" path="M-60 440 C 300 100, 700 100, 930 392"/>
+      <animate attributeName="opacity" dur="7s" repeatCount="indefinite" values="0;1;1;1;0" keyTimes="0;.06;.5;.9;1"/>
+      <g class="pls" transform="scale(1)"><g transform="translate(62 -30) scale(-1 1)">${planeShape}</g></g>
+    </g>
   </svg>
-  <div class="so-plane">${plane}</div>
   <div class="so-island">
     <svg viewBox="0 0 700 340" aria-hidden="true">
       <defs><linearGradient id="soSand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3dfae"/><stop offset="1" stop-color="#d6b777"/></linearGradient></defs>
@@ -129,7 +134,30 @@
       ['packs', block('packs', 'Week-ends tout organisés', 'Transport et hôtel réservés ensemble, payés en ligne en toute sécurité : nos premiers séjours arrivent très bientôt.', packsScene)],
     ];
     defs.forEach(([id, node]) => { const sec = document.getElementById(id); if (sec && !sec.querySelector('.soon')) { sec.classList.add('is-soon'); sec.prepend(node); } });
+    fit();
   }
+
+  /* La scène remplit exactement l'écran sous l'en-tête (rien à faire défiler) ; l'avion rejoint toujours l'île, quelle que soit la taille. */
+  function fit() {
+    document.querySelectorAll('.soon').forEach((s) => {
+      const page = s.parentElement;
+      if (!page || !page.classList.contains('active')) return;
+      const top = s.getBoundingClientRect().top + window.scrollY;
+      s.style.height = `${Math.max(520, window.innerHeight - top)}px`;
+      const svg = s.querySelector('.so-route'); if (!svg) return;
+      const sc = s.querySelector('.soon-scene').getBoundingClientRect(), pin = s.querySelector('.so-pin i').getBoundingClientRect();
+      const w = Math.round(sc.width), h = Math.round(sc.height); if (!w || !h) return;
+      const px = Math.round(pin.left + pin.width / 2 - sc.left), py = Math.round(pin.top + pin.height / 2 - sc.top);
+      const d = `M${-80} ${Math.round(h * 0.78)} C ${Math.round(w * 0.22)} ${Math.round(h * 0.18)}, ${Math.round(w * 0.62)} ${Math.round(h * 0.06)}, ${px} ${py - 10}`;
+      svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+      svg.querySelector('.rt').setAttribute('d', d);
+      svg.querySelector('.pm').setAttribute('path', d);
+      svg.querySelector('.pls').setAttribute('transform', `scale(${Math.min(1.3, Math.max(.7, w / 1000)).toFixed(2)})`);
+    });
+  }
+  let t; const later = () => { clearTimeout(t); t = setTimeout(fit, 60); };
+  window.addEventListener('resize', later); window.addEventListener('hashchange', later); window.addEventListener('load', later);
+  if (window.ResizeObserver) new ResizeObserver(later).observe(document.documentElement);
   mount(); // les sections existent déjà dans la page : montage immédiat (pas de flash du contenu d'origine)
-  document.addEventListener('DOMContentLoaded', mount);
+  document.addEventListener('DOMContentLoaded', () => { mount(); later(); });
 })();
