@@ -1514,6 +1514,15 @@ app.post('/api/public/flight-leads', h(async (req, res) => {
   await recordContact({ email, source: 'vol', consent: b.consent, count: 0 });
   res.status(201).json({ ok: true });
 }));
+// Pages « Bientôt disponible » (voitures, week-ends) : le visiteur laisse son e-mail pour être prévenu de l'ouverture.
+app.post('/api/public/notify-me', h(async (req, res) => {
+  const b = z.object({ email: z.string().trim().email().max(160), kind: z.enum(['car', 'pack']) }).parse(req.body);
+  const ip = clientIp(req);
+  if (await isLockedOut(`lead:${ip}`, ip)) return res.status(429).json({ error: 'TOO_MANY_ATTEMPTS' });
+  await recordFailedAttempt(`lead:${ip}`, ip);
+  await recordContact({ email: b.email, source: b.kind === 'car' ? 'avertir_voiture' : 'avertir_pack', consent: true, count: 0 });
+  res.status(201).json({ ok: true });
+}));
 app.get('/api/admin/flight-leads', auth(...BACKOFFICE_ROLES), can('mailing.export'), h(async (_req, res) => {
   const { rows } = await query('SELECT id, airline, route, email, consent, created_at FROM flight_leads ORDER BY created_at DESC LIMIT 300');
   const { rows: st } = await query(`SELECT count(*)::int AS total, count(*) FILTER (WHERE created_at >= now() - interval '7 days')::int AS week, count(*) FILTER (WHERE created_at >= date_trunc('month', now()))::int AS month FROM flight_leads`);
@@ -2462,7 +2471,7 @@ app.get('/api/admin/mailing', auth(...BACKOFFICE_ROLES), can('mailing.export'), 
   const { rows: st } = await query(`SELECT count(*)::int AS total, count(*) FILTER (WHERE consent AND unsubscribed_at IS NULL)::int AS consent, count(*) FILTER (WHERE unsubscribed_at IS NOT NULL)::int AS unsubscribed FROM contacts`);
   res.json({ contacts: rows, stats: st[0] });
 }));
-const SOURCE_LABELS = { vol: 'Vol' };
+const SOURCE_LABELS = { vol: 'Vol', avertir_voiture: 'Prévenir : voitures', avertir_pack: 'Prévenir : week-ends' };
 app.get('/api/admin/mailing/export', auth(...BACKOFFICE_ROLES), can('mailing.export'), h(async (req, res) => {
   const w = mailingWhere(req.query);
   const { rows } = await query(`SELECT * FROM contacts ${w.sql} ORDER BY last_seen_at DESC`, w.params);

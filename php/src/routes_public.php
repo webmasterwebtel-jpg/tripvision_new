@@ -148,6 +148,18 @@ route('POST', '/api/public/flight-leads', function (Req $req) {
     send(['ok' => true], 201);
 });
 
+/* ---------- Pages « Bientôt disponible » : prévenir le visiteur à l'ouverture ---------- */
+route('POST', '/api/public/notify-me', function (Req $req) {
+    $b = $req->body();
+    $email = strtolower((string)v_str($b, 'email', ['trim' => true, 'email' => true, 'max' => 160]));
+    $kind = (string)v_str($b, 'kind', ['in' => ['car', 'pack']]);
+    $ip = $req->ip();
+    if (is_locked_out("lead:$ip", $ip)) fail(429, 'TOO_MANY_ATTEMPTS');
+    record_failed_attempt("lead:$ip", $ip);
+    record_contact($email, null, null, $kind === 'car' ? 'avertir_voiture' : 'avertir_pack', true, 0);
+    send(['ok' => true], 201);
+});
+
 /* ---------- Suivi des visites (tendances) ---------- */
 const TRACK_KINDS = ['dest_view', 'flight_click', 'pack_view', 'car_view', 'search_flight', 'search_car', 'search_pack'];
 route('POST', '/api/public/track', function (Req $req) {

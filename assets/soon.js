@@ -89,10 +89,39 @@
         <div class="soon-kicker"><span class="soon-dot"></span>${headline}</div>
         <h1 class="soon-title" aria-label="Bientôt disponible"><span class="soon-line">${letters('Bientôt')}</span> <span class="soon-line gold">${letters('disponible')}</span></h1>
         <p class="soon-sub">${sub}</p>
+        <form class="soon-form" novalidate data-kind="${kind === 'cars' ? 'car' : 'pack'}">
+          <div class="soon-field">
+            <input type="email" name="email" placeholder="Votre adresse e-mail" autocomplete="email" aria-label="Votre adresse e-mail" required maxlength="160">
+            <button type="submit" class="btn gold"><span class="lbl">Me prévenir</span></button>
+          </div>
+          <p class="soon-msg" role="status" aria-live="polite">Laissez votre e-mail : nous vous prévenons dès l’ouverture, une seule fois.</p>
+          <div class="soon-ok" hidden><svg viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="24"/><path d="M15 27 L23 35 L38 18"/></svg><div><b>C’est noté, merci !</b><span>Vous serez prévenu(e) par e-mail dès que ${kind === 'cars' ? 'les locations de voiture sont' : 'les week-ends sont'} disponibles.</span></div></div>
+        </form>
         <div class="soon-cta"><a class="btn gold" href="#flights" data-page-link="flights">Voir les vols</a><a class="btn ghost-light" href="#home" data-page-link="home">Retour à l’accueil</a></div>
       </div>`;
     return d;
   };
+
+  const MAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  document.addEventListener('submit', async (e) => {
+    const f = e.target.closest('.soon-form'); if (!f) return;
+    e.preventDefault();
+    const input = f.elements.email, msg = f.querySelector('.soon-msg'), btn = f.querySelector('button'), lbl = btn.querySelector('.lbl');
+    const email = input.value.trim();
+    f.classList.remove('bad');
+    if (!MAIL.test(email)) { f.classList.add('bad'); msg.textContent = 'Indiquez une adresse e-mail valide.'; input.focus(); return; }
+    btn.disabled = true; lbl.textContent = 'Envoi…';
+    try {
+      const base = window.TV_API_BASE || '/api';
+      const r = await fetch(`${base}/public/notify-me`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, kind: f.dataset.kind }) });
+      if (r.status === 429) throw new Error('Trop de tentatives : réessayez dans quelques minutes.');
+      if (!r.ok) throw new Error('Envoi impossible pour le moment : réessayez dans un instant.');
+      f.classList.add('done');
+      f.querySelector('.soon-ok').hidden = false; f.querySelector('.soon-field').hidden = true; msg.hidden = true;
+    } catch (err) {
+      f.classList.add('bad'); msg.textContent = err.message || 'Envoi impossible pour le moment.'; btn.disabled = false; lbl.textContent = 'Me prévenir';
+    }
+  });
 
   function mount() {
     const defs = [

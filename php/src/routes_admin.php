@@ -477,7 +477,7 @@ route('GET', '/api/admin/mailing/export', function (Req $req) {
     $rows = q("SELECT * FROM contacts $sql ORDER BY last_seen_at DESC", $params)->rows;
     $fmt = fn($d) => $d ? date('d/m/Y H:i', strtotime($d)) : '';
     $header = ['E-mail', 'Nom', 'Téléphone', 'Origine', 'Accepte nos offres', 'Désinscrit', 'Première activité', 'Dernière activité', 'Demandes', 'Lien de désinscription'];
-    $table = array_map(fn($c) => [$c['email'], $c['name'] ?: '', $c['phone'] ?: '', implode(', ', array_map(fn($x) => $x === 'vol' ? 'Vol' : $x, $c['sources'] ?? [])), $c['consent'] ? 'Oui' : 'Non', $c['unsubscribed_at'] ? 'Oui' : 'Non', $fmt($c['created_at']), $fmt($c['last_seen_at']), $c['requests_count'], app_url() . '/unsubscribe?t=' . $c['unsub_token']], $rows);
+    $table = array_map(fn($c) => [$c['email'], $c['name'] ?: '', $c['phone'] ?: '', implode(', ', array_map(fn($x) => ['vol' => 'Vol', 'avertir_voiture' => 'Prévenir : voitures', 'avertir_pack' => 'Prévenir : week-ends'][$x] ?? $x, $c['sources'] ?? [])), $c['consent'] ? 'Oui' : 'Non', $c['unsubscribed_at'] ? 'Oui' : 'Non', $fmt($c['created_at']), $fmt($c['last_seen_at']), $c['requests_count'], app_url() . '/unsubscribe?t=' . $c['unsub_token']], $rows);
     audit($u['id'], 'export_contacts', 'contacts', null, $req->ip());
     $stamp = gmdate('Y-m-d');
     if ($req->q('format') === 'xlsx' && class_exists('ZipArchive')) {
