@@ -4690,3 +4690,13 @@ label:has(> input[type=checkbox][name=terms]) > input,label:has(> input[type=che
 .bp-group .bp-more{text-align:left;margin:16px 0 4px}
 .bp-group .bp-more a{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border:1px solid #cfe2d9;border-radius:999px;background:#f1f7f3;color:#0f3b2e;font-weight:700;text-decoration:none;transition:background .2s,border-color .2s}
 .bp-group .bp-more a:hover{background:#e3f0e9;border-color:#9cc9b6}
+
+/* Pages légales */
+.legal-page .legal-wrap{max-width:820px;padding:64px 0 88px}
+.legal-page h1{font-family:var(--serif,Georgia,serif);font-size:clamp(34px,5vw,52px);line-height:1.1;margin:8px 0 6px}
+.legal-page h1 em{color:#0f3b2e}
+.legal-page .legal-date{color:#6b7a72;font-size:14px;margin:0 0 28px}
+.legal-page h2{font-size:20px;margin:34px 0 10px;color:#0f3b2e}
+.legal-page p,.legal-page li{line-height:1.7;color:#2b3a33}
+.legal-page ul{padding-left:22px;margin:8px 0 14px}
+.legal-page a{color:#0f3b2e;text-decoration:underline}
