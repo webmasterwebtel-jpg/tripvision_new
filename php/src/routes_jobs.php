@@ -36,3 +36,22 @@ function cron_route(Req $req): never
 }
 route('GET', '/api/cron/run', fn(Req $r) => cron_route($r));
 route('POST', '/api/cron/run', fn(Req $r) => cron_route($r));
+
+/** Vérification de l'hébergement : extensions PHP, base de données, accès sortants (Stripe, e-mail). Protégée par CRON_KEY. */
+route('GET', '/api/cron/check', function (Req $req) {
+    $key = env('CRON_KEY');
+    if (!$key || !hash_equals($key, (string)($req->q('key') ?: $req->header('x-cron-key')))) fail(404, 'NOT_FOUND');
+    $out = ['php' => PHP_VERSION, 'extensions' => []];
+    foreach (['pgsql', 'pdo_pgsql', 'curl', 'mbstring', 'openssl', 'zip', 'gd', 'json'] as $e) $out['extensions'][$e] = extension_loaded($e);
+    try { $t = microtime(true); $out['database'] = ['ok' => (int)q1('SELECT 1 AS x')['x'] === 1, 'ms' => (int)round((microtime(true) - $t) * 1000)]; }
+    catch (Throwable $e) { $out['database'] = ['ok' => false, 'error' => $e->getMessage()]; }
+    if (function_exists('curl_init')) {
+        $ch = curl_init('https://api.stripe.com/v1'); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 10]); curl_exec($ch);
+        $out['stripe'] = ['reachable' => curl_getinfo($ch, CURLINFO_RESPONSE_CODE) > 0, 'error' => curl_error($ch) ?: null]; curl_close($ch);
+    }
+    $out['mail'] = ['configured' => mail_ready(), 'mode' => env('BREVO_API_KEY') ? 'brevo' : (env('SMTP_HOST') ? 'smtp' : (env('MAIL_NATIVE') === '1' ? 'mail()' : 'aucun'))];
+    if (env('SMTP_HOST')) { $fp = @stream_socket_client('tcp://' . env('SMTP_HOST') . ':' . (env('SMTP_PORT') ?: '587'), $en, $es, 8); $out['mail']['smtp_reachable'] = (bool)$fp; if ($fp) fclose($fp); }
+    $out['settings'] = ['APP_URL' => env('APP_URL'), 'stripe_key' => payments_enabled() ? (payments_test_mode() ? 'test' : 'live') : 'absente', 'webhook_secret' => (bool)stripe_webhook_secret(), 'support_email' => (bool)staff_email(), 'jwt' => (bool)env('JWT_SECRET')];
+    $out['time'] = iso_now();
+    send($out);
+});

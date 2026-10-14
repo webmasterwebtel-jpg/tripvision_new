@@ -135,7 +135,7 @@ final class DB
     {
         if (self::$conn !== null || self::$pdo !== null) return;
         $c = self::parseUrl();
-        if (function_exists('pg_connect')) {
+        if (function_exists('pg_connect') && env('DB_DRIVER') !== 'pdo') {
             $dsn = sprintf("host='%s' port=%d dbname='%s' user='%s' password='%s' sslmode=%s connect_timeout=10", $c['host'], $c['port'], $c['db'], $c['user'], addcslashes($c['pass'], "'\\"), $c['ssl'] ? 'require' : 'prefer');
             $conn = @pg_connect($dsn);
             if (!$conn) throw new RuntimeException('Connexion à la base impossible');
@@ -516,10 +516,19 @@ function route(string $method, string $pattern, callable $fn): void { $GLOBALS['
 /* ---------- Réponse ---------- */
 function security_headers(): void
 {
-    header('X-Content-Type-Options: nosniff');
-    header('X-Frame-Options: SAMEORIGIN');
+    // Mêmes protections que « helmet » côté Node.
+    header("Content-Security-Policy: default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data: blob: https:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests");
+    header('Cross-Origin-Opener-Policy: same-origin');
+    header('Cross-Origin-Resource-Policy: same-origin');
+    header('Origin-Agent-Cluster: ?1');
     header('Referrer-Policy: no-referrer');
-    header('Cross-Origin-Resource-Policy: cross-origin');
+    if ((($_SERVER['HTTPS'] ?? '') !== '' && ($_SERVER['HTTPS'] ?? '') !== 'off') || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') header('Strict-Transport-Security: max-age=15552000; includeSubDomains');
+    header('X-Content-Type-Options: nosniff');
+    header('X-DNS-Prefetch-Control: off');
+    header('X-Download-Options: noopen');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('X-Permitted-Cross-Domain-Policies: none');
+    header('X-XSS-Protection: 0');
     header_remove('X-Powered-By');
     $origin = env('CORS_ORIGIN', '*');
     $reqOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
