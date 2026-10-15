@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 
 const [, , inFile, outBase] = process.argv;
+const PG = process.argv.includes('--pg'); // PostgreSQL (Supabase / ancienne version Node sur Render) au lieu de MariaDB
 const rows = JSON.parse(fs.readFileSync(inFile, 'utf8'));
 const cat = JSON.parse(fs.readFileSync(new URL('../src/data/draft-catalog.json', import.meta.url), 'utf8'));
 const airportName = { ...cat.airportName, BVA: 'BVA – Paris-Beauvais', CIA: 'CIA – Rome-Ciampino', TSF: 'TSF – Venise-Trévise', STN: 'STN – Londres-Stansted', LTN: 'LTN – Londres-Luton', LGW: 'LGW – Londres-Gatwick' };
@@ -29,7 +30,7 @@ for (const r of rows) {
     flight: { tripType: 'roundtrip', airline: r.airline, bookingUrl: link, fromCountry: r.fromCountry || 'France', fromAirport: fromAp, toAirport: toAp, stops: r.stops, cabin: 'Économique' },
     images: [`/assets/dest/${r.img}.jpg`], draft: true, auto: false, toVerify: note, source: exact ? 'ryanair' : 'kayak',
   };
-  sql += `INSERT INTO offers (id, type, title, from_city, to_city, country, badge, price, partner_name, start_date, end_date, image, description, status, details) VALUES (UUID(), 'flight', ${q(`${r.from} → ${r.to}`)}, ${q(r.from)}, ${q(r.to)}, ${q(r.country)}, 'Bon plan', ${r.price}, ${q(r.airline)}, ${q(r.start)}, ${q(r.end)}, ${q(`/assets/dest/${r.img}.jpg`)}, '', 'inactive', ${q(JSON.stringify(details))});\n`;
+  sql += `INSERT INTO offers (id, type, title, from_city, to_city, country, badge, price, partner_name, start_date, end_date, image, description, status, details) VALUES (${PG ? 'gen_random_uuid()' : 'UUID()'}, 'flight', ${q(`${r.from} → ${r.to}`)}, ${q(r.from)}, ${q(r.to)}, ${q(r.country)}, 'Bon plan', ${r.price}, ${q(r.airline)}, ${q(r.start)}, ${q(r.end)}, ${q(`/assets/dest/${r.img}.jpg`)}, '', 'inactive', ${q(JSON.stringify(details))}${PG ? '::jsonb' : ''});\n`;
   csv.push([`${r.from} → ${r.to}`, r.airline, r.start, r.end, r.stops === 0 ? 'direct' : `${r.stops} escale`, String(r.price).replace('.', ','), `${fromAp} → ${toAp}`, link, verify, exact ? (r.airline === 'Ryanair' ? 'Lien exact vérifié (prix confirmé sur ryanair.com)' : 'Lien exact généré (prix relevé sur Kayak, à revérifier)') : 'Lien provisoire Kayak : à remplacer par le lien de la compagnie']);
 }
 fs.writeFileSync(outBase + '.sql', sql, 'utf8');

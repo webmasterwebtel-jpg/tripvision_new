@@ -382,14 +382,14 @@ const pageHead = (eyebrow, title, subtitle = '', actions = '') => `
 
 const emptyRow = (cols, message) => `<tr><td colspan="${cols}"><div class="empty">${icon('empty')}<strong>${esc(message)}</strong><span>Les éléments apparaîtront ici dès leur création.</span></div></td></tr>`;
 
-function tableCard({ id, title, count, head, rows, empty, cols, filters = [] }) {
+function tableCard({ id, title, count, head, rows, empty, cols, filters = [], tools = '' }) {
   const selects = filters.map(f => `<select class="filter-select" data-col-filter="${id}" data-key="${f.key}" aria-label="${esc(f.label)}"><option value="">${esc(f.label)} : tous</option>${f.options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('')}</select>`).join('');
   return `
     <section class="card">
       <div class="card-head">
         <div><h3>${esc(title)}</h3><p>${esc(count)}</p></div>
         <div class="card-tools">
-          ${selects}
+          ${tools}${selects}
           <label class="search">${icon('search')}<input type="search" placeholder="Rechercher…" data-filter="${id}" aria-label="Rechercher dans ${esc(title)}"></label>
           <button class="btn small" type="button" data-action="reload" title="Actualiser les données">${icon('refresh')} Actualiser</button>
         </div>
@@ -401,6 +401,14 @@ function tableCard({ id, title, count, head, rows, empty, cols, filters = [] }) 
       <div class="empty no-results" data-none="${id}" hidden>${icon('search')}<strong>Aucun résultat</strong><span>Modifiez la recherche ou les filtres.</span></div>
     </section>`;
 }
+
+/** Filtre de prix : liste de choix, saisie libre (40 · 40-80 · <50 · >100) et tri croissant / décroissant. */
+const priceTools = (id) => `<div class="price-tools">
+  <select class="filter-select" data-price-preset="${id}" aria-label="Choisir une tranche de prix"><option value="">Prix : tous</option><option value="0-50">Moins de 50 €</option><option value="50-100">50 à 100 €</option><option value="100-200">100 à 200 €</option><option value="200-500">200 à 500 €</option><option value="500-">Plus de 500 €</option></select>
+  <label class="search price-input"><span aria-hidden="true">€</span><input type="text" inputmode="decimal" placeholder="Prix ou fourchette (ex. 40 ou 40-80)" data-price-input="${id}" aria-label="Saisir un prix ou une fourchette de prix" title="Un prix (40), une fourchette (40-80), un maximum (<50) ou un minimum (>100)"></label>
+  <select class="filter-select" data-price-sort="${id}" aria-label="Trier par prix"><option value="">Tri : ajoutées récemment</option><option value="asc">Prix croissant</option><option value="desc">Prix décroissant</option></select>
+  <span class="price-count" data-price-count="${id}" aria-live="polite"></span>
+</div>`;
 
 const field = (label, attrs, full = false) => `<label class="${full ? 'full' : ''}">${esc(label)}<input ${attrs}></label>`;
 
@@ -982,7 +990,7 @@ const RENDERERS = {
           <p>De nouveaux vols sont préparés <b>en brouillon, jamais publiés</b> : l’équipe vérifie le tarif et le lien sur le site de la compagnie, puis publie. Les anciens brouillons <b>non modifiés</b> sont remplacés ; les offres publiées et les brouillons que vous avez modifiés restent en place.</p>
           <div class="auto-meta"><span>Dernier renouvellement <b>${when(auto.lastRunAt)}</b>${auto.lastCreated ? ` · ${auto.lastCreated} créés${auto.lastReplaced ? `, ${auto.lastReplaced} remplacés` : ''}` : ''}</span><span>Prochain <b>${when(auto.nextRunAt)}</b></span><span><b>${auto.replaceable}</b> brouillon${auto.replaceable > 1 ? 's' : ''} remplaçable${auto.replaceable > 1 ? 's' : ''} · <b>${auto.kept}</b> conservé${auto.kept > 1 ? 's' : ''}</span></div></div>
         ${can('offers.create') ? `<button class="btn" type="button" data-action="auto-drafts-run">${icon('refresh')} Renouveler maintenant</button>` : ''}</section>` : '';
-    const rows = offers.map(o => `<tr class="clickable"${fa({ status: pubKey(o), country: o.country })} data-detail="offer" data-type="${o.type}" data-id="${esc(o.id)}">
+    const rows = offers.map((o, i) => `<tr class="clickable"${fa({ status: pubKey(o), country: o.country, price: Number(o.price) || 0, idx: i })} data-detail="offer" data-type="${o.type}" data-id="${esc(o.id)}">
       <td><span class="badge plain">${o.type === 'flight' ? 'Vol' : 'Pack'}</span></td><td><strong>${esc(o.title)}</strong>${airLink(o).url ? `<a class="row-link" href="${esc(airLink(o).url)}" target="_blank" rel="noopener noreferrer" title="Vérifier l’offre sur le site de la compagnie (trajet et dates de l’offre)">${esc(o.flight.airline || 'Compagnie')} ${icon('external')}</a> ${linkBadge(o)}` : ''}</td><td>${esc(o.to_city)}</td>
       <td class="num">${money(o.price)}</td><td>${pubBadge(o)}</td>
       <td class="actions"><span class="row-actions">${offerActions(o)}</span></td></tr>`).join('');
@@ -990,7 +998,7 @@ const RENDERERS = {
       can('offers.create') ? '<button class="btn" type="button" data-action="offer-new-flight">+ Nouveau vol</button><button class="btn primary" type="button" data-action="offer-new-pack">+ Nouveau pack</button>' : '')
       + autoCard
       + '<div class="pills" role="group" aria-label="Filtrer par type"><button type="button" class="pill active" data-type-filter="all">Tous</button><button type="button" class="pill" data-type-filter="flight">Vols</button><button type="button" class="pill" data-type-filter="pack">Packs</button></div>'
-      + tableCard({ id: 'tblOffers', title: 'Offres', count: plural(offers.length, 'offre', 'offres'), head: ['Type', 'Titre', 'Destination', 'Prix', 'Publication', ''], rows, empty: 'Aucune offre', cols: 6, filters: [{ key: 'status', label: 'Statut', options: [['active', 'En ligne'], ['draft', 'Brouillon à vérifier'], ['scheduled', 'Programmée'], ['inactive', 'Désactivée'], ['archived', 'Archivée']] }, { key: 'country', label: 'Pays', options: uniq(offers.map(o => o.country)) }] });
+      + tableCard({ id: 'tblOffers', title: 'Offres', count: plural(offers.length, 'offre', 'offres'), head: ['Type', 'Titre', 'Destination', 'Prix', 'Publication', ''], rows, empty: 'Aucune offre', cols: 6, tools: priceTools('tblOffers'), filters: [{ key: 'status', label: 'Statut', options: [['active', 'En ligne'], ['draft', 'Brouillon à vérifier'], ['scheduled', 'Programmée'], ['inactive', 'Désactivée'], ['archived', 'Archivée']] }, { key: 'country', label: 'Pays', options: uniq(offers.map(o => o.country)) }] });
   },
 
   async bookings() {
@@ -1837,29 +1845,83 @@ document.addEventListener('change', (e) => {
   }
 });
 
+/** « 40 » = ce prix · « 40-80 » ou « 40 à 80 » = fourchette · « <50 » = au plus · « >100 » = au moins. */
+function parsePriceRange(text) {
+  const t = String(text || '').toLowerCase().replace(/€|eur(os?)?/g, '').replace(/\s+/g, ' ').replace(/,/g, '.').trim();
+  if (!t) return null;
+  const N = '(\\d+(?:\\.\\d+)?)';
+  let m;
+  if ((m = t.match(new RegExp('^(?:<=?|≤|max|moins de)\\s*' + N + '$')))) return [0, parseFloat(m[1])];
+  if ((m = t.match(new RegExp('^(?:>=?|≥|min|plus de)\\s*' + N + '$')))) return [parseFloat(m[1]), Infinity];
+  if ((m = t.match(new RegExp('^' + N + '\\s*(?:-|–|à|a|to)\\s*' + N + '$')))) { const a = parseFloat(m[1]), b = parseFloat(m[2]); return [Math.min(a, b), Math.max(a, b)]; }
+  if ((m = t.match(new RegExp('^' + N + '$')))) { const v = parseFloat(m[1]); return [v - 0.5, v + 0.99]; }
+  return undefined;
+}
+function priceRangeOf(tableId) {
+  const preset = document.querySelector(`[data-price-preset="${tableId}"]`)?.value || '';
+  const input = document.querySelector(`[data-price-input="${tableId}"]`);
+  const typed = (input?.value || '').trim();
+  if (typed) { const r = parsePriceRange(typed); input?.classList.toggle('invalid', r === undefined); return r || null; }
+  input?.classList.remove('invalid');
+  if (!preset) return null;
+  const [a, b] = preset.split('-');
+  return [a === '' ? 0 : parseFloat(a), b === '' ? Infinity : parseFloat(b)];
+}
 function applyTableFilters(tableId) {
   const q = (document.querySelector(`[data-filter="${tableId}"]`)?.value || '').trim().toLowerCase();
+  const range = priceRangeOf(tableId);
   const active = [...document.querySelectorAll(`[data-col-filter="${tableId}"]`)].filter(sel => sel.value).map(sel => [sel.dataset.key, sel.value]);
   let rows = 0, visible = 0;
   document.querySelectorAll(`#${tableId} tbody tr`).forEach(tr => {
     const isData = tr.hasAttribute('data-detail') || [...tr.attributes].some(a => a.name.startsWith('data-f-'));
     if (!isData) { tr.hidden = Boolean(q) || active.length > 0; return; }
     rows += 1;
-    const ok = (!q || tr.textContent.toLowerCase().includes(q)) && active.every(([key, value]) => tr.getAttribute(`data-f-${key}`) === value);
+    const price = parseFloat(tr.getAttribute('data-f-price'));
+    const priceOk = !range || (Number.isFinite(price) && price >= range[0] && price <= range[1]);
+    const ok = priceOk && (!q || tr.textContent.toLowerCase().includes(q)) && active.every(([key, value]) => tr.getAttribute(`data-f-${key}`) === value);
     tr.hidden = !ok;
     if (ok) visible += 1;
   });
   const none = document.querySelector(`[data-none="${tableId}"]`);
   if (none) none.hidden = !(rows > 0 && visible === 0);
+  // Tri par prix (ou retour à l'ordre d'origine).
+  const sortEl = document.querySelector(`[data-price-sort="${tableId}"]`);
+  const tbody = document.querySelector(`#${tableId} tbody`);
+  if (tbody && sortEl) {
+    const sort = sortEl.value;
+    const idx = (tr) => parseFloat(tr.getAttribute('data-f-idx')) || 0;
+    const pr = (tr) => parseFloat(tr.getAttribute('data-f-price')) || 0;
+    const list = [...tbody.querySelectorAll('tr[data-f-idx]')];
+    list.sort((a, b) => (sort === 'desc' ? pr(b) - pr(a) : sort === 'asc' ? pr(a) - pr(b) : 0) || idx(a) - idx(b));
+    list.forEach((tr) => tbody.appendChild(tr));
+  }
+  const count = document.querySelector(`[data-price-count="${tableId}"]`);
+  if (count) count.textContent = (range || q || active.length) ? `${visible} sur ${rows} affichée${visible > 1 ? 's' : ''}` : '';
 }
 
 document.addEventListener('input', (e) => {
   const input = e.target.closest('[data-filter]');
   if (input) applyTableFilters(input.dataset.filter);
+  const price = e.target.closest('[data-price-input]');
+  if (price) {
+    // Une saisie libre remplace la tranche choisie dans la liste.
+    const preset = document.querySelector(`[data-price-preset="${price.dataset.priceInput}"]`);
+    if (preset && price.value.trim()) preset.value = '';
+    applyTableFilters(price.dataset.priceInput);
+  }
 });
 document.addEventListener('change', (e) => {
   const select = e.target.closest('[data-col-filter]');
   if (select) applyTableFilters(select.dataset.colFilter);
+  const preset = e.target.closest('[data-price-preset]');
+  if (preset) {
+    // Choisir une tranche vide la saisie libre.
+    const input = document.querySelector(`[data-price-input="${preset.dataset.pricePreset}"]`);
+    if (input) input.value = '';
+    applyTableFilters(preset.dataset.pricePreset);
+  }
+  const sort = e.target.closest('[data-price-sort]');
+  if (sort) applyTableFilters(sort.dataset.priceSort);
 });
 
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modalState) closeDrawer(); });

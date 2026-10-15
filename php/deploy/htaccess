@@ -7,10 +7,14 @@ DirectoryIndex index.html
   # Les jetons de connexion (en-tête Authorization) doivent atteindre PHP.
   RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-  # Site en HTTPS uniquement (décommentez ces 3 lignes quand le certificat du domaine est actif).
-  # RewriteCond %{HTTPS} !=on
-  # RewriteCond %{HTTP:X-Forwarded-Proto} !=https
-  # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+  # Une seule adresse pour le site : www.tripvision.fr renvoie vers tripvision.fr (cookies, référencement), toujours en HTTPS.
+  RewriteCond %{HTTP_HOST} ^www\.tripvision\.fr$ [NC]
+  RewriteRule ^ https://tripvision.fr%{REQUEST_URI} [L,R=301]
+
+  # Site en HTTPS uniquement (certificat actif depuis le 14/10/2026).
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
   # Tout ce qui est « serveur » passe par api.php : l'API, les images importées et le lien de désinscription.
   RewriteRule ^api(/|$) api.php [L]

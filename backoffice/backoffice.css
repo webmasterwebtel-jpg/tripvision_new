@@ -922,3 +922,12 @@ td strong + .row-link{display:flex;width:max-content}
 .auto-body p{margin:0 0 10px;color:var(--muted,#6b766f);font-size:13.5px;line-height:1.5;max-width:760px}
 .auto-meta{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:13px;color:var(--ink-soft,#33403b)}
 @media(max-width:760px){.auto-card{grid-template-columns:1fr}.auto-card .btn{width:100%;justify-content:center}}
+
+/* Filtre de prix de la liste des offres */
+.price-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.price-input { position: relative; }
+.price-input span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; opacity: .55; pointer-events: none; }
+.card-tools .price-input input { width: 270px; padding-left: 30px; }
+.card-tools .price-input input.invalid { border-color: #c0392b; box-shadow: 0 0 0 3px rgba(192,57,43,.15); }
+.price-count { font-size: 12.5px; font-weight: 600; opacity: .7; white-space: nowrap; }
+@media (max-width: 720px) { .price-tools { width: 100%; } .price-tools .filter-select, .card-tools .price-input, .card-tools .price-input input { width: 100%; } }

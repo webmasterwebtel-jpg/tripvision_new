@@ -361,10 +361,11 @@ final class Router
     public function dispatch(Req $req): mixed
     {
         $allowed = false;
+        $method = $req->method === 'HEAD' ? 'GET' : $req->method; // HEAD = GET sans le corps (contrôles de disponibilité, moteurs de recherche)
         foreach ($this->routes as [$m, $regex, $fn]) {
             if (!preg_match($regex, $req->path, $mt)) continue;
             $allowed = true;
-            if ($m !== $req->method) continue;
+            if ($m !== $method) continue;
             $req->params = array_filter($mt, 'is_string', ARRAY_FILTER_USE_KEY);
             return $fn($req);
         }
@@ -405,7 +406,7 @@ function emit(HttpExit $e): void
 {
     http_response_code($e->status);
     foreach ($e->headers as $k => $v) header("$k: $v");
-    if ($e->status === 204 || $e->status === 304) return;
+    if ($e->status === 204 || $e->status === 304 || ($_SERVER['REQUEST_METHOD'] ?? '') === 'HEAD') return;
     switch ($e->type) {
         case 'html': header('Content-Type: text/html; charset=utf-8'); echo $e->payload; break;
         case 'raw': echo $e->payload; break;

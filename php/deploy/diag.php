@@ -28,3 +28,39 @@ foreach (['core', 'mail', 'helpers', 'geo', 'payments', 'xlsx', 'pdf', 'routes_a
 echo "\n--- Base de données ---\n";
 try { echo 'connexion : ', (int)q1('SELECT 1 AS x')['x'] === 1 ? 'ok' : 'échec', "\n"; echo 'version : ', q1('SELECT VERSION() AS v')['v'], "\n"; echo 'tables : ', q1('SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = DATABASE()')['n'], "\n"; }
 catch (Throwable $t) { echo 'ERREUR : ', $t->getMessage(), "\n"; }
+
+echo "
+--- Essais de connexion à la base (sans mot de passe affiché) ---
+";
+$cfg = [];
+foreach (['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'] as $k) $cfg[$k] = $env !== false && preg_match('/^' . $k . '=(.*)$/m', $env, $m) ? trim($m[1], " 	
+\"'") : '';
+echo 'DB_HOST=', $cfg['DB_HOST'], ' DB_PORT=', $cfg['DB_PORT'] ?: '(3306)', ' DB_NAME=', $cfg['DB_NAME'], ' DB_USER=', $cfg['DB_USER'], ' mot de passe: ', $cfg['DB_PASSWORD'] === '' || $cfg['DB_PASSWORD'] === 'A_REMPLIR' ? 'NON RENSEIGNÉ' : 'renseigné (' . strlen($cfg['DB_PASSWORD']) . " caractères)
+";
+$hosts = array_unique(array_filter([$cfg['DB_HOST'], 'localhost', '127.0.0.1', 'c11-sq115', 'mysql']));
+foreach ($hosts as $h) foreach (array_unique([(int)($cfg['DB_PORT'] ?: 3306), 3306]) as $port) {
+    try {
+        $dsn = $h === 'localhost' && $port === 3306 ? "mysql:host=$h;dbname={$cfg['DB_NAME']};charset=utf8mb4" : "mysql:host=$h;port=$port;dbname={$cfg['DB_NAME']};charset=utf8mb4";
+        $p = new PDO($dsn, $cfg['DB_USER'], $cfg['DB_PASSWORD'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 5]);
+        echo "  $h:$port -> CONNEXION OK (", $p->query('SELECT VERSION()')->fetchColumn(), ', ', $p->query('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()')->fetchColumn(), " tables)
+";
+    } catch (Throwable $t) { echo "  $h:$port -> ", substr($t->getMessage(), 0, 160), "
+"; }
+}
+
+echo "\n--- Réglages PHP de l'hébergeur pour MySQL ---\n";
+foreach (['pdo_mysql.default_socket', 'mysqli.default_host', 'mysqli.default_port', 'mysqli.default_socket', 'mysqlnd.net_read_timeout'] as $k) echo "  $k = ", var_export(ini_get($k), true), "\n";
+echo "\n--- Ports ouverts ---\n";
+foreach (['c11-sq115', '127.0.0.1'] as $h) foreach ([3306, 3307, 3308, 3309, 33060, 5432] as $port) {
+    $fp = @stream_socket_client("tcp://$h:$port", $en, $es, 3);
+    echo "  $h:$port -> ", $fp ? 'OUVERT' : "fermé ($es)", "\n";
+    if ($fp) fclose($fp);
+}
+echo "\n--- Sockets possibles ---\n";
+foreach (array_filter([ini_get('pdo_mysql.default_socket'), ini_get('mysqli.default_socket'), '/var/run/mysqld/mysqld.sock', '/var/lib/mysql/mysql.sock', '/tmp/mysql.sock', '/run/mysqld/mysqld.sock']) as $sock) {
+    echo "  $sock -> ", @file_exists($sock) ? 'présent' : 'absent', "\n";
+    if (@file_exists($sock)) {
+        try { $p = new PDO("mysql:unix_socket=$sock;dbname={$cfg['DB_NAME']};charset=utf8mb4", $cfg['DB_USER'], $cfg['DB_PASSWORD'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]); echo "     CONNEXION OK par ce socket\n"; }
+        catch (Throwable $t) { echo '     ', substr($t->getMessage(), 0, 140), "\n"; }
+    }
+}
